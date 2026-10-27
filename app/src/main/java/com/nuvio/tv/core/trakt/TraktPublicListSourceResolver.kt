@@ -128,6 +128,44 @@ class TraktPublicListSourceResolver @Inject constructor(
         traktApi.getPopularLists()
     }
 
+    /**
+     * Trakt's trending and popular public lists, with their likes, trending ones first; null when Trakt couldn't be
+     * reached. For Smart Highlights, which pick from these.
+     */
+    suspend fun prominentListSummaries(limit: Int): List<Pair<TraktListSummaryDto, Int>>? = withContext(Dispatchers.IO) {
+        val trending = traktAuthService.executePublicRequest { traktApi.getTrendingLists(limit = limit) }
+        val popular = traktAuthService.executePublicRequest { traktApi.getPopularLists(limit = limit) }
+        if (trending?.isSuccessful != true && popular?.isSuccessful != true) return@withContext null
+        (trending?.body().orEmpty() + popular?.body().orEmpty())
+            .mapNotNull { entry -> entry.list?.let { it to (entry.likeCount ?: it.likes ?: 0) } }
+            .distinctBy { it.first.ids?.trakt }
+    }
+
+    /**
+     * A public list's movies and shows that have a backdrop (a highlighted row's cards are all backdrop), in the
+     * list's order; null when Trakt couldn't be reached.
+     */
+    suspend fun listBackdropPreviews(traktListId: Long, limit: Int): List<MetaPreview>? = withContext(Dispatchers.IO) {
+        val response = traktAuthService.executePublicRequest {
+            traktApi.getPublicListItems(id = traktListId.toString(), type = "movie,show", limit = limit)
+        } ?: return@withContext null
+        if (!response.isSuccessful) return@withContext null
+        response.body().orEmpty().mapNotNull { item ->
+            item.movie?.takeIf { it.images?.fanart.firstTraktImageUrl() != null }?.toPreview()
+                ?: item.show?.takeIf { it.images?.fanart.firstTraktImageUrl() != null }?.toPreview()
+        }
+    }
+
+    /** What's trending on Trakt now, movies and shows alternating, those with a backdrop; null when unreachable. */
+    suspend fun trendingBackdropPreviews(limit: Int): List<MetaPreview>? = withContext(Dispatchers.IO) {
+        val movies = traktAuthService.executePublicRequest { traktApi.getTrendingMovies(limit = limit) }
+        val shows = traktAuthService.executePublicRequest { traktApi.getTrendingShows(limit = limit) }
+        if (movies?.isSuccessful != true && shows?.isSuccessful != true) return@withContext null
+        val m = movies?.body().orEmpty().mapNotNull { e -> e.movie?.takeIf { it.images?.fanart.firstTraktImageUrl() != null }?.toPreview() }
+        val s = shows?.body().orEmpty().mapNotNull { e -> e.show?.takeIf { it.images?.fanart.firstTraktImageUrl() != null }?.toPreview() }
+        (0 until maxOf(m.size, s.size)).flatMap { i -> listOfNotNull(m.getOrNull(i), s.getOrNull(i)) }
+    }
+
     fun parseTraktListId(input: String): Long? {
         return parseTraktListPath(input)?.toLongOrNull()
     }

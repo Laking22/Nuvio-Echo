@@ -3,6 +3,7 @@ package com.nuvio.tv.ui.newlook.home
 import com.nuvio.tv.core.home.BuiltInRowsRepository
 import com.nuvio.tv.core.home.smart.HighlightNameFilter
 import com.nuvio.tv.core.home.smart.SmartHighlightRow
+import com.nuvio.tv.core.home.smart.TraktHighlightSource
 import com.nuvio.tv.data.local.BetaPerformanceSettings
 import com.nuvio.tv.domain.model.ContentType
 import com.nuvio.tv.domain.model.MetaPreview
@@ -138,5 +139,22 @@ class SmartHighlightRowsTest {
         val row = build(smart = named, settings = blocked).first { it.key == "smart:a" }
         assertEquals("Theme a", row.title)
         assertFalse(row.smart!!.aiNamed)
+    }
+
+    @Test
+    fun `trakt's trending row leads as a grand row and the every-third rule counts the others`() {
+        val spotlight = smart(TraktHighlightSource.SPOTLIGHT_ID)
+        val heavy = BetaPerformanceSettings(enrichment = BetaPerformanceSettings.ENRICHMENT_HEAVY)
+        val kinds = build(smart = listOf(spotlight) + threeSmart, settings = heavy)
+            .filter { it.smart != null }
+            .associate { it.smart!!.themeId to it.kind }
+        assertEquals(RowKind.GRAND, kinds[TraktHighlightSource.SPOTLIGHT_ID])
+        // Among the others the 2nd is grand, as without the spotlight.
+        assertEquals(listOf(RowKind.HIGHLIGHT, RowKind.GRAND, RowKind.HIGHLIGHT), listOf(kinds["a"], kinds["b"], kinds["c"]))
+
+        // At Low there are no grand rows, the spotlight included.
+        val low = BetaPerformanceSettings(enrichment = BetaPerformanceSettings.ENRICHMENT_LOW)
+        val lowRows = build(smart = listOf(spotlight) + threeSmart, settings = low).filter { it.smart != null }
+        assertTrue(lowRows.all { it.kind == RowKind.HIGHLIGHT })
     }
 }

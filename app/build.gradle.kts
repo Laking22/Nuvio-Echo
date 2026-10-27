@@ -114,6 +114,13 @@ android {
         buildConfigField("String", "TRAILER_API_URL", "\"${localProperties.getProperty("TRAILER_API_URL", "")}\"")
         buildConfigField("String", "IMDB_RATINGS_API_BASE_URL", "\"${localProperties.getProperty("IMDB_RATINGS_API_BASE_URL", "")}\"")
         buildConfigField("String", "IMDB_TAPFRAME_API_BASE_URL", "\"${localProperties.getProperty("IMDB_TAPFRAME_API_BASE_URL", "")}\"")
+        // The app's own TMDB key, so TMDB features work without one of the viewer's (who can still enter theirs).
+        // From local.properties or the environment; never committed. Builds without it simply have none built in.
+        buildConfigField(
+            "String",
+            "TMDB_API_KEY",
+            buildConfigString((localProperties.getProperty("TMDB_API_KEY") ?: System.getenv("TMDB_API_KEY") ?: "").trim())
+        )
         buildConfigField("String", "TRAKT_CLIENT_ID", "\"${localProperties.getProperty("TRAKT_CLIENT_ID", "")}\"")
         buildConfigField("String", "TRAKT_CLIENT_SECRET", "\"${localProperties.getProperty("TRAKT_CLIENT_SECRET", "")}\"")
         buildConfigField("String", "TRAKT_API_URL", "\"${localProperties.getProperty("TRAKT_API_URL", "https://api.trakt.tv/")}\"")

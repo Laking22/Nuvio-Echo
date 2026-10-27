@@ -387,16 +387,26 @@ internal fun NewLookHomeContent(
     // Smart Highlights: rebuilt when the Enrichment level changes, renamed or something is blocked (a block refills
     // the gap).
     val smartHighlights by source.smartHighlights.collectAsState()
-    LaunchedEffect(settings.enrichment, settings.smartHighlightAiNames, settings.blockedHighlights, settings.snoozedHighlights) {
+    LaunchedEffect(
+        settings.enrichment, settings.smartHighlightAiNames, settings.smartHighlightTrakt,
+        settings.smartHighlightMdbList, settings.blockedHighlights,
+        settings.snoozedHighlights
+    ) {
         source.refreshSmartHighlights()
     }
+    // Custom posters reach the built-in rows as they do the catalogs (Home's screen setting).
+    val homePosterPattern = uiState.customPosterUrlPattern
+        .takeIf { com.nuvio.tv.core.poster.CustomPosterScreen.HOME in uiState.customPosterEnabledScreens }
+        .orEmpty()
     val rows = remember(
         presentation.rows, builtIns, titles,
         settings.highlightedRows, settings.hiddenBuiltInRows, settings.plainBuiltInRows, settings.grandRows,
         settings.homeRowOrder, smartHighlights, settings.enrichment, settings.smartHighlightAiNames,
-        settings.blockedHighlights, settings.snoozedHighlights, settings.highlightExclusions
+        settings.blockedHighlights, settings.snoozedHighlights, settings.highlightExclusions, homePosterPattern
     ) {
-        buildNewLookRows(presentation.rows.list, builtIns, settings, titles, smartHighlights)
+        buildNewLookRows(
+            presentation.rows.list, builtIns.withCustomPosterUrls(homePosterPattern), settings, titles, smartHighlights
+        )
     }
     var sourcesIn by remember { mutableStateOf(false) }
     LaunchedEffect(source) {
@@ -1566,6 +1576,7 @@ private fun RowCard(
         }
         row.kind == RowKind.POSTER -> PosterCard(
             poster = preview.poster ?: item.imageUrl,
+            posterFallback = item.metaPreview?.rawPosterUrl,
             backdrop = backdrop,
             logo = logo,
             title = item.title,

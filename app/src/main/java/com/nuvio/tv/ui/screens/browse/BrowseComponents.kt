@@ -70,6 +70,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.nuvio.tv.core.image.customPosterFallback
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.nuvio.tv.R
@@ -417,9 +418,10 @@ private fun BrowsePosterCard(
     val placeholder = Plain.backgroundCard
     val context = LocalContext.current
     val density = LocalDensity.current
-    val request = remember(item.poster, density, width) {
+    val request = remember(item.poster, item.rawPosterUrl, density, width) {
         ImageRequest.Builder(context)
             .data(item.poster)
+            .customPosterFallback(item.poster, item.rawPosterUrl)
             .size(with(density) { width.roundToPx() }, with(density) { height.roundToPx() })
             .crossfade(false)
             .build()

@@ -73,6 +73,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.nuvio.tv.core.image.customPosterFallback
 import coil3.request.crossfade
 import androidx.compose.ui.layout.layout
 import androidx.compose.runtime.derivedStateOf
@@ -156,7 +157,13 @@ internal fun BoxScope.CardDepthOverlay(shape: androidx.compose.ui.graphics.Shape
 }
 
 @Composable
-internal fun Artwork(url: String?, modifier: Modifier = Modifier, fallbackTitle: String? = null) {
+internal fun Artwork(
+    url: String?,
+    modifier: Modifier = Modifier,
+    fallbackTitle: String? = null,
+    /** The art a custom poster replaced, shown if the custom one fails to load. */
+    fallbackUrl: String? = null
+) {
     val shown = LocalArtworkShown.current
     if (url.isNullOrBlank()) {
         androidx.compose.runtime.SideEffect { shown?.value = true }
@@ -169,7 +176,9 @@ internal fun Artwork(url: String?, modifier: Modifier = Modifier, fallbackTitle:
     }
     val context = LocalContext.current
     // Built once per image, not on every recomposition of the card.
-    val request = remember(url) { ImageRequest.Builder(context).data(url).crossfade(200).build() }
+    val request = remember(url, fallbackUrl) {
+        ImageRequest.Builder(context).data(url).customPosterFallback(url, fallbackUrl).crossfade(200).build()
+    }
     // Tells the card when its picture is up (the card's depth waits for it). A card showing two pictures (a poster
     // under its backdrop) counts as in once the first is.
     AsyncImage(
@@ -304,6 +313,8 @@ internal fun ContinueWatchingCard(
 @Composable
 internal fun PosterCard(
     poster: String?,
+    /** The art a custom [poster] replaced, shown if the custom one fails to load. */
+    posterFallback: String? = null,
     backdrop: String?,
     logo: String?,
     title: String,
@@ -348,7 +359,10 @@ internal fun PosterCard(
         },
         depth = CardDepthSurface.POSTERS
     ) {
-        Artwork(poster ?: backdrop, Modifier.fillMaxSize().graphicsLayer { alpha = posterAlpha.value }, fallbackTitle = title)
+        Artwork(
+            poster ?: backdrop, Modifier.fillMaxSize().graphicsLayer { alpha = posterAlpha.value },
+            fallbackTitle = title, fallbackUrl = posterFallback
+        )
         if (showOpen) {
             Box(modifier = Modifier.fillMaxSize().graphicsLayer { alpha = openAlpha.value }.background(Color.Black)) {
                 Artwork(backdrop ?: poster, Modifier.fillMaxSize())
@@ -629,7 +643,10 @@ internal fun CollectionTile(
         width, height, onClick, null, onFocusChanged, modifier,
         depth = if (highlighted) CardDepthSurface.FEATURED else CardDepthSurface.POSTERS
     ) {
-        Artwork(cover, Modifier.fillMaxSize(), fallbackTitle = item.title.ifBlank { null })
+        Artwork(
+            cover, Modifier.fillMaxSize(), fallbackTitle = item.title.ifBlank { null },
+            fallbackUrl = item.metaPreview?.rawPosterUrl.takeIf { !highlighted }
+        )
         if (focused && gif != null) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current).data(gif).build(),

@@ -144,20 +144,6 @@ internal fun LayoutPosterCardSection(
         options = radiusOptions,
         onSelected = { radius -> onEvent(LayoutSettingsEvent.SetPosterCardCornerRadius(radius)) }
     )
-    SettingsToggleRow(
-        title = stringResource(R.string.layout_landscape_posters),
-        subtitle = stringResource(R.string.layout_landscape_posters_sub),
-        checked = uiState.modernLandscapePostersEnabled,
-        onToggle = {
-            onEvent(LayoutSettingsEvent.SetModernLandscapePostersEnabled(!uiState.modernLandscapePostersEnabled))
-        }
-    )
-    SettingsToggleRow(
-        title = stringResource(R.string.layout_always_show_landscape_clearlogo),
-        subtitle = stringResource(R.string.layout_always_show_landscape_clearlogo_sub),
-        checked = uiState.alwaysShowLandscapeClearlogo,
-        onToggle = { onEvent(LayoutSettingsEvent.SetAlwaysShowLandscapeClearlogo(!uiState.alwaysShowLandscapeClearlogo)) }
-    )
     SettingsResetButton(
         text = stringResource(R.string.layout_reset_default),
         onClick = { onEvent(LayoutSettingsEvent.ResetPosterCardStyle) }

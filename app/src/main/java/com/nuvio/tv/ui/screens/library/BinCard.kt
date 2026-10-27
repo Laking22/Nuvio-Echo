@@ -74,6 +74,8 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import coil3.SingletonImageLoader
 import coil3.compose.AsyncImage
+import com.nuvio.tv.core.image.customPosterFallback
+import com.nuvio.tv.core.poster.withCustomPosterUrls
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
@@ -99,6 +101,8 @@ internal val BinShape = RoundedCornerShape(28.dp)
 @Composable
 internal fun BinCard(
     bin: Bin,
+    /** Layout's custom poster URL for the Library, so the covers match the posters inside the bin. */
+    posterPattern: String,
     width: Dp,
     height: Dp,
     index: Int,
@@ -134,7 +138,13 @@ internal fun BinCard(
     )
     // Newest first in the fan and the mesh, whatever order the bin's own page uses.
     val titles = remember(bin.entries) { BinsReducer.sortedEntries(bin.entries, BinSort.ADDED_NEWEST) }
-    val posters = remember(titles) { titles.mapNotNull { it.poster?.takeIf(String::isNotBlank) } }
+    // Custom posters where they're on; each falls back to the title's own if the custom one fails.
+    val covers = remember(titles, posterPattern) {
+        titles.map { it.toPreview() }.withCustomPosterUrls(posterPattern)
+            .mapNotNull { p -> p.poster?.takeIf(String::isNotBlank)?.let { it to p.rawPosterUrl } }
+    }
+    val posters = remember(covers) { covers.map { it.first } }
+    val fallbacks = remember(covers) { covers.map { it.second } }
     val count = bin.entries.size
 
     Box(
@@ -168,7 +178,7 @@ internal fun BinCard(
                     .fillMaxSize()
                     .background(Brush.horizontalGradient(0f to Color(0xA0000000), 0.45f to Color(0x55000000), 0.75f to Color.Transparent))
             )
-            BinFan(posters, focused = lifted, modifier = Modifier.align(Alignment.TopEnd).padding(top = 29.dp, end = 22.dp))
+            BinFan(posters, fallbacks, focused = lifted, modifier = Modifier.align(Alignment.TopEnd).padding(top = 29.dp, end = 22.dp))
             Column(
                 Modifier
                     .padding(start = 21.dp, top = 20.dp, bottom = 18.dp)
@@ -230,7 +240,7 @@ internal fun BinCard(
 
 /** Three posters fanned like a hand of cards; they spread when the bin is focused. Dashed outlines when empty. */
 @Composable
-private fun BinFan(posters: List<String>, focused: Boolean, modifier: Modifier) {
+private fun BinFan(posters: List<String>, fallbacks: List<String?>, focused: Boolean, modifier: Modifier) {
     val context = LocalContext.current
     val spread by animateFloatAsState(if (focused) 1f else 0f, tween(320, easing = FastOutSlowInEasing), label = "binFan")
     Box(modifier.size(width = 116.dp, height = 108.dp)) {
@@ -266,7 +276,10 @@ private fun BinFan(posters: List<String>, focused: Boolean, modifier: Modifier) 
             ) {
                 if (url != null) {
                     AsyncImage(
-                        model = remember(url) { ImageRequest.Builder(context).data(url).size(120, 180).crossfade(true).build() },
+                        model = remember(url) {
+                            ImageRequest.Builder(context).data(url).customPosterFallback(url, fallbacks.getOrNull(k))
+                                .size(120, 180).crossfade(true).build()
+                        },
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()

@@ -29,6 +29,8 @@ import com.nuvio.tv.data.remote.dto.trakt.TraktSeasonDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktShowDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktShowProgressResponseDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktTokenResponseDto
+import com.nuvio.tv.data.remote.dto.trakt.TraktTrendingMovieDto
+import com.nuvio.tv.data.remote.dto.trakt.TraktTrendingShowDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktUserEpisodeHistoryItemDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktUserSettingsResponseDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktUserStatsResponseDto
@@ -247,6 +249,22 @@ interface TraktApi {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20
     ): Response<List<TraktProminentListDto>>
+
+    @GET("movies/trending")
+    suspend fun getTrendingMovies(
+        @Header("Authorization") authorization: String? = null,
+        @Query("extended") extended: String = "full,images",
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<List<TraktTrendingMovieDto>>
+
+    @GET("shows/trending")
+    suspend fun getTrendingShows(
+        @Header("Authorization") authorization: String? = null,
+        @Query("extended") extended: String = "full,images",
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20
+    ): Response<List<TraktTrendingShowDto>>
 
     @GET("lists/{id}")
     suspend fun getPublicList(

@@ -91,6 +91,8 @@ class BetaPerformanceSettingsViewModel @Inject constructor(
     fun setTrailerVideoLayer(enabled: Boolean) = viewModelScope.launch { dataStore.setTrailerVideoLayer(enabled) }
     fun setEnrichment(level: Int) = viewModelScope.launch { dataStore.setEnrichment(level) }
     fun setSmartHighlightAiNames(enabled: Boolean) = viewModelScope.launch { dataStore.setSmartHighlightAiNames(enabled) }
+    fun setSmartHighlightTrakt(enabled: Boolean) = viewModelScope.launch { dataStore.setSmartHighlightTrakt(enabled) }
+    fun setSmartHighlightMdbList(enabled: Boolean) = viewModelScope.launch { dataStore.setSmartHighlightMdbList(enabled) }
     fun resetBlockedHighlights() = viewModelScope.launch { dataStore.resetBlockedHighlights() }
     fun setMinimalPlayer(enabled: Boolean) = viewModelScope.launch { dataStore.setMinimalPlayer(enabled) }
     fun setPlaybackIntro(enabled: Boolean) = viewModelScope.launch { dataStore.setPlaybackIntro(enabled) }
@@ -366,6 +368,18 @@ internal fun HighlightSettingsGroup(viewModel: BetaPerformanceSettingsViewModel 
                 subtitle = stringResource(R.string.beta_smart_highlight_ai_names_subtitle),
                 checked = settings.smartHighlightAiNames,
                 onToggle = { viewModel.setSmartHighlightAiNames(!settings.smartHighlightAiNames) }
+            )
+            SettingsToggleRow(
+                title = stringResource(R.string.beta_smart_highlight_trakt_title),
+                subtitle = stringResource(R.string.beta_smart_highlight_trakt_subtitle),
+                checked = settings.smartHighlightTrakt,
+                onToggle = { viewModel.setSmartHighlightTrakt(!settings.smartHighlightTrakt) }
+            )
+            SettingsToggleRow(
+                title = stringResource(R.string.beta_smart_highlight_mdblist_title),
+                subtitle = stringResource(R.string.beta_smart_highlight_mdblist_subtitle),
+                checked = settings.smartHighlightMdbList,
+                onToggle = { viewModel.setSmartHighlightMdbList(!settings.smartHighlightMdbList) }
             )
             val hiddenCount = settings.blockedHighlights.size + settings.snoozedHighlights.size +
                 settings.highlightExclusions.size

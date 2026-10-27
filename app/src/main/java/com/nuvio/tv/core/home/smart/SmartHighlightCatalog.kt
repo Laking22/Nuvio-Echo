@@ -32,7 +32,11 @@ data class HighlightTheme(
     val movie: ThemeQuery?,
     val tv: ThemeQuery?,
     /** TMDB genre ids (movie and TV) that make this theme more likely for someone who watches them. */
-    val affinityGenres: Set<Int> = emptySet()
+    val affinityGenres: Set<Int> = emptySet(),
+    /** A public Trakt list to fill the row from, in place of [movie] and [tv] (see [TraktHighlightSource]). */
+    val traktListId: Long? = null,
+    /** MDBList lists to fill the row from (a movie + show twin has two), in place of [movie] and [tv]. */
+    val mdbListIds: List<Long> = emptyList()
 )
 
 /** The built-in Smart Highlights. Ids are stored when a user blocks one, so they never change. */

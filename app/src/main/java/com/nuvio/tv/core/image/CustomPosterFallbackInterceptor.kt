@@ -39,3 +39,14 @@ class CustomPosterFallbackInterceptor : Interceptor {
         return result
     }
 }
+
+/**
+ * Lets a failed custom poster at [url] fall back to [fallback] (the art it replaced, usually the addon's own) through
+ * [CustomPosterFallbackInterceptor]. Does nothing when there's no fallback or it's the same picture.
+ */
+fun coil3.request.ImageRequest.Builder.customPosterFallback(url: String?, fallback: String?): coil3.request.ImageRequest.Builder =
+    if (!fallback.isNullOrBlank() && fallback != url) {
+        memoryCacheKeyExtras(mapOf(CustomPosterFallbackInterceptor.FALLBACK_URL_KEY to fallback))
+    } else {
+        this
+    }

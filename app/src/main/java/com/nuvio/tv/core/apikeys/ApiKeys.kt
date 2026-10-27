@@ -2,12 +2,13 @@ package com.nuvio.tv.core.apikeys
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.nuvio.tv.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-/** A service key the person brings: none is built into the app. */
+/** A service key the person can bring. TMDB also has one built into the app; Gemini doesn't. */
 enum class ApiKeyKind(internal val prefKey: String) {
     /** TMDB: built-in rows, Smart Highlights, Genres, Calendar, credits, reviews and TMDB enrichment. */
     TMDB("tmdb"),
@@ -17,8 +18,9 @@ enum class ApiKeyKind(internal val prefKey: String) {
 
 /**
  * The TMDB and Gemini keys this device uses, entered in Settings → Integrations → API keys. Kept on the device (not
- * synced, not per profile) and read synchronously, so code that runs at startup already sees them. A key that's
- * switched off reads as blank, the same as no key, and whatever needs it stays off.
+ * synced, not per profile) and read synchronously, so code that runs at startup already sees them. A personal key
+ * that's switched off reads as blank, the same as no key: TMDB then falls back to the app's built-in key, and
+ * whatever needs Gemini stays off.
  */
 object ApiKeys {
     private const val FILE = "api_keys"
@@ -36,13 +38,20 @@ object ApiKeys {
         if (prefs == null) prefs = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
     }
 
-    /** The TMDB key to use, or blank when there's none or it's switched off. */
-    val tmdb: String get() = active(ApiKeyKind.TMDB)
+    /** The TMDB key to use: the person's own when it's entered and on, else the built-in one (blank if none). */
+    val tmdb: String get() = active(ApiKeyKind.TMDB).ifBlank { builtIn(ApiKeyKind.TMDB) }
 
     /** The Gemini key to use, or blank when there's none or it's switched off. */
     val gemini: String get() = active(ApiKeyKind.GEMINI)
 
+    /** The person's own key when it's entered and on, else blank. Doesn't include the built-in key. */
     fun active(kind: ApiKeyKind): String = if (isOn(kind)) stored(kind) else ""
+
+    /** The key built into this build of the app, or blank. Only TMDB has one. */
+    fun builtIn(kind: ApiKeyKind): String = when (kind) {
+        ApiKeyKind.TMDB -> BuildConfig.TMDB_API_KEY
+        ApiKeyKind.GEMINI -> ""
+    }
 
     /** The saved key, whether or not it's switched on. */
     fun stored(kind: ApiKeyKind): String = prefs?.getString(kind.prefKey, null)?.trim().orEmpty()

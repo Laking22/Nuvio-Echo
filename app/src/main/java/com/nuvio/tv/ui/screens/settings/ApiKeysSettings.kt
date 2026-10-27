@@ -92,7 +92,7 @@ class ApiKeysViewModel @Inject constructor(
 
 /**
  * Integrations → API keys: the TMDB and Gemini keys this device uses. Each can be entered (checked with its service
- * first) and switched off without being forgotten.
+ * first) and switched off without being forgotten. TMDB works without one when the build has a key built in.
  */
 @Composable
 internal fun ApiKeysSettingsRows(viewModel: ApiKeysViewModel = hiltViewModel()) {
@@ -107,15 +107,17 @@ internal fun ApiKeysSettingsRows(viewModel: ApiKeysViewModel = hiltViewModel()) 
     )
     ApiKeyKind.entries.forEach { kind ->
         val state = keys[kind] ?: ApiKeyState("", false)
+        // With a key built in, the person's own is optional: without it (or with it off) the built-in one is used.
+        val builtIn = ApiKeys.builtIn(kind).isNotBlank()
         SettingsActionRow(
             title = stringResource(kind.titleRes()),
-            subtitle = stringResource(kind.subtitleRes()),
-            value = maskDeviceApiKey(state.stored, notSet),
+            subtitle = stringResource(if (builtIn) R.string.settings_api_key_tmdb_subtitle_builtin else kind.subtitleRes()),
+            value = maskDeviceApiKey(state.stored, if (builtIn) stringResource(R.string.settings_api_key_builtin) else notSet),
             onClick = { editing = kind }
         )
         SettingsToggleRow(
             title = stringResource(kind.useTitleRes()),
-            subtitle = null,
+            subtitle = if (builtIn) stringResource(R.string.settings_api_key_use_builtin_off) else null,
             checked = state.on && state.stored.isNotEmpty(),
             enabled = state.stored.isNotEmpty(),
             onToggle = { viewModel.setOn(kind, !state.on) }

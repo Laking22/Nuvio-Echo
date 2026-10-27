@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
+import com.nuvio.tv.core.image.customPosterFallback
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.nuvio.tv.R
@@ -92,7 +93,9 @@ internal fun NdRowHeader(title: String, subtitle: String? = null) {
 private fun NdTitleCard(item: MetaPreview, onClick: () -> Unit, onLongClick: () -> Unit) {
     val context = LocalContext.current
     var focused by remember { mutableStateOf(false) }
-    val image = item.background ?: item.poster
+    // Wide cards: a landscape custom poster when the pattern gives one, else the backdrop (which it falls back to).
+    val image = item.landscapePoster ?: item.background ?: item.poster
+    val fallback = item.background ?: item.rawPosterUrl ?: item.poster
     Column(Modifier.width(220.dp)) {
         Box(
             modifier = Modifier
@@ -105,7 +108,9 @@ private fun NdTitleCard(item: MetaPreview, onClick: () -> Unit, onLongClick: () 
         ) {
             if (image != null) {
                 AsyncImage(
-                    model = remember(image) { ImageRequest.Builder(context).data(image).crossfade(true).build() },
+                    model = remember(image, fallback) {
+                        ImageRequest.Builder(context).data(image).customPosterFallback(image, fallback).crossfade(true).build()
+                    },
                     contentDescription = item.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()

@@ -53,6 +53,8 @@ data class BinsUiState(
     /** The bin id or title key picked to move. */
     val picked: String? = null,
     val posterWidthDp: Int = 126,
+    /** Layout's custom poster URL for the Library (blank when off), for the bins' own covers. */
+    val posterPattern: String = "",
     val posterCornerDp: Int = 12,
     val watchedMovieIds: Set<String> = emptySet(),
     val watchedSeriesIds: Set<String> = emptySet()
@@ -112,6 +114,7 @@ class BinsViewModel @Inject constructor(
             picked = local.picked,
             posterWidthDp = width,
             posterCornerDp = corner,
+            posterPattern = pattern,
             watchedMovieIds = watched.first,
             watchedSeriesIds = watched.second
         )

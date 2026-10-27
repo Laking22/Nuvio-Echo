@@ -3,6 +3,9 @@ package com.nuvio.tv.core.browse
 import android.content.Context
 import android.util.Log
 import com.nuvio.tv.core.network.NetworkResult
+import com.nuvio.tv.core.poster.CustomPosterScreen
+import com.nuvio.tv.core.poster.withCustomPosterUrls
+import com.nuvio.tv.data.local.LayoutPreferenceDataStore
 import com.nuvio.tv.data.local.TmdbSettingsDataStore
 import com.nuvio.tv.data.remote.api.KitsuAnime
 import com.nuvio.tv.data.remote.api.KitsuAnimeResponse
@@ -55,8 +58,26 @@ class BrowseRepository @Inject constructor(
     private val tmdbSettingsDataStore: TmdbSettingsDataStore,
     private val catalogRepository: CatalogRepository,
     private val kitsuApi: KitsuApi,
-    private val addonRepository: AddonRepository
+    private val addonRepository: AddonRepository,
+    private val layoutPreferences: LayoutPreferenceDataStore
 ) {
+    /**
+     * Search's custom poster URL (Layout → custom posters, when Search is one of its screens), applied to every page
+     * handed out: Genres and the search screen's grid show the same posters as the rest of the app. Pages are cached
+     * without it, so changing the setting takes effect at once.
+     */
+    @Volatile
+    private var posterPattern: String = ""
+
+    private suspend fun refreshPosterPattern(): String {
+        val pattern = layoutPreferences.customPosterUrlPattern.first()
+        val screens = layoutPreferences.customPosterEnabledScreens.first()
+        return (if (CustomPosterScreen.SEARCH in screens) pattern else "").also { posterPattern = it }
+    }
+
+    private fun BrowsePage.withPosters(pattern: String = posterPattern): BrowsePage =
+        if (pattern.isBlank()) this else copy(items = items.withCustomPosterUrls(pattern))
+
     val hasTmdb: Boolean get() = com.nuvio.tv.core.apikeys.ApiKeys.tmdb.isNotBlank()
 
     private val apiKey: String get() = com.nuvio.tv.core.apikeys.ApiKeys.tmdb
@@ -86,7 +107,9 @@ class BrowseRepository @Inject constructor(
         if (hasTmdb) BrowseSort.entries else listOf(BrowseSort.POPULAR, BrowseSort.MOST_RATED)
 
     /** Cached pages come back without a request; [cursor] null asks for the first page. */
-    fun cachedPage(request: BrowseRequest, cursor: BrowseCursor?): BrowsePage? {
+    fun cachedPage(request: BrowseRequest, cursor: BrowseCursor?): BrowsePage? = cachedRaw(request, cursor)?.withPosters()
+
+    private fun cachedRaw(request: BrowseRequest, cursor: BrowseCursor?): BrowsePage? {
         val key = cacheKey(request, cursor)
         return synchronized(pageCache) {
             pageCache[key]?.takeIf { System.currentTimeMillis() - it.storedAtMs < CACHE_TTL_MS }?.page
@@ -94,20 +117,20 @@ class BrowseRepository @Inject constructor(
     }
 
     suspend fun load(request: BrowseRequest, cursor: BrowseCursor?): BrowsePage =
-        withContext(Dispatchers.IO) { loadShared(request, cursor) }
+        withContext(Dispatchers.IO) { loadShared(request, cursor).withPosters(refreshPosterPattern()) }
 
     /** Fetches past the page cache (for the speed test), then caches the fresh page as usual. */
     suspend fun loadFresh(request: BrowseRequest, cursor: BrowseCursor? = null): BrowsePage = withContext(Dispatchers.IO) {
         val page = if (hasTmdb) loadFromTmdb(request, cursor) else loadFromCinemeta(request, cursor)
         synchronized(pageCache) { pageCache[cacheKey(request, cursor)] = CachedPage(page, System.currentTimeMillis()) }
-        page
+        page.withPosters(refreshPosterPattern())
     }
 
     /** One request per page however many screens ask for it at once. */
     private suspend fun loadShared(request: BrowseRequest, cursor: BrowseCursor?): BrowsePage {
         val key = cacheKey(request, cursor)
         while (true) {
-            cachedPage(request, cursor)?.let { return it }
+            cachedRaw(request, cursor)?.let { return it }
             val existing = pagesInFlight[key]
             if (existing != null) {
                 try {

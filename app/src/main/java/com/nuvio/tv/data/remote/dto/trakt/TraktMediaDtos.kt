@@ -51,6 +51,20 @@ data class TraktShowDto(
     @Json(name = "images") val images: TraktImagesDto? = null
 )
 
+/** One entry of `movies/trending`: the movie and how many are watching it now. */
+@JsonClass(generateAdapter = true)
+data class TraktTrendingMovieDto(
+    @Json(name = "watchers") val watchers: Int? = null,
+    @Json(name = "movie") val movie: TraktMovieDto? = null
+)
+
+/** One entry of `shows/trending`: the show and how many are watching it now. */
+@JsonClass(generateAdapter = true)
+data class TraktTrendingShowDto(
+    @Json(name = "watchers") val watchers: Int? = null,
+    @Json(name = "show") val show: TraktShowDto? = null
+)
+
 @JsonClass(generateAdapter = true)
 data class TraktImagesDto(
     @Json(name = "fanart") val fanart: List<String>? = null,

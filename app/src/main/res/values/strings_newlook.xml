@@ -118,6 +118,10 @@
     <string name="beta_enrichment_heavy">Heavy</string>
     <string name="beta_smart_highlight_ai_names_title">AI-named highlights</string>
     <string name="beta_smart_highlight_ai_names_subtitle">Gemini names your highlights. Checks for bad language.</string>
+    <string name="beta_smart_highlight_trakt_title">Trakt lists and trends</string>
+    <string name="beta_smart_highlight_mdblist_title">MDBList lists</string>
+    <string name="beta_smart_highlight_mdblist_subtitle">When MDBList is connected, one of your lists leads each day and MDBList\'s top lists join your highlights.</string>
+    <string name="beta_smart_highlight_trakt_subtitle">Popular Trakt lists join your highlights under their own names, and what\'s trending this week leads as a big row.</string>
     <string name="beta_smart_highlights_reset_title">Bring back blocked highlights</string>
     <string name="beta_smart_highlights_reset_subtitle">%1$d hidden.</string>
     <string name="beta_smart_highlights_reset_none">Nothing hidden.</string>

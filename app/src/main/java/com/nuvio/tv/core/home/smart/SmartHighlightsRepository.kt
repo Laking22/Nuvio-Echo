@@ -58,8 +58,12 @@ data class SmartHighlightRow(
  *    titles and titles without a backdrop are dropped, so are rated ones, and no title shows in two Smart Highlights.
  *    Titles shown in the last few days go last, and themes with enough new titles come first.
  * 3. With a Gemini key, one request checks which titles really fit and (with AI-written names on) names the rows.
+ * With "Trakt lists and trends" on, the day's popular Trakt lists join the themes under their own names, and what's
+ * trending on Trakt leads the day's highlights ([TraktHighlightSource]). With MDBList connected, one of the account's
+ * own lists comes next and MDBList's top lists join the themes ([MdbListHighlightSource]); a list name that's
+ * already a theme isn't offered twice.
  * Blocks, snoozes and removed titles are applied on Home from the settings, so they take effect at once; a refresh
- * then fills the gap with the next theme. Without a TMDB key nothing shows.
+ * then fills the gap with the next theme. Without TMDB or Trakt nothing shows.
  */
 @Singleton
 class SmartHighlightsRepository @Inject constructor(
@@ -74,6 +78,8 @@ class SmartHighlightsRepository @Inject constructor(
     private val progressProviders: TrackingProgressProviderRegistry,
     private val libraryProviders: TrackingLibraryProviderRegistry,
     private val libraryRepository: LibraryRepository,
+    private val traktSource: TraktHighlightSource,
+    private val mdbListSource: MdbListHighlightSource,
     @ApplicationContext context: Context
 ) {
     private val history = HighlightHistory(context)
@@ -98,7 +104,9 @@ class SmartHighlightsRepository @Inject constructor(
     suspend fun refresh() = withContext(Dispatchers.IO) {
         // Read from the file, not the shared state: a refresh started by a block must see that block.
         val settings = betaSettings.settings.first()
-        if (!settings.smartHighlights || !hasTmdb) {
+        val traktOn = settings.smartHighlightTrakt && traktSource.available
+        val mdbListOn = settings.smartHighlightMdbList && mdbListSource.available
+        if (!settings.smartHighlights || (!hasTmdb && !traktOn)) {
             _rows.value = emptyList()
             signature = null
             _firstLoadDone.value = true
@@ -124,7 +132,7 @@ class SmartHighlightsRepository @Inject constructor(
                 .map { BuiltInRanking.Seed(it.id, it.type, it.name, it.listedAt) }
             val ratings = withTimeoutOrNull(5_000) { titleRatingsStore.current() } ?: com.nuvio.tv.data.local.TitleRatings()
             val newSignature = listOf(
-                profileId, language, today, settings.enrichment, settings.smartHighlightAiNames,
+                profileId, language, today, settings.enrichment, settings.smartHighlightAiNames, traktOn, mdbListOn,
                 settings.blockedHighlights.sorted(), settings.snoozedHighlights.sorted(),
                 seeds.joinToString(",") { it.id }, saved.joinToString(",") { it.id }, ratings.signature
             ).joinToString("|")
@@ -141,17 +149,34 @@ class SmartHighlightsRepository @Inject constructor(
                         ?.let { it to com.nuvio.tv.core.home.Taste.ratingWeight(r.rating) }
                 }
             val affinity = com.nuvio.tv.core.home.Taste.genreAffinity(weighted)
+            // Trakt's and MDBList's top lists join the catalogue's themes and are ordered with them; trending leads when
+            // it's on, then one of the account's own MDBList lists. A name already offered isn't offered again.
+            val mdbList = if (mdbListOn) mdbListSource.themes(today) else MdbListHighlightSource.Themes()
+            val themes = ((if (hasTmdb) SmartHighlightCatalog.themes else emptyList()) +
+                (if (traktOn) traktSource.listThemes(today) else emptyList()) + mdbList.top)
+                .distinctBy { HighlightNameFilter.normalise(it.title) }
             val ordered = SmartHighlightPlanner.order(
-                SmartHighlightCatalog.themes, settings.blockedHighlights, settings.snoozedHighlights,
+                themes, settings.blockedHighlights, settings.snoozedHighlights,
                 today, profileId.toLong(), affinity, history.themes(profileId)
             )
+            val takenNames = themes.map { HighlightNameFilter.normalise(it.title) }.toSet()
+            val ownList = SmartHighlightPlanner.order(
+                mdbList.own.filter { HighlightNameFilter.normalise(it.title) !in takenNames },
+                settings.blockedHighlights, settings.snoozedHighlights, today, profileId.toLong(), emptyMap(),
+                history.themes(profileId)
+            ).firstOrNull()
+            val spotlight = traktSource.spotlight.takeIf {
+                traktOn && it.id !in settings.blockedHighlights &&
+                    !SmartHighlightPlanner.isSnoozed(it.id, settings.snoozedHighlights, today)
+            }
             val recentTitles = history.recentTitles(profileId, today)
             val notWatched = BuiltInRanking.notWatched(progress, watchedItems)
             val notRated = com.nuvio.tv.core.home.Taste.notRated(ratings)
             val keep: (MetaPreview) -> Boolean = { notWatched(it) && notRated(it) }
             val wanted = SmartHighlightPlanner.maxRows(settings.enrichment)
             // A few spare themes, fetched together, in case some come back too thin (Heavy, with no limit, tries all).
-            val tried = if (wanted == Int.MAX_VALUE) ordered else ordered.take(wanted + SPARE_THEMES)
+            val tried = listOfNotNull(spotlight, ownList) +
+                (if (wanted == Int.MAX_VALUE) ordered else ordered.take(wanted + SPARE_THEMES))
             val gate = Semaphore(FETCH_PARALLEL)
             val fetched = coroutineScope {
                 tried.map { theme -> async { gate.withPermit { theme to fetch(theme, language, today, keep) } } }.awaitAll()
@@ -223,6 +248,12 @@ class SmartHighlightsRepository @Inject constructor(
         today: Long,
         keep: (MetaPreview) -> Boolean
     ): List<MetaPreview>? = coroutineScope {
+        if (theme.traktListId != null || theme.id == TraktHighlightSource.SPOTLIGHT_ID) {
+            return@coroutineScope traktSource.items(theme)?.filter(keep)?.distinctBy { it.id }
+        }
+        if (theme.mdbListIds.isNotEmpty()) {
+            return@coroutineScope mdbListSource.items(theme, language)?.filter(keep)?.distinctBy { it.id }
+        }
         // Page 1, 2 or 3 by day, so a theme that comes back shows something different.
         val page = 1 + Math.floorMod(today + theme.id.hashCode(), DISCOVER_PAGES.toLong()).toInt()
         val movies = theme.movie?.let { q -> async { discover(q, isTv = false, language, page) } }

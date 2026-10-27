@@ -129,7 +129,10 @@
     <string name="settings_api_key_invalid">That key was turned down. Check it and try again.</string>
     <string name="settings_api_key_tmdb">TMDB API key</string>
     <string name="settings_api_key_tmdb_subtitle">Needed for rows, Genres and Calendar.</string>
-    <string name="settings_api_key_tmdb_use">Use TMDB key</string>
+    <string name="settings_api_key_tmdb_subtitle_builtin">Optional: one is built in. Add your own to use it instead.</string>
+    <string name="settings_api_key_builtin">Built in</string>
+    <string name="settings_api_key_use_builtin_off">When off, the built-in key is used.</string>
+    <string name="settings_api_key_tmdb_use">Use my TMDB key</string>
     <string name="settings_api_key_gemini">Gemini API key</string>
     <string name="settings_api_key_gemini_subtitle">Ranks your rows and names highlights.</string>
     <string name="settings_api_key_gemini_use">Use Gemini key</string>

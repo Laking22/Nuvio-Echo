@@ -25,31 +25,68 @@
 
 To install, open the APK on your TV with a file manager or the Downloader app and allow installs from that app when asked. A newer APK installs over the old one and keeps your settings.
 
-No API keys are built in. Add your own TMDB key, and optionally a Gemini key for smarter recommendations, in **Settings → Integrations → API keys**.
+Everything that uses TMDB works out of the box. You can use your own TMDB key instead, and add a Gemini key for smarter recommendations, in **Settings → Integrations → API keys**.
 
-## Features
+## What's new
 
-**Speed**
-- Addons load fast: connections to addon servers are opened ahead, and streams are fetched as soon as you rest on a title or episode.
-- Playback starts quickly, and every speed-up has its own switch under Settings → Beta speed-ups.
+### A redesigned interface
+The whole app now uses one glass look, built for a TV remote. Home has an optional edge-to-edge hero, a sidebar or a top bar, a soft glow taken from the artwork, and a card size slider in place of the old interface size setting. The details page, the player, Settings, Search and the Library were all redrawn to match.
 
-**Player**
-- A glass player with minimal controls and the title's logo.
-- Quality menu, Auto quality that switches without stopping, and automatic fallback when a source fails.
-- Audio languages from every source in one menu.
-- Thumbnails while you seek, and intro and credits skipping.
-- A short intro animation when playback starts.
+### Quick starts
+Playback starts sooner because the waiting happens earlier:
+- Connections to your addon servers are opened when the app starts, and a title's sources are fetched as soon as you rest on it (Continue Watching cards and episode rows included), before you press anything.
+- The chosen stream's server is warmed up while the player is still loading, and playback starts on a smaller first buffer.
+- A title you were watching resumes on the link it last played, unless that link was below 720p.
+- The next episode's sources are found ahead of time.
 
-**Home and browsing**
-- A glass interface with an optional edge-to-edge hero.
-- Smart Highlights, Because You Watched and For You rows (optionally ranked by Gemini), and hero-sized Grand rows.
-- Trailers in rows and on the hero, with a sound setting.
-- Search and Genres tabs, voice search, and a card size slider.
+Every speed-up has its own switch under **Settings → Beta speed-ups**.
 
-**Pages**
-- A details page with reviews, ratings, the cast's filmographies, and release reminders.
-- Library bins, and a Cloud tab for files in your debrid services.
-- A Calendar of upcoming episodes, anime mode, a detailed parental guide, and a speed test.
+### The intro loader
+A short animation of the logo plays while a title loads, so the wait reads as part of the show instead of a spinner. It lasts 3 to 6 seconds (your choice) and ends as soon as the video is ready.
+
+### Audio and quality parser
+Addons describe their streams in very different ways, so Echo reads every part of a source: the quality field, the resolution the addon reports, the file name and the label. A resolution stated outright ("1080p", "4K") beats a loose word ("HD", "UHD"), and when an addon gives every quality the same file name, the label's own resolution wins. Audio languages are read the same way ("ENG DUB", "Dual", "Hindi", flags), so the audio menu lists the languages available across all your sources, not only the one that's playing.
+
+### Auto quality
+Pick **Auto** in the quality menu and the quality follows your connection. Echo measures the download speed and watches for stalls, steps down early before the picture freezes, and only steps back up after a calm stretch with plenty buffered. Switching sources is seamless (the picture holds while the new one loads), and Auto never moves to a source without sound.
+
+### Seek previews
+Hold left or right on the progress bar and a thumbnail of that moment appears. It works with MP4, MKV, HLS and DASH streams, including 10-bit files, and doesn't slow down the video you're watching. Holding the key also speeds up gradually, so crossing a whole film is quick without overshooting.
+
+### Search, redone
+A new search screen with its own on-screen keyboard. Results appear as you type, suggestions show above the keyboard, and the results from all your addons are ordered by how well known each title is, so the one you meant comes first. Voice search is built in.
+
+### Genres
+A new Genres tab next to Search: browse movies, shows or anime by genre, narrow it down with keywords ("heist", "time travel"), and sort by popularity, rating or release date. It works from TMDB, or from Cinemeta when TMDB isn't available.
+
+### Smart Highlights
+Home mixes in themed rows that change every day: 30 built-in themes ("The Butler Did It", "Grab the Tissues" and more), the day's popular Trakt lists under their own names, and **Trending This Week** from Trakt. With MDBList connected, one of your own MDBList lists joins them each day, along with MDBList's top lists. The themes you're shown lean towards what you watch, save and rate; titles you've watched are left out, and no title appears in two rows. You can block or snooze any row, and a Gemini key adds an optional check of each row and AI-written names.
+
+Alongside them are **Trending**, **Top Movies and Shows Today**, **Because You Watched** and **For You**, built from your own history and ratings.
+
+### Grand rows
+Any catalog or built-in row can be made a Grand row: hero-sized cards with the title's logo, details and trailer inside. The daily Smart Highlights use them too.
+
+### Bins
+The Library is now Bins: your own collections of titles, shown as fanned posters over a blurred mix of their artwork. Make as many as you like, star your favourites, reorder them, and add titles from a title's page or by holding OK on a poster on Home. A Cloud tab lists the files in your debrid services, ready to play.
+
+### And more
+A Calendar of upcoming episodes with reminders, a details page with reviews, ratings and the cast's filmographies, release reminders for titles that aren't out yet, anime mode with Kitsu, a detailed parental guide, and a speed test.
+
+Custom posters still work everywhere posters are shown: a poster URL set in **Settings → Layout**, and posters supplied by addons and poster managers. If a custom poster fails to load, the original appears instead. With TMDB's own artwork turned on (TMDB settings), TMDB posters take the place of both, as before.
+
+## What's gone
+
+These were removed in the redesign and no longer work:
+- **The Classic, Grid and Modern layouts.** The new look is the only one, and with them went their own options: the collapsible and modern sidebars, the floating pill, the full-screen hero backdrop and the classic focus gradient.
+- **Landscape posters** and the "always show landscape clear logo" option. Regular rows show posters, and highlighted and Grand rows show the artwork wide.
+- **Interface size**, replaced by the card size slider.
+- **The old Library** with its list, genre and year filters, replaced by Bins.
+- **The old details page options:** the episode options overlay style, episode ratings on the details page, the full release date, and the random episode button.
+- **The old focus and trailer options:** expand-on-focus and its delay, where trailers play, and the "Trailer" chips. Focused cards now always open out, and trailers play inside them and on the hero, with a single Trailer sound setting.
+- **Blurring the next episode in Continue Watching,** and **choosing which player buttons sit on the main row.**
+- **Automatic subtitle sync,** which was tried and taken out.
+- **In-app updates.** Echo doesn't update itself; new versions are on the releases page.
 
 ## Build from source
 

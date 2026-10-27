@@ -477,6 +477,7 @@ private fun BinsGrid(
         items(state.bins, key = { it.id }) { bin ->
             BinCard(
                 bin = bin,
+                posterPattern = state.posterPattern,
                 width = binWidth,
                 height = binHeight,
                 index = state.bins.indexOf(bin),

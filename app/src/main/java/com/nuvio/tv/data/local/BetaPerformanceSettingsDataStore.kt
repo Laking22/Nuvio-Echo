@@ -152,6 +152,13 @@ data class BetaPerformanceSettings(
     /** Smart Highlights: Gemini may write a row's name; off, every row keeps its catalogue name. */
     val smartHighlightAiNames: Boolean = false,
     /**
+     * Smart Highlights also from Trakt (no sign-in needed): popular public lists under their own names, and what's
+     * trending this week as the day's first, grand, row.
+     */
+    val smartHighlightTrakt: Boolean = true,
+    /** Smart Highlights also from MDBList, when it's connected: the account's own lists (one leads each day) and top lists. */
+    val smartHighlightMdbList: Boolean = true,
+    /**
      * Smart Highlights the user blocked: theme ids, and AI-written names as [SMART_NAME_PREFIX] + their normalised
      * form (see [com.nuvio.tv.core.home.smart.HighlightNameFilter.normalise]).
      */
@@ -248,6 +255,8 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     private val smartHighlightsKey = booleanPreferencesKey("smart_highlights")
     private val enrichmentKey = intPreferencesKey("home_enrichment")
     private val smartHighlightAiNamesKey = booleanPreferencesKey("smart_highlight_ai_names")
+    private val smartHighlightTraktKey = booleanPreferencesKey("smart_highlight_trakt")
+    private val smartHighlightMdbListKey = booleanPreferencesKey("smart_highlight_mdblist")
     private val blockedHighlightsKey = stringSetPreferencesKey("smart_highlights_blocked")
     private val snoozedHighlightsKey = stringSetPreferencesKey("smart_highlights_snoozed")
     private val highlightExclusionsKey = stringSetPreferencesKey("smart_highlights_excluded")
@@ -309,6 +318,8 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
             enrichment = prefs[enrichmentKey]?.coerceIn(BetaPerformanceSettings.ENRICHMENT_OFF, BetaPerformanceSettings.ENRICHMENT_HEAVY)
                 ?: if (prefs[smartHighlightsKey] == false) BetaPerformanceSettings.ENRICHMENT_OFF else defaults.enrichment,
             smartHighlightAiNames = prefs[smartHighlightAiNamesKey] ?: defaults.smartHighlightAiNames,
+            smartHighlightTrakt = prefs[smartHighlightTraktKey] ?: defaults.smartHighlightTrakt,
+            smartHighlightMdbList = prefs[smartHighlightMdbListKey] ?: defaults.smartHighlightMdbList,
             blockedHighlights = prefs[blockedHighlightsKey] ?: defaults.blockedHighlights,
             snoozedHighlights = prefs[snoozedHighlightsKey] ?: defaults.snoozedHighlights,
             highlightExclusions = prefs[highlightExclusionsKey] ?: defaults.highlightExclusions
@@ -451,6 +462,8 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
         }
     }
     suspend fun setSmartHighlightAiNames(enabled: Boolean) = set(smartHighlightAiNamesKey, enabled)
+    suspend fun setSmartHighlightTrakt(enabled: Boolean) = set(smartHighlightTraktKey, enabled)
+    suspend fun setSmartHighlightMdbList(enabled: Boolean) = set(smartHighlightMdbListKey, enabled)
 
     /** Never show this Smart Highlight (a theme id, or [BetaPerformanceSettings.SMART_NAME_PREFIX] + a name). */
     suspend fun blockHighlight(entry: String) = addTo(blockedHighlightsKey, entry)

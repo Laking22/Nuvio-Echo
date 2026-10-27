@@ -6,8 +6,10 @@ import com.nuvio.tv.core.home.BuiltInRow
 import com.nuvio.tv.core.home.BuiltInRowsRepository
 import com.nuvio.tv.core.home.HomeRowOrder
 import com.nuvio.tv.core.home.smart.HighlightNameFilter
+import com.nuvio.tv.core.poster.withCustomPosterUrls
 import com.nuvio.tv.core.home.smart.SmartHighlightPlanner
 import com.nuvio.tv.core.home.smart.SmartHighlightRow
+import com.nuvio.tv.core.home.smart.TraktHighlightSource
 import com.nuvio.tv.data.local.BetaPerformanceSettings
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.PosterShape
@@ -271,10 +273,29 @@ private fun smartRows(
             smart = SmartRowInfo(row.themeId, row.catalogueTitle, aiNamed)
         )
     }
-    // Today's number of them for the Enrichment level; some as grand rows at Medium and Heavy.
-    return shown.take(SmartHighlightPlanner.dailyCount(settings.enrichment, epochDay)).mapIndexed { i, row ->
-        if (SmartHighlightPlanner.isGrand(settings.enrichment, i)) row.copy(kind = RowKind.GRAND) else row
+    // Today's number of them for the Enrichment level; some as grand rows at Medium and Heavy. Trakt's trending row
+    // leads as a grand row there, and the every-third rule counts the others only.
+    var others = 0
+    return shown.take(SmartHighlightPlanner.dailyCount(settings.enrichment, epochDay)).map { row ->
+        val grand = if (row.smart?.themeId == TraktHighlightSource.SPOTLIGHT_ID) {
+            settings.enrichment >= BetaPerformanceSettings.ENRICHMENT_MEDIUM
+        } else {
+            SmartHighlightPlanner.isGrand(settings.enrichment, others++)
+        }
+        if (grand) row.copy(kind = RowKind.GRAND) else row
     }
+}
+
+/** The built-in rows with [pattern] (Layout's custom poster URL) applied to their posters; unchanged when blank. */
+internal fun BuiltInRowsRepository.Rows.withCustomPosterUrls(pattern: String): BuiltInRowsRepository.Rows {
+    if (pattern.isBlank()) return this
+    return copy(
+        trendingWeek = trendingWeek.withCustomPosterUrls(pattern),
+        topMoviesToday = topMoviesToday.withCustomPosterUrls(pattern),
+        topShowsToday = topShowsToday.withCustomPosterUrls(pattern),
+        becauseYouWatched = becauseYouWatched?.let { it.copy(items = it.items.withCustomPosterUrls(pattern)) },
+        forYou = forYou.withCustomPosterUrls(pattern)
+    )
 }
 
 /** Row key prefix of the Smart Highlights, so they can't clash with catalogs or built-in rows. */
