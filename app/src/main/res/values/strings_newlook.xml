@@ -15,7 +15,7 @@
     <string name="beta_notification_style_profile">Out of the profile picture</string>
     <string name="beta_notification_style_off">Off</string>
     <string name="beta_notification_test">Show a sample notification</string>
-    <string name="beta_settings_group_highlighted">Highlighted rows</string>
+    <string name="beta_settings_group_highlighted">Default highlights</string>
     <string name="beta_viewed_unit_title">Threshold for viewed</string>
     <string name="beta_viewed_unit_subtitle">When a title counts as watched.</string>
     <string name="beta_viewed_unit_minutes">Minutes</string>

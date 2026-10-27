@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -64,6 +65,8 @@ import com.nuvio.tv.ui.screens.browse.BrowseListRow
 import com.nuvio.tv.ui.screens.browse.BrowsePill
 import com.nuvio.tv.ui.screens.browse.BrowsePosterGrid
 import com.nuvio.tv.ui.screens.browse.browseSortLabel
+import com.nuvio.tv.ui.newlook.glassSurface
+import com.nuvio.tv.ui.newlook.home.AmbientPageWash
 import com.nuvio.tv.ui.theme.NuvioTheme
 import kotlinx.coroutines.launch
 
@@ -80,6 +83,8 @@ private val ColumnGap = 8.dp
 private val GridGapFromList = 16.dp
 private val GridStartWide = 280.dp
 private val TopInset = 18.dp
+/** The glass the genre and filter lists sit on, as Settings' sidebar does. */
+private val ListPanelShape = RoundedCornerShape(20.dp)
 
 @Composable
 fun GenresScreen(
@@ -91,6 +96,8 @@ fun GenresScreen(
     val scope = rememberCoroutineScope()
     // A Kitsu title may need a quick lookup before it opens; ignore repeat presses meanwhile.
     var openingItem by remember { mutableStateOf(false) }
+    // The art of the poster in focus, for the page's colours while browsing the grid.
+    var focusedArt by remember { mutableStateOf<String?>(null) }
 
     val genreFocus = remember { FocusRequester() }
     val entryFocus = remember { FocusRequester() }
@@ -215,6 +222,11 @@ fun GenresScreen(
             .focusRestorer()
             .focusGroup()
     ) {
+        // The page takes on the colours of what's showing, as Home does: the poster in focus, else the first result.
+        AmbientPageWash(
+            url = if (zone == GenresZone.GRID) focusedArt else state.items.firstOrNull()?.backdropUrl,
+            modifier = Modifier.fillMaxSize()
+        )
         // Column 1: genres.
         Column(
             modifier = Modifier
@@ -225,16 +237,18 @@ fun GenresScreen(
         ) {
             Text(
                 text = stringResource(R.string.browse_genres_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = NuvioTheme.colors.TextSecondary,
-                modifier = Modifier.padding(start = NuvioTheme.spacing.sm, top = TopInset, bottom = 12.dp)
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = NuvioTheme.colors.TextPrimary,
+                modifier = Modifier.padding(start = NuvioTheme.spacing.sm, top = TopInset - 4.dp, bottom = 10.dp)
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .verticalScroll(genreScroll)
-                    .padding(bottom = NuvioTheme.spacing.xl),
+                    .padding(bottom = NuvioTheme.spacing.lg)
+                    .glassSurface(ListPanelShape, glints = false)
+                    .padding(6.dp)
+                    .verticalScroll(genreScroll),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 state.genres.forEachIndexed { index, genre ->
@@ -279,8 +293,11 @@ fun GenresScreen(
                 .fillMaxHeight()
         ) {
             Row(
-                modifier = Modifier.padding(top = TopInset - 2.dp, bottom = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                modifier = Modifier
+                    .padding(top = TopInset - 2.dp, bottom = 10.dp)
+                    .glassSurface(RoundedCornerShape(18.dp), glints = false)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 val modes = buildList {
                     add(BrowseMediaMode.MOVIES to R.string.browse_mode_movies)
@@ -323,8 +340,10 @@ fun GenresScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .verticalScroll(entryScroll)
-                    .padding(bottom = NuvioTheme.spacing.xl),
+                    .padding(bottom = NuvioTheme.spacing.lg)
+                    .glassSurface(ListPanelShape, glints = false)
+                    .padding(6.dp)
+                    .verticalScroll(entryScroll),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 state.entries.forEachIndexed { index, entry ->
@@ -449,6 +468,7 @@ fun GenresScreen(
                     },
                     onItemFocused = { index, item ->
                         zone = GenresZone.GRID
+                        focusedArt = item.backdropUrl
                         viewModel.onItemFocused(index, item)
                     },
                     onLeftFromFirstColumn = {

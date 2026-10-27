@@ -1196,10 +1196,6 @@
     <string name="panel_failed_load_episodes">Échec du chargement des épisodes</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Vous regardez</string>
-    <string name="pause_cast_label">Distribution</string>
-    <string name="pause_back_to_details">Retour aux détails</string>
-    <string name="pause_as_character">dans le rôle de %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Épisode suivant</string>
@@ -1716,9 +1712,6 @@
     <string name="collections_editor_pin_above_desc">Afficher cette collection au-dessus de tous les catalogues classiques de l’accueil. Plusieurs collections épinglées suivent l’ordre de création des collections.</string>
     <string name="collections_editor_focus_glow">Halo de sélection</string>
     <string name="collections_editor_focus_glow_desc">Utiliser le halo TV natif sur les cartes de catalogue personnalisées de cette collection sur l’accueil</string>
-    <string name="collections_editor_view_mode">Mode d’affichage</string>
-    <string name="collections_editor_show_all_tab">Afficher l’onglet « Tout »</string>
-    <string name="collections_editor_show_all_tab_desc">Regrouper tous les catalogues dans un seul onglet</string>
     <string name="collections_editor_folders">Dossiers</string>
     <string name="collections_editor_add_folder">Ajouter un dossier</string>
     <string name="collections_editor_new_folder">Nouveau dossier</string>
@@ -1745,9 +1738,6 @@
     <string name="collections_editor_source_count">%1$d source(s)</string>
     <string name="collections_editor_sources">Sources</string>
     <string name="collections_editor_source">Source</string>
-    <string name="collections_editor_view_mode_tabs">Onglets</string>
-    <string name="collections_editor_view_mode_rows">Rangées</string>
-    <string name="collections_editor_view_mode_follow">Suivre la disposition de l’accueil</string>
     <string name="collections_editor_shape_poster">Affiche</string>
     <string name="collections_editor_shape_wide">Large</string>
     <string name="collections_editor_shape_square">Carré</string>

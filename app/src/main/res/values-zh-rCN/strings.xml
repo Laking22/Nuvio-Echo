@@ -1780,10 +1780,6 @@
     <string name="panel_failed_load_streams">加载流失败</string>
     <string name="panel_failed_load_episodes">加载剧集失败</string>
 
-    <string name="pause_you_are_watching">您正在观看</string>
-    <string name="pause_cast_label">演员</string>
-    <string name="pause_back_to_details">返回详情</string>
-    <string name="pause_as_character">饰演 %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">下一集</string>
@@ -2371,9 +2367,6 @@
     <string name="collections_editor_pin_above_desc">将此收藏显示在所有常规首页目录之上。多个固定的收藏按创建顺序排列。</string>
     <string name="collections_editor_focus_glow">焦点光晕</string>
     <string name="collections_editor_focus_glow_desc">在此收藏的首页画面自定义目录卡片上使用原生电视光晕效果</string>
-    <string name="collections_editor_view_mode">查看模式</string>
-    <string name="collections_editor_show_all_tab">显示「全部」标签</string>
-    <string name="collections_editor_show_all_tab_desc">将所有目录合并为一个标签</string>
     <string name="collections_editor_folders">文件夹</string>
     <string name="collections_editor_add_folder">添加文件夹</string>
     <string name="collections_editor_new_folder">新建文件夹</string>
@@ -2400,9 +2393,6 @@
     <string name="collections_editor_source_count">%1$d 个来源</string>
     <string name="collections_editor_sources">来源</string>
     <string name="collections_editor_source">来源</string>
-    <string name="collections_editor_view_mode_tabs">标签</string>
-    <string name="collections_editor_view_mode_rows">行</string>
-    <string name="collections_editor_view_mode_follow">跟随首页布局</string>
     <string name="collections_editor_shape_poster">海报</string>
     <string name="collections_editor_shape_wide">宽</string>
     <string name="collections_editor_shape_square">方形</string>

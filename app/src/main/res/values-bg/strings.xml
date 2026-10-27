@@ -1447,10 +1447,6 @@
     <string name="panel_failed_load_streams">Неуспешно зареждане на потоци</string>
     <string name="panel_failed_load_episodes">Неуспешно зареждане на епизоди</string>
 
-    <string name="pause_you_are_watching">Гледаш</string>
-    <string name="pause_cast_label">Актьорски състав</string>
-    <string name="pause_back_to_details">Обратно към детайлите</string>
-    <string name="pause_as_character">като %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Следващ епизод</string>
@@ -1942,9 +1938,6 @@
     <string name="collections_editor_pin_above_desc">Показвай тази колекция над всички обикновени домашни каталози. Множество закачени колекции следват реда на създаване.</string>
     <string name="collections_editor_focus_glow">Фокусно сияние</string>
     <string name="collections_editor_focus_glow_desc">Използвай нативното TV сияние върху custom catalog картите на тази колекция в началния екран</string>
-    <string name="collections_editor_view_mode">Режим на изглед</string>
-    <string name="collections_editor_show_all_tab">Показвай „Всички“ раздел</string>
-    <string name="collections_editor_show_all_tab_desc">Комбинирай всички каталози в един раздел</string>
     <string name="collections_editor_folders">Папки</string>
     <string name="collections_editor_add_folder">Добави папка</string>
     <string name="collections_editor_new_folder">Нова папка</string>
@@ -1971,9 +1964,6 @@
     <string name="collections_editor_source_count">%1$d източник(а)</string>
     <string name="collections_editor_sources">Източници</string>
     <string name="collections_editor_source">Източник</string>
-    <string name="collections_editor_view_mode_tabs">Раздели</string>
-    <string name="collections_editor_view_mode_rows">Редове</string>
-    <string name="collections_editor_view_mode_follow">Следвай оформлението на началния екран</string>
     <string name="collections_editor_shape_poster">Постер</string>
     <string name="collections_editor_shape_wide">Широк</string>
     <string name="collections_editor_shape_square">Квадрат</string>

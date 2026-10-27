@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -201,6 +203,77 @@ internal fun SettingsResetButton(
                 style = MaterialTheme.typography.labelLarge,
                 color = NuvioTheme.colors.TextPrimary
             )
+        }
+    }
+}
+
+/**
+ * A setting with a longer "how it works" ([explainer]): the setting, then a small round "i" beside it that opens the
+ * explanation in a dialog. [content] draws the setting with the modifier it's given. Without an explainer it's just
+ * the setting.
+ */
+@Composable
+internal fun SettingsWithInfo(
+    title: String,
+    explainer: String?,
+    content: @Composable (Modifier) -> Unit
+) {
+    if (explainer.isNullOrBlank()) {
+        content(Modifier)
+        return
+    }
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        content(Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(NuvioTheme.spacing.sm))
+        SettingsInfoButton(title = title, explainer = explainer)
+    }
+}
+
+/** The round "i" next to a setting: opens [explainer] in a dialog titled [title]. */
+@Composable
+internal fun SettingsInfoButton(title: String, explainer: String, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    var focused by remember { mutableStateOf(false) }
+    androidx.tv.material3.Surface(
+        onClick = { open = true },
+        modifier = modifier
+            .size(40.dp)
+            .onFocusChanged { focused = it.isFocused }
+            .settingsFocusGlass(focused, androidx.compose.foundation.shape.CircleShape),
+        shape = androidx.tv.material3.ClickableSurfaceDefaults.shape(androidx.compose.foundation.shape.CircleShape),
+        colors = androidx.tv.material3.ClickableSurfaceDefaults.colors(
+            containerColor = Color.White.copy(alpha = 0.06f),
+            focusedContainerColor = Color.Transparent
+        ),
+        scale = androidx.tv.material3.ClickableSurfaceDefaults.scale(focusedScale = 1.08f)
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            androidx.tv.material3.Icon(
+                imageVector = Icons.Outlined.Info,
+                contentDescription = stringResource(R.string.settings_more_info),
+                tint = if (focused) NuvioTheme.colors.TextPrimary else NuvioTheme.colors.TextSecondary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+    if (open) {
+        com.nuvio.tv.ui.components.NuvioDialog(
+            onDismiss = { open = false },
+            title = title,
+            width = 620.dp
+        ) {
+            androidx.tv.material3.Text(
+                text = explainer,
+                style = androidx.tv.material3.MaterialTheme.typography.bodyLarge,
+                color = NuvioTheme.colors.TextSecondary
+            )
+            SettingsDialogActionRow {
+                SettingsDialogActionButton(
+                    text = stringResource(R.string.settings_more_info_done),
+                    onClick = { open = false },
+                    primary = true
+                )
+            }
         }
     }
 }

@@ -718,8 +718,10 @@ internal fun SettingsToggleRow(
     titleTrailingIconTint: Color = NuvioTheme.colors.TextPrimary,
     expandSubtitleOnFocus: Boolean = false,
     /** A small tag after the title, such as "Experimental". */
-    titleBadge: String? = null
-) {
+    titleBadge: String? = null,
+    /** How the setting works, behind an "i" button beside the row ([SettingsWithInfo]). */
+    explainer: String? = null
+) = SettingsWithInfo(title, explainer) { infoSlot ->
     val contentAlpha = if (enabled) 1f else 0.4f
     var isFocused by remember { mutableStateOf(false) }
 
@@ -728,6 +730,7 @@ internal fun SettingsToggleRow(
             if (enabled) onToggle()
         },
         modifier = modifier
+            .then(infoSlot)
             .fillMaxWidth()
             .heightIn(min = 62.dp)
             .focusProperties { canFocus = enabled }

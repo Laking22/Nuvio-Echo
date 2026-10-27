@@ -70,6 +70,11 @@ Any catalog or built-in row can be made a Grand row: hero-sized cards with the t
 ### Bins
 The Library is now Bins: your own collections of titles, shown as fanned posters over a blurred mix of their artwork. Make as many as you like, star your favourites, reorder them, and add titles from a title's page or by holding OK on a poster on Home. A Cloud tab lists the files in your debrid services, ready to play.
 
+### Collections, Calendar and the pause screen
+Opening a collection folder shows it as a small Home: a hero of its titles, then a row per source with the same cards that open out to the backdrop and logo when you rest on them. The Calendar was redesigned to match the app: the focused show in a spotlight on the left, the page tinted with its colours, date tiles beside each show, and artwork in the month grid. When a video has been paused for a while, a quiet overlay shows the title, the episode, the synopsis and how much is left.
+
+Settings that take some explaining have a small **i** button beside them that explains how they work (pre-fetching, seek preview quality, hot swap and others).
+
 ### And more
 A Calendar of upcoming episodes with reminders, a details page with reviews, ratings and the cast's filmographies, release reminders for titles that aren't out yet, anime mode with Kitsu, a detailed parental guide, and a speed test.
 
@@ -86,6 +91,7 @@ These were removed in the redesign and no longer work:
 - **The old focus and trailer options:** expand-on-focus and its delay, where trailers play, and the "Trailer" chips. Focused cards now always open out, and trailers play inside them and on the hero, with a single Trailer sound setting.
 - **Blurring the next episode in Continue Watching,** and **choosing which player buttons sit on the main row.**
 - **Automatic subtitle sync,** which was tried and taken out.
+- **Collection view modes** (tabbed grid, rows, follow layout) and the "All" tab: every folder opens as a small Home now.
 - **In-app updates.** Echo doesn't update itself; new versions are on the releases page.
 
 ## Build from source

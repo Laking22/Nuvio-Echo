@@ -1212,7 +1212,7 @@ private val NoBringIntoView = object : BringIntoViewSpec {
 private const val ROW_PIN_CHECK_DELAY_MS = 300L
 
 /** Rows pin the focused card to their start, so a row always starts with its focused card. */
-private class PinToStart(private val startPx: Float) : BringIntoViewSpec {
+internal class PinToStart(private val startPx: Float) : BringIntoViewSpec {
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> = Glide.scroll
 
@@ -1361,6 +1361,9 @@ private fun NewLookRowView(
     val cardTop = dims.rowHead + 3.dp
     val focusedIndex = row.items.indexOfFirst { it.key == focusedItemKey }
     val shownItem = row.items.getOrNull(if (focusedIndex >= 0) focusedIndex else col)
+    // The card that takes focus when Home moves into this row: the remembered column, or the last card while the row
+    // has fewer (Continue Watching fills in after startup). Without a card to hold it, moving into the row did nothing.
+    val focusCol = col.coerceAtMost((row.items.size - 1).coerceAtLeast(0))
 
     // Highlighted rows show logos on every card: fetch the first few as the row comes on screen.
     if ((row.kind == RowKind.HIGHLIGHT || row.kind == RowKind.GRAND) && !row.collection) {
@@ -1441,8 +1444,8 @@ private fun NewLookRowView(
                         .graphicsLayer { alpha = passed }
                         .then(
                             when (index) {
-                                col -> Modifier.focusRequester(focusRequester)
-                                col - 1 -> Modifier.focusRequester(leftFocusRequester)
+                                focusCol -> Modifier.focusRequester(focusRequester)
+                                focusCol - 1 -> Modifier.focusRequester(leftFocusRequester)
                                 else -> Modifier
                             }
                         )

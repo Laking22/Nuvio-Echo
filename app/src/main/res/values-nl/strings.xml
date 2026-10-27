@@ -1699,10 +1699,6 @@
     <string name="panel_failed_load_streams">Streams laden mislukt</string>
     <string name="panel_failed_load_episodes">Afleveringen laden mislukt</string>
 
-    <string name="pause_you_are_watching">Je kijkt naar</string>
-    <string name="pause_cast_label">Cast</string>
-    <string name="pause_back_to_details">Terug naar details</string>
-    <string name="pause_as_character">als %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Volgende aflevering</string>
@@ -2290,9 +2286,6 @@
     <string name="collections_editor_pin_above_desc">Toon deze collectie boven alle gewone startcatalogi. Meerdere vastgezette collecties volgen de volgorde waarin ze zijn gemaakt.</string>
     <string name="collections_editor_focus_glow">Focusgloed</string>
     <string name="collections_editor_focus_glow_desc">Gebruik de eigen tv-gloed op de aangepaste cataloguskaarten van deze collectie op het startscherm</string>
-    <string name="collections_editor_view_mode">Weergavemodus</string>
-    <string name="collections_editor_show_all_tab">Tabblad \"Alle\" tonen</string>
-    <string name="collections_editor_show_all_tab_desc">Voeg alle catalogi samen in één tabblad</string>
     <string name="collections_editor_folders">Mappen</string>
     <string name="collections_editor_add_folder">Map toevoegen</string>
     <string name="collections_editor_new_folder">Nieuwe map</string>
@@ -2319,9 +2312,6 @@
     <string name="collections_editor_source_count">%1$d bron(nen)</string>
     <string name="collections_editor_sources">Bronnen</string>
     <string name="collections_editor_source">Bron</string>
-    <string name="collections_editor_view_mode_tabs">Tabbladen</string>
-    <string name="collections_editor_view_mode_rows">Rijen</string>
-    <string name="collections_editor_view_mode_follow">Startindeling volgen</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Breed</string>
     <string name="collections_editor_shape_square">Vierkant</string>

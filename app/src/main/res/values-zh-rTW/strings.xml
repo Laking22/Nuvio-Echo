@@ -1780,10 +1780,6 @@
     <string name="panel_failed_load_streams">載入串流失敗</string>
     <string name="panel_failed_load_episodes">載入集數失敗</string>
 
-    <string name="pause_you_are_watching">您正在觀看</string>
-    <string name="pause_cast_label">演員</string>
-    <string name="pause_back_to_details">返回詳情</string>
-    <string name="pause_as_character">飾演 %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">下一集</string>
@@ -2371,9 +2367,6 @@
     <string name="collections_editor_pin_above_desc">將此收藏顯示在所有常規首頁目錄之上。多個釘選的收藏依建立順序排列。</string>
     <string name="collections_editor_focus_glow">焦點光暈</string>
     <string name="collections_editor_focus_glow_desc">在此收藏的首頁畫面自訂目錄卡片上使用原生電視光暈效果</string>
-    <string name="collections_editor_view_mode">檢視模式</string>
-    <string name="collections_editor_show_all_tab">顯示「全部」標籤</string>
-    <string name="collections_editor_show_all_tab_desc">將所有目錄合併為一個標籤</string>
     <string name="collections_editor_folders">資料夾</string>
     <string name="collections_editor_add_folder">新增資料夾</string>
     <string name="collections_editor_new_folder">新資料夾</string>
@@ -2400,9 +2393,6 @@
     <string name="collections_editor_source_count">%1$d 個來源</string>
     <string name="collections_editor_sources">來源</string>
     <string name="collections_editor_source">來源</string>
-    <string name="collections_editor_view_mode_tabs">標籤</string>
-    <string name="collections_editor_view_mode_rows">列</string>
-    <string name="collections_editor_view_mode_follow">跟隨首頁佈局</string>
     <string name="collections_editor_shape_poster">海報</string>
     <string name="collections_editor_shape_wide">寬</string>
     <string name="collections_editor_shape_square">方形</string>

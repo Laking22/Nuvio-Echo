@@ -1461,10 +1461,6 @@
     <string name="panel_failed_load_episodes">فشل تحميل الحلقات</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">أنت تشاهد</string>
-    <string name="pause_cast_label">طاقم العمل</string>
-    <string name="pause_back_to_details">العودة للتفاصيل</string>
-    <string name="pause_as_character">بدور %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">الحلقة التالية</string>
@@ -1959,9 +1955,6 @@
     <string name="collections_editor_pin_above_desc">عرض هذه المجموعة فوق فهارس الرئيسية. المجموعات المتعددة تتبع ترتيب إنشائها.</string>
     <string name="collections_editor_focus_glow">توهج التركيز</string>
     <string name="collections_editor_focus_glow_desc">تفعيل توهج التلفاز الافتراضي لبطاقات هذه المجموعة</string>
-    <string name="collections_editor_view_mode">وضع العرض</string>
-    <string name="collections_editor_show_all_tab">عرض علامة "الكل"</string>
-    <string name="collections_editor_show_all_tab_desc">دمج جميع الفهارس في علامة تبويب واحدة</string>
     <string name="collections_editor_folders">المجلدات</string>
     <string name="collections_editor_add_folder">إضافة مجلد</string>
     <string name="collections_editor_new_folder">مجلد جديد</string>
@@ -1988,9 +1981,6 @@
     <string name="collections_editor_source_count">%1$d مصدر</string>
     <string name="collections_editor_sources">المصادر</string>
     <string name="collections_editor_source">المصدر</string>
-    <string name="collections_editor_view_mode_tabs">تبويبات</string>
-    <string name="collections_editor_view_mode_rows">صفوف</string>
-    <string name="collections_editor_view_mode_follow">اتباع تخطيط الرئيسية</string>
     <string name="collections_editor_shape_poster">ملصق</string>
     <string name="collections_editor_shape_wide">عريض</string>
     <string name="collections_editor_shape_square">مربع</string>

@@ -1215,6 +1215,7 @@ private fun PlayerScreenContent(
             )
         }
 
+        val pauseTimeline by viewModel.playbackTimeline.collectAsState()
         PauseOverlay(
             visible = uiState.showPauseOverlay && uiState.error == null &&
                 !uiState.showLoadingOverlay && !postPlayRecommendationState.isVisible,
@@ -1227,8 +1228,9 @@ private fun PlayerScreenContent(
             year = uiState.releaseYear,
             type = uiState.contentType,
             description = uiState.description,
-            cast = uiState.castMembers,
-            showClock = !viewModel.playbackTimeline.collectAsState().value.isLive,
+            positionMs = pauseTimeline.currentPosition,
+            durationMs = if (pauseTimeline.isLive) 0L else pauseTimeline.duration,
+            showClock = !pauseTimeline.isLive,
             modifier = Modifier
                 .fillMaxSize()
                 .zIndex(2.5f)

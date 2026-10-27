@@ -1396,10 +1396,6 @@
     <string name="panel_failed_load_episodes">Nepodarilo sa načítať epizódy</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Sledujete</string>
-    <string name="pause_cast_label">Obsadenie</string>
-    <string name="pause_back_to_details">Späť na detaily</string>
-    <string name="pause_as_character">ako %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Ďalšia epizóda</string>
@@ -1909,9 +1905,6 @@
     <string name="collections_editor_pin_above_desc">Zobraziť túto kolekciu nad všetkými bežnými domácimi katalógmi. Viaceré pripnuté kolekcie sledujú poradie vytvorenia kolekcie.</string>
     <string name="collections_editor_focus_glow">Žiara pri zameraní</string>
     <string name="collections_editor_focus_glow_desc">Použiť natívnu TV žiaru na vlastné katalógové karty tejto kolekcie na domovskej obrazovke</string>
-    <string name="collections_editor_view_mode">Režim zobrazenia</string>
-    <string name="collections_editor_show_all_tab">Zobraziť kartu „Všetko“</string>
-    <string name="collections_editor_show_all_tab_desc">Skombinovať všetky katalógy do jednej karty</string>
     <string name="collections_editor_folders">Priečinky</string>
     <string name="collections_editor_add_folder">Pridať priečinok</string>
     <string name="collections_editor_new_folder">Nový priečinok</string>
@@ -1938,9 +1931,6 @@
     <string name="collections_editor_source_count">%1$d zdrojov</string>
     <string name="collections_editor_sources">Zdroje</string>
     <string name="collections_editor_source">Zdroj</string>
-    <string name="collections_editor_view_mode_tabs">Karty</string>
-    <string name="collections_editor_view_mode_rows">Riadky</string>
-    <string name="collections_editor_view_mode_follow">Sledovať rozloženie domovskej obrazovky</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Široký</string>
     <string name="collections_editor_shape_square">Štvorec</string>

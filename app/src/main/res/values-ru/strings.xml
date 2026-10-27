@@ -1112,10 +1112,6 @@
     <string name="panel_failed_load_episodes">Не удалось загрузить эпизоды</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Вы смотрите</string>
-    <string name="pause_cast_label">В ролях</string>
-    <string name="pause_back_to_details">Назад к деталям</string>
-    <string name="pause_as_character">роль: %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Следующий эпизод</string>
@@ -1615,9 +1611,6 @@
     <string name="collections_editor_pin_above_desc">Показывать эту коллекцию выше всех обычных каталогов на главной. Несколько закрепленных коллекций сортируются в порядке их создания.</string>
     <string name="collections_editor_focus_glow">Свечение при фокусе</string>
     <string name="collections_editor_focus_glow_desc">Использовать нативное свечение ТВ на пользовательских карточках каталога этой коллекции</string>
-    <string name="collections_editor_view_mode">Режим просмотра</string>
-    <string name="collections_editor_show_all_tab">Показывать вкладку \"Все\"</string>
-    <string name="collections_editor_show_all_tab_desc">Объединить все каталоги в одну вкладку</string>
     <string name="collections_editor_folders">Папки</string>
     <string name="collections_editor_add_folder">Добавить папку</string>
     <string name="collections_editor_edit_folder">Редактировать папку</string>
@@ -1640,9 +1633,6 @@
     <string name="collections_editor_back">Назад</string>
     <string name="collections_editor_edit_collection">Редактировать коллекцию</string>
     <string name="collections_editor_catalog_count">%1$d каталог(ов)</string>
-    <string name="collections_editor_view_mode_tabs">Вкладки</string>
-    <string name="collections_editor_view_mode_rows">Строки</string>
-    <string name="collections_editor_view_mode_follow">Следовать макету главной</string>
     <string name="collections_editor_shape_poster">Постер</string>
     <string name="collections_editor_shape_wide">Широкий</string>
     <string name="collections_editor_shape_square">Квадрат</string>

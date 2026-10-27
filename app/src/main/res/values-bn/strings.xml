@@ -1785,10 +1785,6 @@
     <string name="subtitle_style_weight">ওয়েট</string>
     <string name="panel_failed_load_streams">স্ট্রিম লোড করতে ব্যর্থ হয়েছে</string>
     <string name="panel_failed_load_episodes">এপিসোড লোড করতে ব্যর্থ হয়েছে</string>
-    <string name="pause_you_are_watching">আপনি দেখছেন</string>
-    <string name="pause_cast_label">কাস্ট</string>
-    <string name="pause_back_to_details">বিস্তারিততে ফিরে যান</string>
-    <string name="pause_as_character">%1$s হিসেবে</string>
     <string name="next_episode_label">পরবর্তী পর্ব</string>
     <string name="next_episode_finding_source">সোর্স খোঁজা হচ্ছে…</string>
     <string name="next_episode_playing_via">%2$d সেকেন্ডে %1$s-এর মাধ্যমে প্লে হচ্ছে</string>
@@ -2303,9 +2299,6 @@
     <string name="collections_editor_pin_above_desc">এই কালেকশনটি সমস্ত নিয়মিত হোম ক্যাটালগের উপরে দেখান। একাধিক পিন করা কালেকশন কালেকশন তৈরির ক্রম অনুসরণ করে।</string>
     <string name="collections_editor_focus_glow">ফোকাস গ্লো</string>
     <string name="collections_editor_focus_glow_desc">এই কালেকশনের হোম-স্ক্রিন কাস্টম ক্যাটালগ কার্ডগুলোতে নেটিভ টিভি গ্লো ব্যবহার করুন</string>
-    <string name="collections_editor_view_mode">দেখুন মোড</string>
-    <string name="collections_editor_show_all_tab">"সমস্ত" ট্যাব দেখান</string>
-    <string name="collections_editor_show_all_tab_desc">একটি ট্যাবে সমস্ত ক্যাটালগ একত্রিত করুন</string>
     <string name="collections_editor_folders">ফোল্ডারগুলি</string>
     <string name="collections_editor_add_folder">ফোল্ডার যোগ করুন</string>
     <string name="collections_editor_new_folder">নতুন ফোল্ডার</string>
@@ -2332,9 +2325,6 @@
     <string name="collections_editor_source_count">%1$dটি সোর্স</string>
     <string name="collections_editor_sources">সোর্স</string>
     <string name="collections_editor_source">সোর্স</string>
-    <string name="collections_editor_view_mode_tabs">ট্যাব</string>
-    <string name="collections_editor_view_mode_rows">সারি</string>
-    <string name="collections_editor_view_mode_follow">হোম লেআউট ফলো করুন</string>
     <string name="collections_editor_shape_poster">পোস্টার</string>
     <string name="collections_editor_shape_wide">প্রশস্ত</string>
     <string name="collections_editor_shape_square">বর্গক্ষেত্র</string>

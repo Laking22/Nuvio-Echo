@@ -1727,10 +1727,6 @@
     <string name="panel_failed_load_streams">Falha ao carregar fontes</string>
     <string name="panel_failed_load_episodes">Falha ao carregar episódios</string>
 
-    <string name="pause_you_are_watching">Você está assistindo</string>
-    <string name="pause_cast_label">Elenco</string>
-    <string name="pause_back_to_details">Voltar para detalhes</string>
-    <string name="pause_as_character">como %1$s</string>
    
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Próximo Episódio</string>
@@ -2318,9 +2314,6 @@
     <string name="collections_editor_pin_above_desc">Mostrar esta coleção acima dos catálogos da home. Coleções fixadas seguem ordem de criação.</string>
     <string name="collections_editor_focus_glow">Brilho de foco</string>
     <string name="collections_editor_focus_glow_desc">Usar brilho nativo da TV nos cartões desta coleção</string>
-    <string name="collections_editor_view_mode">Modo de visualização</string>
-    <string name="collections_editor_show_all_tab">Mostrar aba "Todos"</string>
-    <string name="collections_editor_show_all_tab_desc">Combinar todos os catálogos em uma aba</string>
     <string name="collections_editor_folders">Pastas</string>
     <string name="collections_editor_add_folder">Adicionar pasta</string>
     <string name="collections_editor_new_folder">Nova Pasta</string>
@@ -2347,9 +2340,6 @@
     <string name="collections_editor_source_count">%1$d fonte(s)</string>
     <string name="collections_editor_sources">Fontes</string>
     <string name="collections_editor_source">Fonte</string>
-    <string name="collections_editor_view_mode_tabs">Abas</string>
-    <string name="collections_editor_view_mode_rows">Linhas</string>
-    <string name="collections_editor_view_mode_follow">Seguir layout da Home</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Largo</string>
     <string name="collections_editor_shape_square">Quadrado</string>

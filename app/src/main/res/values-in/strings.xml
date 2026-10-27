@@ -1392,10 +1392,6 @@
     <string name="panel_failed_load_episodes">Gagal memuat episode</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Anda sedang menonton</string>
-    <string name="pause_cast_label">Pemeran</string>
-    <string name="pause_back_to_details">Kembali ke detail</string>
-    <string name="pause_as_character">sebagai %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Episode Berikutnya</string>
@@ -1905,9 +1901,6 @@
     <string name="collections_editor_pin_above_desc">Tampilkan koleksi ini di atas semua katalog beranda biasa. Beberapa koleksi yang disematkan mengikuti urutan pembuatan koleksi.</string>
     <string name="collections_editor_focus_glow">Cahaya Fokus</string>
     <string name="collections_editor_focus_glow_desc">Gunakan cahaya TV asli pada kartu katalog kustom layar beranda koleksi ini</string>
-    <string name="collections_editor_view_mode">Mode Tampilan</string>
-    <string name="collections_editor_show_all_tab">Tampilkan Tab \"Semua\"</string>
-    <string name="collections_editor_show_all_tab_desc">Gabungkan semua katalog menjadi satu tab</string>
     <string name="collections_editor_folders">Folder</string>
     <string name="collections_editor_add_folder">Tambah Folder</string>
     <string name="collections_editor_new_folder">Folder Baru</string>
@@ -1934,9 +1927,6 @@
     <string name="collections_editor_source_count">%1$d sumber</string>
     <string name="collections_editor_sources">Sumber</string>
     <string name="collections_editor_source">Sumber</string>
-    <string name="collections_editor_view_mode_tabs">Tab</string>
-    <string name="collections_editor_view_mode_rows">Baris</string>
-    <string name="collections_editor_view_mode_follow">Ikuti Tata Letak Beranda</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Lebar</string>
     <string name="collections_editor_shape_square">Kotak</string>

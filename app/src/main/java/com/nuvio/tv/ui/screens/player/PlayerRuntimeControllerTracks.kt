@@ -40,6 +40,7 @@ internal fun PlayerRuntimeController.updateAvailableTracks(tracks: Tracks) {
     var selectedVideoFormat: Format? = null
     var bestVideoTrackSupport = C.FORMAT_UNSUPPORTED_TYPE
     var selectedVideoTrackSupport = C.FORMAT_UNSUPPORTED_TYPE
+    var selectedVideoTrackCount = 0
 
     tracks.groups.forEachIndexed { groupIndex, trackGroup ->
         val trackType = trackGroup.type
@@ -59,6 +60,7 @@ internal fun PlayerRuntimeController.updateAvailableTracks(tracks: Tracks) {
                         bestVideoTrackSupport = support
                     }
                     if (trackGroup.isTrackSelected(i)) {
+                        selectedVideoTrackCount++
                         val format = trackGroup.getTrackFormat(i)
                         val currentSelected = selectedVideoFormat
                         if (currentSelected == null || format.width > currentSelected.width ||
@@ -95,8 +97,13 @@ internal fun PlayerRuntimeController.updateAvailableTracks(tracks: Tracks) {
                     // Extract video codec, resolution, and bitrate for stream info
                     currentVideoCodec = CustomDefaultTrackNameProvider.formatNameFromMime(format.sampleMimeType)
                         ?: CustomDefaultTrackNameProvider.formatNameFromMime(format.codecs)
-                    currentVideoWidth = format.width.takeIf { it > 0 }
-                    currentVideoHeight = format.height.takeIf { it > 0 }
+                    // An adaptive stream (HLS, DASH) selects all its variants at once, and the widest of them isn't
+                    // necessarily the one playing: the playing quality then comes from the decoded picture
+                    // (onVideoSizeChanged), so the quality label doesn't claim the stream's best.
+                    if (selectedVideoTrackCount <= 1) {
+                        currentVideoWidth = format.width.takeIf { it > 0 }
+                        currentVideoHeight = format.height.takeIf { it > 0 }
+                    }
                     currentVideoBitrate = format.bitrate.takeIf { it > 0 }
                 }
             }

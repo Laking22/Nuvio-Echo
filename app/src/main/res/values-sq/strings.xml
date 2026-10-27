@@ -1571,10 +1571,6 @@
     <string name="subtitle_style_weight">Trashësia</string>
     <string name="panel_failed_load_streams">Ngarkimi i transmetimeve dështoi</string>
     <string name="panel_failed_load_episodes">Ngarkimi i episodeve dështoi</string>
-    <string name="pause_you_are_watching">Po shikon</string>
-    <string name="pause_cast_label">Aktorët</string>
-    <string name="pause_back_to_details">Kthehu te detajet</string>
-    <string name="pause_as_character">si %1$s</string>
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Episodi tjetër</string>
     <string name="next_episode_finding_source">Duke kërkuar burimin…</string>
@@ -2090,9 +2086,6 @@
     <string name="collections_editor_pin_above_desc">Shfaq këtë koleksion mbi të gjithë katalogët e zakonshëm të faqes kryesore. Koleksionet e shumta të fiksuara ndjekin rendin e krijimit të koleksioneve.</string>
     <string name="collections_editor_focus_glow">Shkëlqimi i fokusit</string>
     <string name="collections_editor_focus_glow_desc">Përdor shkëlqimin native të TV-së në kartat e katalogut të personalizuar të këtij koleksioni në ekranin kryesor</string>
-    <string name="collections_editor_view_mode">Modaliteti i pamjes</string>
-    <string name="collections_editor_show_all_tab">Shfaq skedën \"Të gjitha\"</string>
-    <string name="collections_editor_show_all_tab_desc">Kombino të gjithë katalogët në një skedë</string>
     <string name="collections_editor_folders">Dosjet</string>
     <string name="collections_editor_add_folder">Shto dosje</string>
     <string name="collections_editor_new_folder">Dosje e re</string>
@@ -2119,9 +2112,6 @@
     <string name="collections_editor_source_count">%1$d burim(e)</string>
     <string name="collections_editor_sources">Burimet</string>
     <string name="collections_editor_source">Burimi</string>
-    <string name="collections_editor_view_mode_tabs">Skedat</string>
-    <string name="collections_editor_view_mode_rows">Rreshtat</string>
-    <string name="collections_editor_view_mode_follow">Ndiq paraqitjen e faqes kryesore</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">E gjerë</string>
     <string name="collections_editor_shape_square">Katror</string>

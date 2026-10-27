@@ -63,7 +63,8 @@ internal fun SliderSettingsItem(
     subtitle: String? = null,
     onFocused: () -> Unit = {},
     enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    explainer: String? = null
 ) {
     val span = (maxValue - minValue).toFloat()
     val progress = if (span > 0f) (value - minValue).toFloat() / span else 0f
@@ -83,7 +84,8 @@ internal fun SliderSettingsItem(
             if (newValue != value) onValueChange(newValue)
         },
         onFocused = onFocused,
-        modifier = modifier
+        modifier = modifier,
+        explainer = explainer
     )
 }
 
@@ -97,7 +99,8 @@ internal fun SliderSettingsItem(
     subtitle: String? = null,
     onFocused: () -> Unit = {},
     enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    explainer: String? = null
 ) {
     require(values.isNotEmpty()) { "SliderSettingsItem.values must not be empty" }
 
@@ -120,7 +123,8 @@ internal fun SliderSettingsItem(
             if (newValue != selected) onValueChange(newValue)
         },
         onFocused = onFocused,
-        modifier = modifier
+        modifier = modifier,
+        explainer = explainer
     )
 }
 
@@ -134,8 +138,9 @@ private fun SliderSettingsItemLayout(
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
     onFocused: () -> Unit,
-    modifier: Modifier
-) {
+    modifier: Modifier,
+    explainer: String?
+) = SettingsWithInfo(title, explainer) { infoSlot ->
     var isFocused by remember { mutableStateOf(false) }
     val contentAlpha = if (enabled) 1f else 0.4f
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -144,6 +149,7 @@ private fun SliderSettingsItemLayout(
     Card(
         onClick = { },
         modifier = modifier
+            .then(infoSlot)
             .fillMaxWidth()
             .onFocusChanged { state ->
                 val nowFocused = state.isFocused

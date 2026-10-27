@@ -1545,10 +1545,6 @@
     <string name="panel_failed_load_streams">Nepodařilo se načíst streamy</string>
     <string name="panel_failed_load_episodes">Nepodařilo se načíst epizody</string>
 
-    <string name="pause_you_are_watching">Právě sledujete</string>
-    <string name="pause_cast_label">Obsazení</string>
-    <string name="pause_back_to_details">Zpět na podrobnosti</string>
-    <string name="pause_as_character">jako %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Další epizoda</string>
@@ -2053,9 +2049,6 @@
     <string name="collections_editor_pin_above_desc">Zobrazit tuto kolekci nad všemi běžnými domovskými katalogy. Vícenásobné připnuté kolekce následují pořadí vytvoření kolekcí.</string>
     <string name="collections_editor_focus_glow">Záře zaměření</string>
     <string name="collections_editor_focus_glow_desc">Použít nativní TV záři na vlastních katalogových kartách této kolekce na domovské obrazovce</string>
-    <string name="collections_editor_view_mode">Režim zobrazení</string>
-    <string name="collections_editor_show_all_tab">Zobrazit kartu \"Vše\"</string>
-    <string name="collections_editor_show_all_tab_desc">Sloučit všechny katalogy do jedné karty</string>
     <string name="collections_editor_folders">Složky</string>
     <string name="collections_editor_add_folder">Přidat složku</string>
     <string name="collections_editor_new_folder">Nová složka</string>
@@ -2082,9 +2075,6 @@
     <string name="collections_editor_source_count">%1$d zdrojů</string>
     <string name="collections_editor_sources">Zdroje</string>
     <string name="collections_editor_source">Zdroj</string>
-    <string name="collections_editor_view_mode_tabs">Karty</string>
-    <string name="collections_editor_view_mode_rows">Řádky</string>
-    <string name="collections_editor_view_mode_follow">Následovat rozvržení domova</string>
     <string name="collections_editor_shape_poster">Plakát</string>
     <string name="collections_editor_shape_wide">Širokoúhlý</string>
     <string name="collections_editor_shape_square">Čtverec</string>

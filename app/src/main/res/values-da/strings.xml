@@ -1455,10 +1455,6 @@
     <string name="panel_failed_load_streams">Kunne ikke indlæse streams</string>
     <string name="panel_failed_load_episodes">Kunne ikke indlæse episoder</string>
 
-    <string name="pause_you_are_watching">Du ser</string>
-    <string name="pause_cast_label">Medvirkende</string>
-    <string name="pause_back_to_details">Tilbage til detaljer</string>
-    <string name="pause_as_character">som %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Næste episode</string>
@@ -1950,9 +1946,6 @@
     <string name="collections_editor_pin_above_desc">Vis denne samling over alle almindelige startskærms-kataloger. Flere fastgjorte samlinger følger oprettelsesrækkefølgen.</string>
     <string name="collections_editor_focus_glow">Fokusglød</string>
     <string name="collections_editor_focus_glow_desc">Brug den native TV-glød på denne samlings brugerdefinerede katalogkort på startskærmen</string>
-    <string name="collections_editor_view_mode">Visningstilstand</string>
-    <string name="collections_editor_show_all_tab">Vis \"Alle\"-fanen</string>
-    <string name="collections_editor_show_all_tab_desc">Kombiner alle kataloger i én fane</string>
     <string name="collections_editor_folders">Mapper</string>
     <string name="collections_editor_add_folder">Tilføj mappe</string>
     <string name="collections_editor_new_folder">Ny mappe</string>
@@ -1979,9 +1972,6 @@
     <string name="collections_editor_source_count">%1$d kilde(r)</string>
     <string name="collections_editor_sources">Kilder</string>
     <string name="collections_editor_source">Kilde</string>
-    <string name="collections_editor_view_mode_tabs">Faner</string>
-    <string name="collections_editor_view_mode_rows">Rækker</string>
-    <string name="collections_editor_view_mode_follow">Følg hjemskærmslayout</string>
     <string name="collections_editor_shape_poster">Plakat</string>
     <string name="collections_editor_shape_wide">Bred</string>
     <string name="collections_editor_shape_square">Kvadrat</string>

@@ -1447,10 +1447,6 @@
     <string name="panel_failed_load_streams">Не вдалося завантажити потоки</string>
     <string name="panel_failed_load_episodes">Не вдалося завантажити епізоди</string>
 
-    <string name="pause_you_are_watching">Ви дивитесь</string>
-    <string name="pause_cast_label">У ролях</string>
-    <string name="pause_back_to_details">Назад до деталей</string>
-    <string name="pause_as_character">роль: %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Наступний епізод</string>
@@ -1942,9 +1938,6 @@
     <string name="collections_editor_pin_above_desc">Показувати цю колекцію вище всіх звичайних каталогів на головній. Кілька закріплених колекцій сортуються в порядку їх створення.</string>
     <string name="collections_editor_focus_glow">Сяяння при фокусі</string>
     <string name="collections_editor_focus_glow_desc">Використовувати нативне сяяння ТВ на користувацьких картках каталогу цієї колекції</string>
-    <string name="collections_editor_view_mode">Режим перегляду</string>
-    <string name="collections_editor_show_all_tab">Показувати вкладку «Всі»</string>
-    <string name="collections_editor_show_all_tab_desc">Об\'єднати всі каталоги в одну вкладку</string>
     <string name="collections_editor_folders">Папки</string>
     <string name="collections_editor_add_folder">Додати папку</string>
     <string name="collections_editor_new_folder">Нова папка</string>
@@ -1971,9 +1964,6 @@
     <string name="collections_editor_source_count">%1$d джерело(ел)</string>
     <string name="collections_editor_sources">Джерела</string>
     <string name="collections_editor_source">Джерело</string>
-    <string name="collections_editor_view_mode_tabs">Вкладки</string>
-    <string name="collections_editor_view_mode_rows">Рядки</string>
-    <string name="collections_editor_view_mode_follow">Слідувати макету головної</string>
     <string name="collections_editor_shape_poster">Постер</string>
     <string name="collections_editor_shape_wide">Широкий</string>
     <string name="collections_editor_shape_square">Квадрат</string>

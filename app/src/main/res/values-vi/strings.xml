@@ -1857,10 +1857,6 @@
     <string name="panel_failed_load_streams">Không thể tải các luồng phát</string>
     <string name="panel_failed_load_episodes">Không thể tải các tập phim</string>
 
-    <string name="pause_you_are_watching">Bạn đang xem</string>
-    <string name="pause_cast_label">Diễn viên</string>
-    <string name="pause_back_to_details">Quay lại chi tiết</string>
-    <string name="pause_as_character">vai %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Tập tiếp theo</string>
@@ -2448,9 +2444,6 @@
     <string name="collections_editor_pin_above_desc">Hiển thị bộ sưu tập này phía trên tất cả danh mục trang chủ thông thường. Các bộ sưu tập được ghim sẽ theo thứ tự tạo bộ sưu tập.</string>
     <string name="collections_editor_focus_glow">Phát sáng khi chọn</string>
     <string name="collections_editor_focus_glow_desc">Sử dụng hiệu ứng phát sáng gốc của TV trên các thẻ danh mục tùy chỉnh thuộc màn hình chính của bộ sưu tập này</string>
-    <string name="collections_editor_view_mode">Chế độ hiển thị</string>
-    <string name="collections_editor_show_all_tab">Hiển thị thẻ \"Tất cả\"</string>
-    <string name="collections_editor_show_all_tab_desc">Gộp tất cả danh mục vào một thẻ</string>
     <string name="collections_editor_folders">Thư mục</string>
     <string name="collections_editor_add_folder">Thêm thư mục</string>
     <string name="collections_editor_new_folder">Thư mục mới</string>
@@ -2477,9 +2470,6 @@
     <string name="collections_editor_source_count">%1$d nguồn · %2$s</string>
     <string name="collections_editor_sources">Nguồn</string>
     <string name="collections_editor_source">Nguồn</string>
-    <string name="collections_editor_view_mode_tabs">Thẻ</string>
-    <string name="collections_editor_view_mode_rows">Hàng</string>
-    <string name="collections_editor_view_mode_follow">Theo bố cục Trang chủ</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Rộng</string>
     <string name="collections_editor_shape_square">Vuông</string>

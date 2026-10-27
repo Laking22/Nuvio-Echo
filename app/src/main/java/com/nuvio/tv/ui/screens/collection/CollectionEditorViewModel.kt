@@ -358,13 +358,6 @@ class CollectionEditorViewModel @Inject constructor(
         }
     }
 
-    fun setViewMode(viewMode: FolderViewMode) {
-        _uiState.update { it.copy(viewMode = viewMode) }
-    }
-
-    fun setShowAllTab(show: Boolean) {
-        _uiState.update { it.copy(showAllTab = show) }
-    }
 
     fun addCatalogSource(catalog: AvailableCatalog) {
         _uiState.update { state ->

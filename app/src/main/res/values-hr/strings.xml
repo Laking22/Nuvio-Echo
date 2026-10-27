@@ -1835,10 +1835,6 @@
     <string name="panel_failed_load_streams">Učitavanje streamova nije uspjelo</string>
     <string name="panel_failed_load_episodes">Učitavanje epizoda nije uspjelo</string>
 
-    <string name="pause_you_are_watching">Gledaš</string>
-    <string name="pause_cast_label">Glumci</string>
-    <string name="pause_back_to_details">Natrag na detalje</string>
-    <string name="pause_as_character">kao %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Sljedeća epizoda</string>
@@ -2411,9 +2407,6 @@
     <string name="collections_editor_pin_above_desc">Prikaži ovu kolekciju iznad svih uobičajenih kataloga na početnom zaslonu. Više prikvačenih kolekcija prati redoslijed stvaranja.</string>
     <string name="collections_editor_focus_glow">Sjaj fokusa</string>
     <string name="collections_editor_focus_glow_desc">Koristi nativni TV sjaj na prilagođenim karticama kataloga ove kolekcije na početnom zaslonu</string>
-    <string name="collections_editor_view_mode">Način prikaza</string>
-    <string name="collections_editor_show_all_tab">Prikaži karticu \"Sve\"</string>
-    <string name="collections_editor_show_all_tab_desc">Spoji sve kataloge u jednu karticu</string>
     <string name="collections_editor_folders">Mape</string>
     <string name="collections_editor_add_folder">Dodaj mapu</string>
     <string name="collections_editor_new_folder">Nova mapa</string>
@@ -2440,9 +2433,6 @@
     <string name="collections_editor_source_count">Izvora: %1$d</string>
     <string name="collections_editor_sources">Izvori</string>
     <string name="collections_editor_source">Izvor</string>
-    <string name="collections_editor_view_mode_tabs">Kartice</string>
-    <string name="collections_editor_view_mode_rows">Redovi</string>
-    <string name="collections_editor_view_mode_follow">Prati izgled početnog zaslona</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Široko</string>
     <string name="collections_editor_shape_square">Kvadrat</string>

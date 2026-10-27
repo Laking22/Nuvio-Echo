@@ -1850,10 +1850,6 @@
     <string name="panel_failed_load_streams">טעינת מקורות נכשלה</string>
     <string name="panel_failed_load_episodes">טעינת פרקים נכשלה</string>
 
-    <string name="pause_you_are_watching">על המסך עכשיו</string>
-    <string name="pause_cast_label">שחקנים</string>
-    <string name="pause_back_to_details">חזרה לפרטים</string>
-    <string name="pause_as_character">בתפקיד %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">פרק הבא</string>
@@ -2441,9 +2437,6 @@
     <string name="collections_editor_pin_above_desc">הצגת אוסף זה מעל כל קטלוגי הבית הרגילים. מספר אוספים נעוצים עוקבים אחר סדר יצירת האוספים.</string>
     <string name="collections_editor_focus_glow">פוקוס זוהר</string>
     <string name="collections_editor_focus_glow_desc">שימוש בזוהר הטלוויזיה המובנה על כרטיסי הקטלוג המותאם אישית של האוסף הזה במסך הבית</string>
-    <string name="collections_editor_view_mode">מצב תצוגה</string>
-    <string name="collections_editor_show_all_tab">הצגת לשונית \"הכול\"</string>
-    <string name="collections_editor_show_all_tab_desc">שילוב כל הקטלוגים בכרטיסייה אחת</string>
     <string name="collections_editor_folders">תיקיות</string>
     <string name="collections_editor_add_folder">הוספת תיקייה</string>
     <string name="collections_editor_new_folder">תיקייה חדשה</string>
@@ -2470,9 +2463,6 @@
     <string name="collections_editor_source_count">%1$d מקורות</string>
     <string name="collections_editor_sources">מקורות</string>
     <string name="collections_editor_source">מקור</string>
-    <string name="collections_editor_view_mode_tabs">לשוניות</string>
-    <string name="collections_editor_view_mode_rows">שורות</string>
-    <string name="collections_editor_view_mode_follow">כמו פריסת הבית</string>
     <string name="collections_editor_shape_poster">פוסטר</string>
     <string name="collections_editor_shape_wide">רוחב</string>
     <string name="collections_editor_shape_square">מרובע</string>

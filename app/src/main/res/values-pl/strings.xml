@@ -835,10 +835,6 @@
     <string name="panel_failed_load_episodes">Nie udało się załadować odcinków</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Oglądasz</string>
-    <string name="pause_cast_label">Obsada</string>
-    <string name="pause_back_to_details">Wróć do szczegółów</string>
-    <string name="pause_as_character">jako %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Następny odcinek</string>
@@ -1534,9 +1530,6 @@
     <string name="collections_editor_pin_above_desc">Pokaż tę kolekcję nad wszystkimi zwykłymi katalogami. Wiele przypiętych kolekcji zachowuje kolejność tworzenia.</string>
     <string name="collections_editor_focus_glow">Poświata zaznaczonej karty</string>
     <string name="collections_editor_focus_glow_desc">Użyj natywnej poświaty TV na kartach tej kolekcji na ekranie głównym</string>
-    <string name="collections_editor_view_mode">Tryb widoku</string>
-    <string name="collections_editor_show_all_tab">Pokaż kartę \"Wszystko\"</string>
-    <string name="collections_editor_show_all_tab_desc">Połącz wszystkie katalogi w jednej karcie</string>
     <string name="collections_editor_folders">Foldery</string>
     <string name="collections_editor_add_folder">Dodaj folder</string>
     <string name="collections_editor_edit_folder">Edytuj folder</string>
@@ -1559,9 +1552,6 @@
     <string name="collections_editor_back">Wstecz</string>
     <string name="collections_editor_edit_collection">Edytuj kolekcję</string>
     <string name="collections_editor_catalog_count">%1$d katalogów</string>
-    <string name="collections_editor_view_mode_tabs">Karty</string>
-    <string name="collections_editor_view_mode_rows">Wiersze</string>
-    <string name="collections_editor_view_mode_follow">Układ ekranu głównego</string>
     <string name="collections_editor_shape_poster">Plakat</string>
     <string name="collections_editor_shape_wide">Szeroki</string>
     <string name="collections_editor_shape_square">Kwadrat</string>

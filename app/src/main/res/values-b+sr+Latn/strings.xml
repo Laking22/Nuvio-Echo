@@ -1725,10 +1725,6 @@
     <string name="panel_failed_load_streams">Nije uspelo učitavanje strimova</string>
     <string name="panel_failed_load_episodes">Nije uspelo učitavanje epizoda</string>
 
-    <string name="pause_you_are_watching">Gledate</string>
-    <string name="pause_cast_label">Glumci</string>
-    <string name="pause_back_to_details">Nazad na detalje</string>
-    <string name="pause_as_character">kao %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Sledeća epizoda</string>
@@ -2316,9 +2312,6 @@
     <string name="collections_editor_pin_above_desc">Prikažite ovu kolekciju iznad svih redovnih početnih kataloga. Više zakačenih kolekcija prati redosled kreiranja kolekcija.</string>
     <string name="collections_editor_focus_glow">Sjaj pri fokusu</string>
     <string name="collections_editor_focus_glow_desc">Koristite izvorni TV sjaj na prilagođenim karticama kataloga ove kolekcije na početnom ekranu</string>
-    <string name="collections_editor_view_mode">Režim prikaza</string>
-    <string name="collections_editor_show_all_tab">Prikaži karticu „Sve“</string>
-    <string name="collections_editor_show_all_tab_desc">Kombinujte sve kataloge u jednu karticu</string>
     <string name="collections_editor_folders">Fascikle</string>
     <string name="collections_editor_add_folder">Dodaj fasciklu</string>
     <string name="collections_editor_new_folder">Nova fascikla</string>
@@ -2345,9 +2338,6 @@
     <string name="collections_editor_source_count">%1$d izvor(a)</string>
     <string name="collections_editor_sources">Izvori</string>
     <string name="collections_editor_source">Izvor</string>
-    <string name="collections_editor_view_mode_tabs">Kartice</string>
-    <string name="collections_editor_view_mode_rows">Redovi</string>
-    <string name="collections_editor_view_mode_follow">Prati izgled početnog ekrana</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Široko</string>
     <string name="collections_editor_shape_square">Kvadrat</string>

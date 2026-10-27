@@ -1201,10 +1201,6 @@
     <string name="panel_failed_load_streams">Nalaganje virov ni uspelo</string>
     <string name="panel_failed_load_episodes">Nalaganje epizod ni uspelo</string>													 
 	<!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Gledate</string>
-    <string name="pause_cast_label">Zasedba</string>
-    <string name="pause_back_to_details">Nazaj na podrobnosti</string>
-    <string name="pause_as_character">kot %1$s</string>
     <!-- PostPlayOverlay -->	
     <string name="next_episode_label">Naslednja epizoda</string>
 	<string name="next_episode_finding_source">Iskanje vira…</string>
@@ -1645,9 +1641,6 @@
     <string name="collections_editor_pin_above_desc">Prikaži to zbirko nad vsemi običajnimi katalogi na začetnem zaslonu. Več pripetih zbirk sledi vrstnemu redu njihovega ustvarjanja.</string>
     <string name="collections_editor_focus_glow">Sij ob izbiri</string>
     <string name="collections_editor_focus_glow_desc">Uporabi izvorni TV sij na karticah katalogov po meri na začetnem zaslonu te zbirke</string>
-    <string name="collections_editor_view_mode">Način prikaza</string>
-    <string name="collections_editor_show_all_tab">Prikaži zavihek \"Vse\"</string>
-    <string name="collections_editor_show_all_tab_desc">Združi vse kataloge v en zavihek</string>
     <string name="collections_editor_folders">Mape</string>
     <string name="collections_editor_add_folder">Dodaj mapo</string>
     <string name="collections_editor_new_folder">Nova mapa</string>
@@ -1674,9 +1667,6 @@
     <string name="collections_editor_source_count">%1$d vir(-ov)</string>
     <string name="collections_editor_sources">Viri</string>
     <string name="collections_editor_source">Vir</string>
-    <string name="collections_editor_view_mode_tabs">Zavihki</string>
-    <string name="collections_editor_view_mode_rows">Vrstice</string>
-    <string name="collections_editor_view_mode_follow">Sledi postavitvi začetnega zaslona</string>
     <string name="collections_editor_shape_poster">Plakat</string>
     <string name="collections_editor_shape_wide">Široko</string>
     <string name="collections_editor_shape_square">Kvadrat</string>

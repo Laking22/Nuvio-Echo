@@ -34,6 +34,8 @@ internal fun PlayerOverlayScaffold(
     dismissOnCenter: Boolean = false,
     dismissOnBackgroundClick: Boolean = false,
     overlayTint: Color = Color.Black.copy(alpha = 0.34f),
+    /** The left and top shade behind the content; off for an overlay that draws its own. */
+    drawShade: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(),
     topEndContent: (@Composable () -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
@@ -121,11 +123,11 @@ internal fun PlayerOverlayScaffold(
                             )
                         )
                         onDrawBehind {
-                            drawRect(brush = horizontalGradient)
+                            if (drawShade) drawRect(brush = horizontalGradient)
                             if (overlayTint.alpha > 0f) {
                                 drawRect(color = overlayTint)
                             }
-                            drawRect(brush = verticalGradient)
+                            if (drawShade) drawRect(brush = verticalGradient)
                         }
                     }
                     .padding(contentPadding)

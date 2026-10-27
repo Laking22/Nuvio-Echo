@@ -83,6 +83,8 @@ import com.nuvio.tv.core.calendar.CalendarEpisode
 import com.nuvio.tv.core.calendar.CalendarMarker
 import com.nuvio.tv.core.calendar.CalendarShow
 import com.nuvio.tv.ui.components.NuvioDialog
+import com.nuvio.tv.ui.newlook.glassSurface
+import com.nuvio.tv.ui.newlook.home.AmbientPageWash
 import com.nuvio.tv.ui.screens.browse.BrowsePill
 import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.theme.ThemeColors
@@ -105,9 +107,9 @@ private enum class CalendarView { LIST, MONTH }
 
 private val ScreenStart = 48.dp
 private val ScreenEnd = 40.dp
-private val TopInset = 18.dp
-private val FeatureWidth = 340.dp
-private val PanelGap = 28.dp
+private val TopInset = 22.dp
+private val FeatureWidth = 360.dp
+private val PanelGap = 32.dp
 internal val ReminderGreen = Color(0xFF66BB6A)
 private const val MONTHS_BACK = 1
 private const val MONTHS_AHEAD = 12
@@ -165,6 +167,12 @@ fun CalendarScreen(
     val entriesById = remember(state.entries) { state.entries.associateBy { it.show.id } }
     val focusedEntry = focusedId?.let { entriesById[it] } ?: state.entries.firstOrNull()
     val month = YearMonth.from(state.today).plusMonths(monthOffset.toLong())
+    val shownDay = focusedDay ?: state.today
+    // The page takes on the colours of what's in the spotlight, as Home does with its carousel.
+    val washUrl = when (view) {
+        CalendarView.LIST -> focusedEntry?.show?.let { it.backdrop ?: it.poster }
+        CalendarView.MONTH -> state.byDate[shownDay].orEmpty().firstNotNullOfOrNull { it.show.backdrop ?: it.show.poster }
+    }
 
     val contentFocusRequester = LocalContentFocusRequester.current
     Box(
@@ -175,6 +183,7 @@ fun CalendarScreen(
             .focusRestorer()
             .focusGroup()
     ) {
+        AmbientPageWash(url = washUrl, modifier = Modifier.fillMaxSize())
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -183,10 +192,12 @@ fun CalendarScreen(
             Box(modifier = Modifier.width(FeatureWidth).fillMaxHeight()) {
                 when (view) {
                     CalendarView.LIST -> FeaturePanel(entry = focusedEntry, locale = locale)
-                    CalendarView.MONTH -> {
-                        val day = focusedDay ?: state.today
-                        DayPanel(day = day, entries = state.byDate[day].orEmpty(), today = state.today, locale = locale)
-                    }
+                    CalendarView.MONTH -> DayPanel(
+                        day = shownDay,
+                        entries = state.byDate[shownDay].orEmpty(),
+                        today = state.today,
+                        locale = locale
+                    )
                 }
             }
             Spacer(modifier = Modifier.width(PanelGap))
@@ -203,7 +214,7 @@ fun CalendarScreen(
                         }
                     }
                 )
-                Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
                 when (view) {
                     CalendarView.LIST -> CalendarList(
                         state = state,
@@ -275,6 +286,7 @@ fun CalendarScreen(
     }
 }
 
+/** The title and how many shows have a date, then List / Month in a glass capsule. */
 @Composable
 private fun Header(
     state: CalendarUiState,
@@ -284,37 +296,43 @@ private fun Header(
     onSelect: (CalendarView) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(32.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = stringResource(R.string.calendar_title),
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = NuvioTheme.colors.TextPrimary
-        )
-        Spacer(modifier = Modifier.width(NuvioTheme.spacing.md))
-        Text(
-            text = when {
-                state.followed == 0 && state.refreshing -> stringResource(R.string.calendar_loading)
-                else -> stringResource(R.string.calendar_summary, state.dated, state.followed)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = NuvioTheme.colors.TextTertiary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.calendar_title),
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = NuvioTheme.colors.TextPrimary
+            )
+            Text(
+                text = when {
+                    state.followed == 0 && state.refreshing -> stringResource(R.string.calendar_loading)
+                    else -> stringResource(R.string.calendar_summary, state.dated, state.followed)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = NuvioTheme.colors.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        val capsule = RoundedCornerShape(20.dp)
+        Row(
+            modifier = Modifier
+                .glassSurface(capsule, glints = false)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             BrowsePill(
                 text = stringResource(R.string.calendar_view_list),
                 selected = view == CalendarView.LIST,
-                modifier = Modifier.widthIn(min = 64.dp).focusRequester(listPillFocus),
+                modifier = Modifier.widthIn(min = 72.dp).focusRequester(listPillFocus),
                 onClick = { onSelect(CalendarView.LIST) }
             )
             BrowsePill(
                 text = stringResource(R.string.calendar_view_month),
                 selected = view == CalendarView.MONTH,
-                modifier = Modifier.widthIn(min = 64.dp).focusRequester(monthPillFocus),
+                modifier = Modifier.widthIn(min = 72.dp).focusRequester(monthPillFocus),
                 onClick = { onSelect(CalendarView.MONTH) }
             )
         }
@@ -350,13 +368,13 @@ private fun CalendarList(
     LazyColumn(
         state = listStateHolder,
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        contentPadding = PaddingValues(bottom = NuvioTheme.spacing.xxl)
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        contentPadding = PaddingValues(top = 2.dp, bottom = NuvioTheme.spacing.xxl, end = 4.dp)
     ) {
         for (group in CalendarGroup.entries) {
             val entries = groups[group] ?: continue
             item(key = "h-${group.name}", contentType = "header") {
-                Text(
+                GroupHeader(
                     text = stringResource(
                         when (group) {
                             CalendarGroup.TODAY -> R.string.calendar_group_today
@@ -365,9 +383,7 @@ private fun CalendarList(
                             CalendarGroup.NO_DATE -> R.string.calendar_group_no_date
                         }
                     ).uppercase(locale),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp),
-                    color = NuvioTheme.colors.TextTertiary,
-                    modifier = Modifier.padding(start = 4.dp, top = NuvioTheme.spacing.sm, bottom = 2.dp)
+                    count = entries.size
                 )
             }
             items(entries, key = { it.show.id }, contentType = { "row" }) { entry ->
@@ -385,6 +401,35 @@ private fun CalendarList(
     }
 }
 
+/** "THIS WEEK  3 ———": a small label, its count, and a hairline to the edge. */
+@Composable
+private fun GroupHeader(text: String, count: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = NuvioTheme.spacing.md, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.6.sp),
+            color = NuvioTheme.colors.TextSecondary
+        )
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.labelMedium,
+            color = NuvioTheme.colors.TextTertiary,
+            modifier = Modifier.padding(start = 8.dp)
+        )
+        Box(
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .weight(1f)
+                .height(1.dp)
+                .background(Brush.horizontalGradient(listOf(Color.White.copy(alpha = 0.18f), Color.Transparent)))
+        )
+    }
+}
+
+/** One show: a date tile, its art, title and episode, and when (or the reminder) on the right. */
 @Composable
 private fun CalendarRow(
     entry: CalendarEntry,
@@ -395,14 +440,13 @@ private fun CalendarRow(
 ) {
     var focused by remember { mutableStateOf(false) }
     val colors = NuvioTheme.colors
-    val shape = RoundedCornerShape(NuvioTheme.radii.md)
-    val primary = colors.TextPrimary
-    val secondary = if (focused) Color.White.copy(alpha = 0.75f) else colors.TextSecondary
+    val shape = RoundedCornerShape(16.dp)
+    val secondary = if (focused) Color.White.copy(alpha = 0.8f) else colors.TextSecondary
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(62.dp)
-            .selectionSurface(focused, shape)
+            .height(76.dp)
+            .selectionSurface(focused, shape, Color.White.copy(alpha = 0.035f))
             .onFocusChanged {
                 focused = it.isFocused
                 if (it.isFocused) onFocused()
@@ -412,9 +456,11 @@ private fun CalendarRow(
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 6.dp, vertical = 5.dp),
+            .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        DateTile(date = entry.date, isToday = entry.daysAway == 0L, focused = focused, locale = locale)
+        Spacer(modifier = Modifier.width(10.dp))
         Thumbnail(
             url = entry.show.backdrop ?: entry.show.poster,
             modifier = Modifier.fillMaxHeight().aspectRatio(16f / 9f)
@@ -424,10 +470,11 @@ private fun CalendarRow(
             Text(
                 text = entry.show.title,
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = primary,
+                color = colors.TextPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = rowSubtitle(entry, locale),
                 style = MaterialTheme.typography.bodySmall,
@@ -435,36 +482,86 @@ private fun CalendarRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-        Spacer(modifier = Modifier.width(NuvioTheme.spacing.sm))
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = entry.daysAway?.let { relativeDays(it, locale) } ?: stringResource(R.string.calendar_no_date),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (entry.daysAway == 0L && !focused) Plain.secondary else secondary,
-                maxLines = 1
-            )
             val marker = entry.episode?.takeIf { entry.date != null }?.marker ?: CalendarMarker.NONE
-            if (marker != CalendarMarker.NONE || entry.reminder) {
-                Spacer(modifier = Modifier.height(3.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (marker != CalendarMarker.NONE) {
-                        MarkerChip(marker, inverted = focused)
-                    }
-                    if (entry.reminder) {
-                        if (marker != CalendarMarker.NONE) Spacer(modifier = Modifier.width(5.dp))
-                        Icon(
-                            imageVector = Icons.Filled.NotificationsActive,
-                            contentDescription = stringResource(R.string.calendar_reminder_on),
-                            tint = if (focused) Color.White else ReminderGreen,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-                }
+            if (marker != CalendarMarker.NONE) {
+                Spacer(modifier = Modifier.height(4.dp))
+                MarkerChip(marker, inverted = focused)
             }
         }
-        Spacer(modifier = Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(NuvioTheme.spacing.sm))
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.Center) {
+            WhenPill(
+                text = entry.daysAway?.let { relativeDays(it, locale) } ?: stringResource(R.string.calendar_no_date),
+                highlight = entry.daysAway == 0L,
+                focused = focused
+            )
+            if (entry.reminder) {
+                Spacer(modifier = Modifier.height(5.dp))
+                Icon(
+                    imageVector = Icons.Filled.NotificationsActive,
+                    contentDescription = stringResource(R.string.calendar_reminder_on),
+                    tint = if (focused) Color.White else ReminderGreen,
+                    modifier = Modifier.size(15.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(6.dp))
     }
+}
+
+/** A tear-off calendar page: the weekday above the day of the month. Undated shows get a dash. */
+@Composable
+private fun DateTile(date: LocalDate?, isToday: Boolean, focused: Boolean, locale: Locale) {
+    val shape = RoundedCornerShape(12.dp)
+    val lit = isToday && !focused
+    Column(
+        modifier = Modifier
+            .width(50.dp)
+            .fillMaxHeight()
+            .clip(shape)
+            .background(if (lit) Plain.secondary else Color.White.copy(alpha = if (focused) 0.14f else 0.06f)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        val ink = if (lit) Plain.onSecondary else Color.White
+        Text(
+            text = date?.dayOfWeek?.getDisplayName(TextStyle.SHORT, locale)?.uppercase(locale) ?: "",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 10.sp),
+            color = ink.copy(alpha = 0.75f),
+            maxLines = 1
+        )
+        Text(
+            text = date?.dayOfMonth?.toString() ?: "–",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 22.sp),
+            color = ink,
+            maxLines = 1
+        )
+    }
+}
+
+/** When it airs, as a small capsule: bright for today. */
+@Composable
+private fun WhenPill(text: String, highlight: Boolean, focused: Boolean) {
+    val shape = RoundedCornerShape(50)
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+        color = when {
+            highlight && !focused -> Plain.onSecondary
+            focused -> Color.White
+            else -> NuvioTheme.colors.TextSecondary
+        },
+        maxLines = 1,
+        modifier = Modifier
+            .clip(shape)
+            .background(
+                when {
+                    highlight && !focused -> Plain.secondary
+                    else -> Color.White.copy(alpha = if (focused) 0.16f else 0.07f)
+                }
+            )
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    )
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -498,31 +595,38 @@ private fun MonthGrid(
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            MonthArrow(Icons.Filled.ChevronLeft, enabled = canGoBack) { onMonth(-1) }
             Text(
                 text = month.month.getDisplayName(TextStyle.FULL_STANDALONE, locale)
-                    .replaceFirstChar { it.titlecase(locale) } + " " + month.year,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = NuvioTheme.colors.TextPrimary,
-                modifier = Modifier.padding(horizontal = NuvioTheme.spacing.md)
+                    .replaceFirstChar { it.titlecase(locale) },
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = NuvioTheme.colors.TextPrimary
             )
+            Text(
+                text = month.year.toString(),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Light),
+                color = NuvioTheme.colors.TextTertiary,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            MonthArrow(Icons.Filled.ChevronLeft, enabled = canGoBack) { onMonth(-1) }
+            Spacer(modifier = Modifier.width(8.dp))
             MonthArrow(Icons.Filled.ChevronRight, enabled = canGoForward) { onMonth(1) }
         }
-        Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             repeat(7) { i ->
                 Text(
                     text = firstDayOfWeek.plus(i.toLong()).getDisplayName(TextStyle.SHORT, locale).uppercase(locale),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
                     color = NuvioTheme.colors.TextTertiary,
-                    modifier = Modifier.weight(1f).padding(start = 6.dp)
+                    modifier = Modifier.weight(1f).padding(start = 8.dp)
                 )
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Spacer(modifier = Modifier.height(6.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             for (week in 0 until 6) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (d in 0 until 7) {
                         val day = days[week * 7 + d]
                         DayCell(
@@ -550,9 +654,8 @@ private fun MonthArrow(icon: ImageVector, enabled: Boolean, onClick: () -> Unit)
     val colors = NuvioTheme.colors
     Box(
         modifier = Modifier
-            .size(28.dp)
-            .selectionSurface(focused, CircleShape)
-            .then(if (focused) Modifier else Modifier.border(BorderStroke(NuvioTheme.spacing.hairline, colors.Border), CircleShape))
+            .size(34.dp)
+            .selectionSurface(focused, CircleShape, Color.White.copy(alpha = 0.06f))
             .onFocusChanged { focused = it.isFocused }
             .clickable(
                 enabled = enabled,
@@ -570,11 +673,15 @@ private fun MonthArrow(icon: ImageVector, enabled: Boolean, onClick: () -> Unit)
                 enabled -> colors.TextPrimary
                 else -> colors.TextTertiary.copy(alpha = 0.4f)
             },
-            modifier = Modifier.size(18.dp)
+            modifier = Modifier.size(20.dp)
         )
     }
 }
 
+/**
+ * A day: its number, and when something airs, that show's art behind it, darkened so the number reads, with a count
+ * when there's more than one. Today has a bright ring.
+ */
 @Composable
 private fun DayCell(
     day: LocalDate,
@@ -588,20 +695,21 @@ private fun DayCell(
 ) {
     var focused by remember { mutableStateOf(false) }
     val colors = NuvioTheme.colors
-    val shape = RoundedCornerShape(NuvioTheme.radii.sm)
+    val shape = RoundedCornerShape(12.dp)
+    val art = entries.firstNotNullOfOrNull { it.show.backdrop ?: it.show.poster }
     Box(
         modifier = modifier
-            .height(52.dp)
+            .height(58.dp)
             .selectionSurface(
                 focused, shape,
                 when {
-                    selected -> Plain.focusBackground
-                    entries.isNotEmpty() -> Plain.backgroundCard
+                    selected -> Color.White.copy(alpha = 0.12f)
+                    inMonth -> Color.White.copy(alpha = 0.04f)
                     else -> Color.Transparent
                 }
             )
             .then(
-                if (isToday && !focused) Modifier.border(BorderStroke(1.dp, Plain.secondary), shape) else Modifier
+                if (isToday && !focused) Modifier.border(BorderStroke(1.5.dp, Plain.secondary), shape) else Modifier
             )
             .onFocusChanged {
                 focused = it.isFocused
@@ -612,46 +720,59 @@ private fun DayCell(
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 6.dp, vertical = 5.dp)
     ) {
+        if (art != null) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current).data(art).crossfade(true).build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alpha = if (inMonth) 1f else 0.4f,
+                modifier = Modifier.fillMaxSize().clip(shape)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(shape)
+                    .background(
+                        Brush.verticalGradient(
+                            0f to Color.Black.copy(alpha = 0.7f),
+                            0.6f to Color.Black.copy(alpha = 0.25f),
+                            1f to Color.Black.copy(alpha = 0.55f)
+                        )
+                    )
+            )
+        }
         Text(
             text = day.dayOfMonth.toString(),
             style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium
+                fontWeight = if (isToday || art != null) FontWeight.Bold else FontWeight.Medium
             ),
             color = when {
-                focused -> Color.White
+                focused || art != null -> Color.White
                 isToday -> Plain.secondary
                 inMonth -> colors.TextPrimary
                 else -> colors.TextTertiary.copy(alpha = 0.5f)
             },
-            modifier = Modifier.align(Alignment.TopStart)
+            modifier = Modifier.align(Alignment.TopStart).padding(horizontal = 8.dp, vertical = 6.dp)
         )
         if (entries.isNotEmpty()) {
             Row(
-                modifier = Modifier.align(Alignment.BottomStart),
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                entries.take(MAX_DOTS).forEach { entry ->
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(
-                                when {
-                                    focused -> Color.White
-                                    entry.reminder -> ReminderGreen
-                                    else -> colors.TextSecondary
-                                }
-                            )
-                    )
+                if (entries.any { it.reminder }) {
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(ReminderGreen))
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
-                if (entries.size > MAX_DOTS) {
+                if (entries.size > 1) {
                     Text(
-                        text = "+${entries.size - MAX_DOTS}",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = if (focused) Color.White else colors.TextSecondary
+                        text = entries.size.toString(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                        color = Color.White,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.Black.copy(alpha = 0.55f))
+                            .padding(horizontal = 6.dp, vertical = 1.dp)
                     )
                 }
             }
@@ -659,25 +780,27 @@ private fun DayCell(
     }
 }
 
-private const val MAX_DOTS = 4
-
 // ---------------------------------------------------------------------------------------------
 // Left panels
 // ---------------------------------------------------------------------------------------------
 
-/** The focused show, big: art, when, which episode, what kind of episode, and its synopsis. */
+/**
+ * The focused show in the spotlight: its art as a wide card with the airing day pinned to the corner, then when,
+ * which episode, the network and the synopsis, and the reminder when it's on.
+ */
 @Composable
 private fun FeaturePanel(entry: CalendarEntry?, locale: Locale) {
     if (entry == null) return
     val colors = NuvioTheme.colors
     val episode = entry.episode
     Column(modifier = Modifier.fillMaxWidth()) {
+        val shape = RoundedCornerShape(20.dp)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(NuvioTheme.radii.lg))
-                .background(Plain.backgroundCard)
+                .glassSurface(shape, glints = false)
+                .clip(shape)
         ) {
             val url = entry.show.backdrop ?: entry.show.poster
             if (url != null) {
@@ -688,22 +811,49 @@ private fun FeaturePanel(entry: CalendarEntry?, locale: Locale) {
                     modifier = Modifier.fillMaxSize()
                 )
             }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f)))
+            )
             val marker = episode?.takeIf { entry.date != null }?.marker ?: CalendarMarker.NONE
             if (marker != CalendarMarker.NONE) {
-                Box(modifier = Modifier.align(Alignment.TopStart).padding(10.dp)) {
+                Box(modifier = Modifier.align(Alignment.TopStart).padding(12.dp)) {
                     MarkerChip(marker, inverted = false, large = true)
                 }
             }
+            if (entry.date != null) {
+                // The day, big, in the corner: "15 OCT".
+                Row(
+                    modifier = Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 10.dp),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = entry.date.dayOfMonth.toString(),
+                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold, fontSize = 40.sp),
+                        color = Color.White
+                    )
+                    Text(
+                        text = entry.date.month.getDisplayName(TextStyle.SHORT, locale).uppercase(locale),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp),
+                        color = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(start = 8.dp, bottom = 9.dp)
+                    )
+                }
+                Box(modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp)) {
+                    WhenPill(text = relativeDays(entry.daysAway ?: 0L, locale), highlight = entry.daysAway == 0L, focused = false)
+                }
+            }
         }
-        Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
         Text(
             text = if (entry.date != null) {
-                dayLabel(entry.date, locale) + " · " + relativeDays(entry.daysAway ?: 0L, locale)
+                entry.date.format(DateTimeFormatter.ofPattern("EEEE", locale))
             } else {
                 stringResource(R.string.calendar_group_no_date)
             }.uppercase(locale),
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
-            color = if (entry.date != null) Plain.secondary else colors.TextTertiary,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 2.sp),
+            color = colors.TextTertiary,
             maxLines = 1
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -715,18 +865,18 @@ private fun FeaturePanel(entry: CalendarEntry?, locale: Locale) {
             overflow = TextOverflow.Ellipsis
         )
         if (episode != null) {
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             val code = stringResource(R.string.calendar_episode_code, episode.season, episode.episode)
             Text(
                 text = if (entry.date != null) {
-                    listOfNotNull(code, episode.name).joinToString(" · ")
+                    listOfNotNull(code, episode.name).joinToString("  ·  ")
                 } else {
                     stringResource(
                         R.string.calendar_last_episode,
                         listOfNotNull(code, episode.airDate?.let { fullDate(it, locale) }).joinToString(" · ")
                     )
                 },
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                 color = colors.TextSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -745,46 +895,59 @@ private fun FeaturePanel(entry: CalendarEntry?, locale: Locale) {
         }
         val overview = episode?.overview?.takeIf { entry.date != null }
         if (overview != null) {
-            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
+            Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
             Text(
                 text = overview,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 19.sp),
                 color = colors.TextSecondary,
-                maxLines = 4,
+                maxLines = 5,
                 overflow = TextOverflow.Ellipsis
             )
         }
         if (entry.reminder) {
             Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.NotificationsActive,
-                    contentDescription = null,
-                    tint = ReminderGreen,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = stringResource(R.string.calendar_reminder_on),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = ReminderGreen
-                )
-            }
+            ReminderBadge()
         }
     }
 }
 
-/** Month view: the focused day and what airs on it. */
+/** "Reminder on", with its bell, in a faint green capsule. */
+@Composable
+private fun ReminderBadge() {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(ReminderGreen.copy(alpha = 0.14f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Filled.NotificationsActive,
+            contentDescription = null,
+            tint = ReminderGreen,
+            modifier = Modifier.size(15.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = stringResource(R.string.calendar_reminder_on),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = ReminderGreen
+        )
+    }
+}
+
+/** Month view: the focused day, big, and what airs on it. */
 @Composable
 private fun DayPanel(day: LocalDate, entries: List<CalendarEntry>, today: LocalDate, locale: Locale) {
     val colors = NuvioTheme.colors
     Column(modifier = Modifier.fillMaxWidth()) {
+        val shape = RoundedCornerShape(20.dp)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(NuvioTheme.radii.lg))
-                .background(Plain.backgroundCard),
+                .glassSurface(shape, glints = false)
+                .clip(shape),
             contentAlignment = Alignment.Center
         ) {
             val url = entries.firstNotNullOfOrNull { it.show.backdrop ?: it.show.poster }
@@ -798,25 +961,37 @@ private fun DayPanel(day: LocalDate, entries: List<CalendarEntry>, today: LocalD
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))))
+                        .background(Brush.verticalGradient(0.4f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.75f)))
                 )
             }
-            Text(
-                text = day.dayOfMonth.toString(),
-                style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                color = if (url != null) Color.White else colors.TextTertiary,
+            Row(
                 modifier = Modifier
                     .align(if (url != null) Alignment.BottomStart else Alignment.Center)
-                    .padding(if (url != null) 12.dp else 0.dp)
-            )
+                    .padding(if (url != null) 14.dp else 0.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    text = day.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                    color = if (url != null) Color.White else colors.TextSecondary
+                )
+                Text(
+                    text = day.month.getDisplayName(TextStyle.SHORT, locale).uppercase(locale),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp),
+                    color = if (url != null) Color.White.copy(alpha = 0.8f) else colors.TextTertiary,
+                    modifier = Modifier.padding(start = 8.dp, bottom = 12.dp)
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
-        val label = day.format(DateTimeFormatter.ofPattern("EEEE d MMMM", locale))
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
         val relative = ChronoUnit.DAYS.between(today, day)
         Text(
-            text = (if (relative >= 0) "$label · ${relativeDays(relative, locale)}" else label).uppercase(locale),
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
-            color = Plain.secondary,
+            text = (
+                day.format(DateTimeFormatter.ofPattern("EEEE", locale)) +
+                    if (relative >= 0) " · ${relativeDays(relative, locale)}" else ""
+                ).uppercase(locale),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 2.sp),
+            color = colors.TextTertiary,
             maxLines = 1
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -826,38 +1001,46 @@ private fun DayPanel(day: LocalDate, entries: List<CalendarEntry>, today: LocalD
             } else {
                 pluralStringResource(R.plurals.calendar_day_episodes, entries.size, entries.size)
             },
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = colors.TextPrimary
         )
-        Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
-        entries.take(5).forEach { entry ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(if (entry.reminder) ReminderGreen else colors.TextSecondary)
-                )
-                Spacer(modifier = Modifier.width(NuvioTheme.spacing.sm))
-                Text(
-                    text = entry.show.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = colors.TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                entry.episode?.let { ep ->
-                    Spacer(modifier = Modifier.width(NuvioTheme.spacing.sm))
-                    Text(
-                        text = stringResource(R.string.calendar_episode_code, ep.season, ep.episode),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colors.TextSecondary,
-                        maxLines = 1
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            entries.take(5).forEach { entry ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Thumbnail(
+                        url = entry.show.backdrop ?: entry.show.poster,
+                        modifier = Modifier.fillMaxHeight().aspectRatio(16f / 9f)
                     )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = entry.show.title,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        entry.episode?.let { ep ->
+                            Text(
+                                text = stringResource(R.string.calendar_episode_code, ep.season, ep.episode),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.TextSecondary,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                    if (entry.reminder) {
+                        Icon(
+                            imageVector = Icons.Filled.NotificationsActive,
+                            contentDescription = null,
+                            tint = ReminderGreen,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                 }
             }
         }
@@ -866,7 +1049,7 @@ private fun DayPanel(day: LocalDate, entries: List<CalendarEntry>, today: LocalD
                 text = "+${entries.size - 5}",
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.TextTertiary,
-                modifier = Modifier.padding(start = 14.dp, top = 2.dp)
+                modifier = Modifier.padding(top = 6.dp)
             )
         }
     }
@@ -1024,8 +1207,8 @@ internal fun CalendarActionCard(
 private fun Thumbnail(url: String?, modifier: Modifier) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(NuvioTheme.radii.sm))
-            .background(Plain.backgroundCard)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.White.copy(alpha = 0.06f))
     ) {
         if (url != null) {
             AsyncImage(

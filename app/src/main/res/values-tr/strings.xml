@@ -1854,10 +1854,6 @@
     <string name="panel_failed_load_episodes">Bölümler yüklenemedi</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Şu an izliyorsunuz:</string>
-    <string name="pause_cast_label">Oyuncular</string>
-    <string name="pause_back_to_details">Ayrıntılara dön</string>
-    <string name="pause_as_character">Karakter: %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="player_next_episode_prompt_title">İzlemeye devam edilsin mi?</string>
@@ -2702,9 +2698,6 @@
     <string name="collections_editor_pin_above_desc">Bu koleksiyonu tüm normal ana sayfa kataloglarının üstünde göster. Birden fazla sabitlenmiş koleksiyon oluşturulma sırasını takip eder.</string>
     <string name="collections_editor_focus_glow">Odak Parlaması</string>
     <string name="collections_editor_focus_glow_desc">Bu koleksiyonun Ana Sayfa özel katalog kartlarında TV\'ye özgü parlamayı kullan</string>
-    <string name="collections_editor_view_mode">Görünüm Modu</string>
-    <string name="collections_editor_show_all_tab">\"Tümü\" Sekmesini Göster</string>
-    <string name="collections_editor_show_all_tab_desc">Tüm katalogları tek bir sekmede birleştir</string>
     <string name="collections_editor_folders">Klasörler</string>
     <string name="collections_editor_add_folder">Klasör Ekle</string>
     <string name="collections_editor_new_folder">Yeni Klasör</string>
@@ -2731,9 +2724,6 @@
     <string name="collections_editor_source_count">%1$d kaynak</string>
     <string name="collections_editor_sources">Kaynaklar</string>
     <string name="collections_editor_source">Kaynak</string>
-    <string name="collections_editor_view_mode_tabs">Sekmeler</string>
-    <string name="collections_editor_view_mode_rows">Satırlar</string>
-    <string name="collections_editor_view_mode_follow">Ana Sayfa Düzenini Takip Et</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Geniş</string>
     <string name="collections_editor_shape_square">Kare</string>

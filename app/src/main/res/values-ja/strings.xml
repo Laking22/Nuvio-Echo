@@ -1459,10 +1459,6 @@
     <string name="panel_failed_load_streams">ストリームの読み込みに失敗しました</string>
     <string name="panel_failed_load_episodes">エピソードの読み込みに失敗しました</string>
 
-    <string name="pause_you_are_watching">視聴中</string>
-    <string name="pause_cast_label">キャスト</string>
-    <string name="pause_back_to_details">詳細に戻る</string>
-    <string name="pause_as_character">%1$s 役</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">次のエピソード</string>
@@ -1951,9 +1947,6 @@
     <string name="collections_editor_pin_above_desc">このコレクションをすべての通常のホームカタログの上に表示します。複数の固定コレクションは作成順に従います。</string>
     <string name="collections_editor_focus_glow">フォーカスグロー</string>
     <string name="collections_editor_focus_glow_desc">このコレクションのホーム画面カスタムカタログカードにネイティブTVグローを使用</string>
-    <string name="collections_editor_view_mode">表示モード</string>
-    <string name="collections_editor_show_all_tab">「すべて」タブを表示</string>
-    <string name="collections_editor_show_all_tab_desc">すべてのカタログを1つのタブにまとめる</string>
     <string name="collections_editor_folders">フォルダー</string>
     <string name="collections_editor_add_folder">フォルダーを追加</string>
     <string name="collections_editor_new_folder">新規フォルダー</string>
@@ -1980,9 +1973,6 @@
     <string name="collections_editor_source_count">%1$d個のソース</string>
     <string name="collections_editor_sources">ソース</string>
     <string name="collections_editor_source">ソース</string>
-    <string name="collections_editor_view_mode_tabs">タブ</string>
-    <string name="collections_editor_view_mode_rows">行</string>
-    <string name="collections_editor_view_mode_follow">ホームレイアウトに従う</string>
     <string name="collections_editor_shape_poster">ポスター</string>
     <string name="collections_editor_shape_wide">ワイド</string>
     <string name="collections_editor_shape_square">正方形</string>

@@ -46,6 +46,9 @@ fun TrackingSettingsScreen(
     simklViewModel: SimklSettingsViewModel = hiltViewModel(),
     mdbListViewModel: MdbListTrackerViewModel = hiltViewModel(),
     trackingViewModel: TrackingSettingsViewModel = hiltViewModel(),
+    /** Drawn in Settings' own panel, beside the sidebar, instead of as a screen of its own. */
+    inline: Boolean = false,
+    initialFocusRequester: FocusRequester? = null,
     onBackPress: () -> Unit
 ) {
     val traktState by traktViewModel.uiState.collectAsStateWithLifecycle()
@@ -53,7 +56,8 @@ fun TrackingSettingsScreen(
     val mdbListState by mdbListViewModel.uiState.collectAsStateWithLifecycle()
     val mdbListLibraryLists by mdbListViewModel.libraryLists.collectAsStateWithLifecycle()
     val trackingState by trackingViewModel.uiState.collectAsStateWithLifecycle()
-    val traktFocusRequester = remember { FocusRequester() }
+    val ownTraktFocusRequester = remember { FocusRequester() }
+    val traktFocusRequester = initialFocusRequester ?: ownTraktFocusRequester
     val simklFocusRequester = remember { FocusRequester() }
     val mdbListFocusRequester = remember { FocusRequester() }
     val libraryFocusRequester = remember { FocusRequester() }
@@ -81,11 +85,12 @@ fun TrackingSettingsScreen(
         showAnimeIdDialog ||
         showMdbListLibraryListsDialog
 
-    BackHandler(enabled = !hasOverlay) {
+    BackHandler(enabled = !hasOverlay && !inline) {
         onBackPress()
     }
 
     LaunchedEffect(Unit) {
+        if (inline) return@LaunchedEffect
         delay(160L)
         runCatching { traktFocusRequester.requestFocus() }
     }
@@ -173,6 +178,7 @@ fun TrackingSettingsScreen(
         simklState = simklState,
         mdbListState = mdbListState,
         trackingState = trackingState,
+        inline = inline,
         traktFocusRequester = traktFocusRequester,
         simklFocusRequester = simklFocusRequester,
         mdbListFocusRequester = mdbListFocusRequester,
@@ -460,6 +466,7 @@ internal fun TrackingSettingsOverview(
     simklState: SimklSettingsUiState,
     mdbListState: MdbListTrackerUiState,
     trackingState: TrackingSettingsUiState,
+    inline: Boolean = false,
     traktFocusRequester: FocusRequester,
     simklFocusRequester: FocusRequester,
     mdbListFocusRequester: FocusRequester,
@@ -486,11 +493,7 @@ internal fun TrackingSettingsOverview(
     val traktConnected = traktState.mode == TraktConnectionMode.CONNECTED
     val traktProgressActive = trackingState.watchProgressSource == WatchProgressSource.TRAKT
 
-    SettingsStandaloneScaffold(
-        title = stringResource(R.string.settings_tracking_title),
-        subtitle = stringResource(R.string.settings_tracking_description),
-        classicContainer = false
-    ) {
+    val body: @Composable () -> Unit = {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -660,6 +663,17 @@ internal fun TrackingSettingsOverview(
                 }
                 SettingsVerticalScrollIndicators(state = listState)
             }
+        }
+    }
+    if (inline) {
+        body()
+    } else {
+        SettingsStandaloneScaffold(
+            title = stringResource(R.string.settings_tracking_title),
+            subtitle = stringResource(R.string.settings_tracking_description),
+            classicContainer = false
+        ) {
+            body()
         }
     }
 }

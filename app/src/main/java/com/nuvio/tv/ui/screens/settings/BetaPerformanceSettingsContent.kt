@@ -326,6 +326,7 @@ internal fun DrawingPerformanceRows(viewModel: BetaPerformanceSettingsViewModel 
     SettingsToggleRow(
         title = stringResource(R.string.beta_hardware_bitmaps_title),
         subtitle = stringResource(R.string.beta_hardware_bitmaps_subtitle),
+        explainer = stringResource(R.string.beta_hardware_bitmaps_explainer),
         checked = hardwareBitmaps,
         onToggle = { viewModel.setHardwareBitmaps(!hardwareBitmaps) }
     )
@@ -455,24 +456,28 @@ internal fun SourceFetchRows(viewModel: BetaPerformanceSettingsViewModel = hiltV
     SettingsToggleRow(
         title = stringResource(R.string.beta_prefetch_on_open_title),
         subtitle = stringResource(R.string.beta_prefetch_on_open_subtitle),
+        explainer = stringResource(R.string.beta_prefetch_explainer),
         checked = settings.prefetchOnOpen,
         onToggle = { viewModel.setPrefetchOnOpen(!settings.prefetchOnOpen) }
     )
     SettingsToggleRow(
         title = stringResource(R.string.beta_prefetch_on_focus_title),
         subtitle = stringResource(R.string.beta_prefetch_on_focus_subtitle),
+        explainer = stringResource(R.string.beta_prefetch_explainer),
         checked = settings.prefetchOnFocus,
         onToggle = { viewModel.setPrefetchOnFocus(!settings.prefetchOnFocus) }
     )
     SettingsToggleRow(
         title = stringResource(R.string.beta_fetch_on_expansion_title),
         subtitle = stringResource(R.string.beta_fetch_on_expansion_subtitle),
+        explainer = stringResource(R.string.beta_prefetch_explainer),
         checked = settings.fetchOnExpansion,
         onToggle = { viewModel.setFetchOnExpansion(!settings.fetchOnExpansion) }
     )
     SettingsToggleRow(
         title = stringResource(R.string.beta_warm_up_title),
         subtitle = stringResource(R.string.beta_warm_up_subtitle),
+        explainer = stringResource(R.string.beta_warm_up_explainer),
         checked = settings.warmUpAddonConnections,
         onToggle = { viewModel.setWarmUpAddonConnections(!settings.warmUpAddonConnections) }
     )
@@ -486,6 +491,7 @@ internal fun PlaybackStartRows(viewModel: BetaPerformanceSettingsViewModel = hil
     SettingsToggleRow(
         title = stringResource(R.string.beta_fast_playback_title),
         subtitle = stringResource(R.string.beta_fast_playback_subtitle),
+        explainer = stringResource(R.string.beta_fast_playback_explainer),
         checked = settings.fastPlaybackStart,
         onToggle = { viewModel.setFastPlaybackStart(!settings.fastPlaybackStart) }
     )
@@ -498,6 +504,7 @@ internal fun PlaybackStartRows(viewModel: BetaPerformanceSettingsViewModel = hil
     SliderSettingsItem(
         title = stringResource(R.string.beta_source_switch_timeout_title),
         subtitle = stringResource(R.string.beta_source_switch_timeout_subtitle),
+        explainer = stringResource(R.string.beta_source_switch_timeout_explainer),
         value = settings.sourceSwitchTimeoutSeconds,
         valueText = stringResource(R.string.beta_playback_intro_length_value, settings.sourceSwitchTimeoutSeconds),
         minValue = BetaPerformanceSettings.SOURCE_SWITCH_TIMEOUT_MIN,
@@ -528,7 +535,9 @@ internal fun PlaybackStartRows(viewModel: BetaPerformanceSettingsViewModel = hil
                     AUTO_QUALITY_LOYAL -> viewModel.setAutoQualityLanguageLoyal(!settings.autoQualityLanguageLoyal)
                     AUTO_QUALITY_HOT_SWAP -> viewModel.setAutoQualityHotSwap(!settings.autoQualityHotSwap)
                 }
-            }
+            },
+            explainer = stringResource(R.string.beta_auto_quality_options_explainer),
+            explainerTitle = stringResource(R.string.beta_auto_quality_title)
         )
         SliderSettingsItem(
             title = stringResource(R.string.beta_auto_quality_confirm_title),
@@ -596,6 +605,7 @@ internal fun PlayerExtrasRows(viewModel: BetaPerformanceSettingsViewModel = hilt
         SliderSettingsItem(
             title = stringResource(R.string.beta_seek_preview_budget_title),
             subtitle = stringResource(R.string.beta_seek_preview_budget_subtitle),
+            explainer = stringResource(R.string.beta_seek_preview_budget_explainer),
             values = BetaPerformanceSettings.SEEK_PREVIEW_BUDGETS,
             selected = settings.seekPreviewBudgetMb,
             valueText = when (val mb = settings.seekPreviewBudgetMb) {
@@ -620,7 +630,9 @@ internal fun PlayerExtrasRows(viewModel: BetaPerformanceSettingsViewModel = hilt
                 }
             },
             selected = setOf(settings.seekPreviewQuality.toString()),
-            onToggle = { key -> viewModel.setSeekPreviewQuality(key.toInt()) }
+            onToggle = { key -> viewModel.setSeekPreviewQuality(key.toInt()) },
+            explainer = stringResource(R.string.beta_seek_preview_quality_explainer),
+            explainerTitle = stringResource(R.string.beta_seek_preview_quality_title)
         )
     }
 }
@@ -636,6 +648,7 @@ internal fun AudioMenuRows(viewModel: BetaPerformanceSettingsViewModel = hiltVie
     SettingsToggleRow(
         title = stringResource(R.string.beta_audio_menu_title),
         subtitle = stringResource(R.string.beta_audio_menu_subtitle),
+        explainer = stringResource(R.string.beta_audio_menu_explainer),
         checked = settings.audioLanguageMenu,
         onToggle = { viewModel.setAudioLanguageMenu(!settings.audioLanguageMenu) }
     )
@@ -670,11 +683,14 @@ internal fun SettingsChipRow(
     items: List<Pair<String, String>>,
     selected: Set<String>,
     onToggle: (String) -> Unit,
-    firstChipModifier: Modifier = Modifier
-) {
+    firstChipModifier: Modifier = Modifier,
+    /** How these choices work, behind an "i" button at the end of the row ([SettingsWithInfo]). */
+    explainer: String? = null,
+    explainerTitle: String = ""
+) = SettingsWithInfo(explainerTitle, explainer) { infoSlot ->
     val firstChip = remember { FocusRequester() }
     LazyRow(
-        modifier = Modifier.fillMaxWidth().settingsOptionRow(firstChip),
+        modifier = infoSlot.fillMaxWidth().settingsOptionRow(firstChip),
         contentPadding = PaddingValues(end = NuvioTheme.spacing.sm),
         horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)
     ) {

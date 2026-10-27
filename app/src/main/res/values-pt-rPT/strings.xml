@@ -1411,10 +1411,6 @@
     <string name="subtitle_style_weight">Espessura (Weight)</string>
     <string name="panel_failed_load_streams">Falha ao carregar streams</string>
     <string name="panel_failed_load_episodes">Falha ao carregar episódios</string>
-    <string name="pause_you_are_watching">Estás a ver</string>
-    <string name="pause_cast_label">Elenco</string>
-    <string name="pause_back_to_details">Voltar aos detalhes</string>
-    <string name="pause_as_character">como %1$s</string>
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Próximo episódio</string>
     <string name="next_episode_finding_source">A procurar fonte…</string>
@@ -1861,9 +1857,6 @@
     <string name="collections_editor_pin_above_desc">Mostra esta coleção acima de todos os catálogos normais da página inicial. Se fixares várias coleções, elas seguirão a ordem de criação.</string>
     <string name="collections_editor_focus_glow">Brilho de Foco</string>
     <string name="collections_editor_focus_glow_desc">Utiliza o brilho nativo da TV nos cartões de catálogo personalizados desta coleção na página inicial.</string>
-    <string name="collections_editor_view_mode">Modo de visualização</string>
-    <string name="collections_editor_show_all_tab">Mostrar separador \"Tudo\"</string>
-    <string name="collections_editor_show_all_tab_desc">Combinar todos os catálogos num único separador</string>
     <string name="collections_editor_folders">Pastas</string>
     <string name="collections_editor_add_folder">Adicionar pasta</string>
     <string name="collections_editor_new_folder">Nova pasta</string>
@@ -1890,9 +1883,6 @@
     <string name="collections_editor_source_count">%1$d fonte(s)</string>
     <string name="collections_editor_sources">Fontes</string>
     <string name="collections_editor_source">Fonte</string>
-    <string name="collections_editor_view_mode_tabs">Separadores</string>
-    <string name="collections_editor_view_mode_rows">Linhas</string>
-    <string name="collections_editor_view_mode_follow">Seguir Esquema Inicial</string>
     <string name="collections_editor_shape_poster">Cartaz</string>
     <string name="collections_editor_shape_wide">Panorâmico</string>
     <string name="collections_editor_shape_square">Quadrado</string>

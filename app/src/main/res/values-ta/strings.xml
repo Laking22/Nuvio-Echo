@@ -1243,10 +1243,6 @@
     <string name="panel_failed_load_episodes">எபிசோடுகளை ஏற்ற முடியவில்லை</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">நீங்கள் பார்க்கிறது</string>
-    <string name="pause_cast_label">நடிகர்கள்</string>
-    <string name="pause_back_to_details">விவரங்களுக்கு திரும்பு</string>
-    <string name="pause_as_character">%1$s ஆக</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">அடுத்த எபிசோடு</string>
@@ -1728,9 +1724,6 @@
     <string name="collections_editor_pin_above_desc">இந்த தொகுப்பை அனைத்து வழக்கமான முகப்பு கேட்டலாக்களின் மேல் காட்டு. பல நிலைநிறுத்தப்பட்ட தொகுப்புகள் உருவாக்க வரிசையைப் பின்பற்றும்.</string>
     <string name="collections_editor_focus_glow">கவன ஒளிர்வு</string>
     <string name="collections_editor_focus_glow_desc">இந்த தொகுப்பின் முகப்புத்திரை தனிப்பயன் கேட்டலாக் அட்டைகளில் இயல்பான டிவி ஒளிர்வைப் பயன்படுத்து</string>
-    <string name="collections_editor_view_mode">காட்சி முறை</string>
-    <string name="collections_editor_show_all_tab">\"அனைத்தும்\" தாவலை காட்டு</string>
-    <string name="collections_editor_show_all_tab_desc">அனைத்து கேட்டலாக்களையும் ஒரு தாவலாக இணை</string>
     <string name="collections_editor_folders">கோப்புறைகள்</string>
     <string name="collections_editor_add_folder">கோப்புறை சேர்</string>
     <string name="collections_editor_new_folder">புதிய கோப்புறை</string>
@@ -1757,9 +1750,6 @@
     <string name="collections_editor_source_count">%1$d மூலம்(கள்)</string>
     <string name="collections_editor_sources">மூலங்கள்</string>
     <string name="collections_editor_source">மூலம்</string>
-    <string name="collections_editor_view_mode_tabs">தாவல்கள்</string>
-    <string name="collections_editor_view_mode_rows">வரிசைகள்</string>
-    <string name="collections_editor_view_mode_follow">முகப்பு வடிவமைப்பைப் பின்பற்று</string>
     <string name="collections_editor_shape_poster">போஸ்டர்</string>
     <string name="collections_editor_shape_wide">அகலம்</string>
     <string name="collections_editor_shape_square">சதுரம்</string>

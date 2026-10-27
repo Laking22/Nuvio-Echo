@@ -1864,10 +1864,6 @@
     <string name="panel_failed_load_streams">Failed to load streams</string>
     <string name="panel_failed_load_episodes">Failed to load episodes</string>
 
-    <string name="pause_you_are_watching">You\'re watching</string>
-    <string name="pause_cast_label">Cast</string>
-    <string name="pause_back_to_details">Back to details</string>
-    <string name="pause_as_character">as %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Next Episode</string>
@@ -2455,9 +2451,6 @@
     <string name="collections_editor_pin_above_desc">Show this collection above all regular home catalogs. Multiple pinned collections follow collection creation order.</string>
     <string name="collections_editor_focus_glow">Focus Glow</string>
     <string name="collections_editor_focus_glow_desc">Use the native TV glow on this collection\'s home-screen custom catalog cards</string>
-    <string name="collections_editor_view_mode">View Mode</string>
-    <string name="collections_editor_show_all_tab">Show \"All\" Tab</string>
-    <string name="collections_editor_show_all_tab_desc">Combine all catalogs into one tab</string>
     <string name="collections_editor_folders">Folders</string>
     <string name="collections_editor_add_folder">Add Folder</string>
     <string name="collections_editor_new_folder">New Folder</string>
@@ -2484,9 +2477,6 @@
     <string name="collections_editor_source_count">%1$d source(s)</string>
     <string name="collections_editor_sources">Sources</string>
     <string name="collections_editor_source">Source</string>
-    <string name="collections_editor_view_mode_tabs">Tabs</string>
-    <string name="collections_editor_view_mode_rows">Rows</string>
-    <string name="collections_editor_view_mode_follow">Follow Home Layout</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Wide</string>
     <string name="collections_editor_shape_square">Square</string>

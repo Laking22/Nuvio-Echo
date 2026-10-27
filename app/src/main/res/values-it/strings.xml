@@ -1695,10 +1695,6 @@
 <string name="panel_failed_load_streams">Errore nel caricamento degli stream</string>
 <string name="panel_failed_load_episodes">Errore nel caricamento degli episodi</string>
 
-<string name="pause_you_are_watching">Stai guardando</string>
-<string name="pause_cast_label">Interpreti</string>
-<string name="pause_back_to_details">Torna ai dettagli</string>
-<string name="pause_as_character">nel ruolo di %1$s</string>
 
     <!-- PostPlayOverlay -->
 <string name="next_episode_label">Prossimo Episodio</string>
@@ -2285,9 +2281,6 @@
 <string name="collections_editor_pin_above_desc">Mostra questa collezione sopra tutti i normali cataloghi della home. Più collezioni fissate seguono l\'ordine di creazione.</string>
 <string name="collections_editor_focus_glow">Effetto bagliore</string>
 <string name="collections_editor_focus_glow_desc">Usa il bagliore nativo della TV sulle schede del catalogo personalizzato in home screen</string>
-<string name="collections_editor_view_mode">Modalità di visualizzazione</string>
-<string name="collections_editor_show_all_tab">Mostra scheda \"Tutte\"</string>
-<string name="collections_editor_show_all_tab_desc">Combina tutti i cataloghi in un\'unica scheda</string>
 <string name="collections_editor_folders">Cartelle</string>
 <string name="collections_editor_add_folder">Aggiungi cartella</string>
 <string name="collections_editor_new_folder">Nuova cartella</string>
@@ -2314,9 +2307,6 @@
 <string name="collections_editor_source_count">%1$d sorgente/i</string>
 <string name="collections_editor_sources">Sorgenti</string>
 <string name="collections_editor_source">Sorgente</string>
-<string name="collections_editor_view_mode_tabs">Schede</string>
-<string name="collections_editor_view_mode_rows">Righe</string>
-<string name="collections_editor_view_mode_follow">Segui layout Home</string>
 <string name="collections_editor_shape_poster">Poster (verticale)</string>
 <string name="collections_editor_shape_wide">Wide (orizzontale)</string>
 <string name="collections_editor_shape_square">Quadrato</string>

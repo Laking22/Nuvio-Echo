@@ -728,10 +728,6 @@
     <string name="panel_failed_load_episodes">Kunde inte ladda avsnitt</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Du tittar på</string>
-    <string name="pause_cast_label">Skådespelare</string>
-    <string name="pause_back_to_details">Tillbaka till detaljer</string>
-    <string name="pause_as_character">som %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Nästa avsnitt</string>
@@ -1480,9 +1476,6 @@
     <string name="collections_editor_pin_above_desc">Visa denna samling ovanför alla vanliga hemkataloger. Flera fästa samlingar följer skapandeordningen.</string>
     <string name="collections_editor_focus_glow">Fokusglöd</string>
     <string name="collections_editor_focus_glow_desc">Använd det inbyggda TV-glödet på denna samlings anpassade katalogkort på hemskärmen</string>
-    <string name="collections_editor_view_mode">Visningsläge</string>
-    <string name="collections_editor_show_all_tab">Visa \"Alla\"-flik</string>
-    <string name="collections_editor_show_all_tab_desc">Kombinera alla kataloger i en flik</string>
     <string name="collections_editor_folders">Mappar</string>
     <string name="collections_editor_add_folder">Lägg till mapp</string>
     <string name="collections_editor_edit_folder">Redigera mapp</string>
@@ -1505,9 +1498,6 @@
     <string name="collections_editor_back">Tillbaka</string>
     <string name="collections_editor_edit_collection">Redigera samling</string>
     <string name="collections_editor_catalog_count">%1$d katalog(er)</string>
-    <string name="collections_editor_view_mode_tabs">Flikar</string>
-    <string name="collections_editor_view_mode_rows">Rader</string>
-    <string name="collections_editor_view_mode_follow">Följ hemlayout</string>
     <string name="collections_editor_shape_poster">Affisch</string>
     <string name="collections_editor_shape_wide">Bred</string>
     <string name="collections_editor_shape_square">Fyrkantig</string>

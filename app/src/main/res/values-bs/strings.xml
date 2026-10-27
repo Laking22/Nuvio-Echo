@@ -955,10 +955,6 @@
     <string name="panel_failed_load_episodes">Učitavanje epizoda nije uspjelo</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Gledate</string>
-    <string name="pause_cast_label">Uloge</string>
-    <string name="pause_back_to_details">Nazad na detalje</string>
-    <string name="pause_as_character">kao %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Sljedeća Epizoda</string>
@@ -1379,9 +1375,6 @@
     <string name="collections_editor_pin_above_desc">Prikaži ovu kolekciju iznad svih običnih početnih kataloga. Više zakačenih kolekcija prati redoslijed njihovog kreiranja.</string>
     <string name="collections_editor_focus_glow">Glow pri Fokusu</string>
     <string name="collections_editor_focus_glow_desc">Koristi nativni TV sjaj (glow) na prilagođenim karticama kataloga ove kolekcije na početnom ekranu</string>
-    <string name="collections_editor_view_mode">Mod Prikaza</string>
-    <string name="collections_editor_show_all_tab">Prikaži tab "Sve"</string>
-    <string name="collections_editor_show_all_tab_desc">Kombinuj sve kataloge u jedan tab</string>
     <string name="collections_editor_folders">Folderi</string>
     <string name="collections_editor_add_folder">Dodaj Folder</string>
     <string name="collections_editor_edit_folder">Uredi Folder</string>
@@ -1404,9 +1397,6 @@
     <string name="collections_editor_back">Nazad</string>
     <string name="collections_editor_edit_collection">Uredi Kolekciju</string>
     <string name="collections_editor_catalog_count">%1$d katalog(a)</string>
-    <string name="collections_editor_view_mode_tabs">Tabovi</string>
-    <string name="collections_editor_view_mode_rows">Redovi</string>
-    <string name="collections_editor_view_mode_follow">Prati Početni Izgled</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Široko (Wide)</string>
     <string name="collections_editor_shape_square">Kvadrat</string>

@@ -1612,10 +1612,6 @@
     <string name="panel_failed_load_streams">Nem sikerült betölteni a streameket</string>
     <string name="panel_failed_load_episodes">Nem sikerült betölteni az epizódokat</string>
 
-    <string name="pause_you_are_watching">Folyamatban</string>
-    <string name="pause_cast_label">Szereplők</string>
-    <string name="pause_back_to_details">Vissza a részletekhez</string>
-    <string name="pause_as_character">mint %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Következő epizód</string>
@@ -2176,9 +2172,6 @@
     <string name="collections_editor_pin_above_desc">Ez a gyűjtemény jelenjen meg minden általános kezdőlap katalógus fölött. Több rögzített gyűjtemény a létrehozás sorrendjét követi.</string>
     <string name="collections_editor_focus_glow">Fókusz ragyogás</string>
     <string name="collections_editor_focus_glow_desc">Használja a TV natív ragyogás effektjét a gyűjtemény kezdőképernyős egyéni katalógus kártyáin</string>
-    <string name="collections_editor_view_mode">Nézet mód</string>
-    <string name="collections_editor_show_all_tab">"Összes" fül megjelenítése</string>
-    <string name="collections_editor_show_all_tab_desc">Összes katalógus egyesítése egyetlen fülön</string>
     <string name="collections_editor_folders">Mappák</string>
     <string name="collections_editor_add_folder">Mappa hozzáadása</string>
     <string name="collections_editor_new_folder">Új mappa</string>
@@ -2205,9 +2198,6 @@
     <string name="collections_editor_source_count">%1$d forrás</string>
     <string name="collections_editor_sources">Források</string>
     <string name="collections_editor_source">Forrás</string>
-    <string name="collections_editor_view_mode_tabs">Fülek</string>
-    <string name="collections_editor_view_mode_rows">Sorok</string>
-    <string name="collections_editor_view_mode_follow">Kezdőlap elrendezés követése</string>
     <string name="collections_editor_shape_poster">Poszter</string>
     <string name="collections_editor_shape_wide">Széles</string>
     <string name="collections_editor_shape_square">Négyzet</string>

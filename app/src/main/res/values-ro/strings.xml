@@ -570,10 +570,6 @@
     <string name="panel_failed_load_episodes">Încărcarea episoadelor a eșuat</string>
 
     <!-- PauseOverlay -->
-    <string name="pause_you_are_watching">Vizionați</string>
-    <string name="pause_cast_label">Transmitere</string>
-    <string name="pause_back_to_details">Înapoi la detalii</string>
-    <string name="pause_as_character">ca %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Următorul episod</string>

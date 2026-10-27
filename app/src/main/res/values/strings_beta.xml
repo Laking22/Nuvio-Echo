@@ -193,4 +193,19 @@
     <string name="menu_glass_low">Low</string>
     <string name="menu_glass_mid">Mid</string>
     <string name="menu_glass_high">High</string>
+    <!-- Longer explanations, behind the "i" button beside a setting -->
+    <string name="settings_more_info">More info</string>
+    <string name="settings_more_info_done">Got it</string>
+    <string name="beta_seek_preview_quality_explainer">Seek previews don\'t have to come from the file you\'re watching. With a quality picked, Echo searches your addons for the smallest copy of this title at that quality or above and takes the thumbnails from it. A lighter copy can give smoother previews on heavy files, such as 4K remuxes, but the first preview takes longer to appear while that copy is found and opened. Off uses the file that\'s playing: previews start sooner, but can lag on very large files.</string>
+    <string name="beta_seek_preview_budget_explainer">Each preview reads a small piece of the video around that point. This caps how much one video can download for previews. Bigger files need more to cover the whole timeline; once the cap is reached, no more previews are made for that video. No limit never stops.</string>
+    <string name="beta_prefetch_explainer">Asks your addons for sources before you press Play, so the list is ready and playback starts sooner when you do. Each early search asks every addon, so it uses a little more data, and can use up requests on rate-limited addons.</string>
+    <string name="beta_warm_up_explainer">Opens a connection to each addon server as the app starts, so the first search skips the setup time (often a second or more on a slow server). Costs almost nothing once connected.</string>
+    <string name="beta_fast_playback_explainer">Starts the video on a smaller first buffer and warms up the stream\'s server while the player is still loading. On a slow or unsteady connection, the first seconds may pause once to buffer.</string>
+    <string name="beta_source_switch_timeout_explainer">When you pick another quality or audio in the player, the new source loads while the current one keeps playing. If it hasn\'t started within this time, Echo gives up on it and stays where you were.</string>
+    <string name="beta_auto_quality_options_explainer">Stay loyal to language: Auto only switches to sources offered in the language you\'re listening to, even if a sharper one exists in another. Hot swap: the next source loads alongside the one playing and takes over at a matching frame, so there\'s no pause; a few devices can\'t do this, and Echo falls back to a normal switch.</string>
+    <string name="beta_hardware_bitmaps_explainer">Decodes posters and artwork straight into graphics memory instead of app memory, which helps on TVs with little RAM. A few devices draw these images wrongly; turn it off if artwork looks broken. Takes effect after a restart.</string>
+    <string name="beta_audio_menu_explainer">Reads the audio languages of every source your addons found for this title, not only the one playing. Picking a language that isn\'t in the current file switches to a source that has it, keeping your place.</string>
+    <string name="pause_label">Paused</string>
+    <string name="pause_left_hours">%1$dh %2$dm left</string>
+    <string name="pause_left_minutes">%1$d min left</string>
 </resources>

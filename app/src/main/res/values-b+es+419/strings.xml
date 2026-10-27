@@ -1850,10 +1850,6 @@
     <string name="panel_failed_load_streams">Error al cargar fuentes</string>
     <string name="panel_failed_load_episodes">Error al cargar episodios</string>
 
-    <string name="pause_you_are_watching">Estás viendo</string>
-    <string name="pause_cast_label">Elenco</string>
-    <string name="pause_back_to_details">Volver a detalles</string>
-    <string name="pause_as_character">como %1$s</string>
 
     <!-- PostPlayOverlay -->
     <string name="next_episode_label">Siguiente Episodio</string>
@@ -2441,9 +2437,6 @@
     <string name="collections_editor_pin_above_desc">Muestra esta colección encima de todos los catálogos normales de inicio. Las colecciones fijadas siguen el orden de creación.</string>
     <string name="collections_editor_focus_glow">Resplandor de enfoque</string>
     <string name="collections_editor_focus_glow_desc">Usa el resplandor nativo de TV en las tarjetas de catálogo personalizado de esta colección en la pantalla de inicio</string>
-    <string name="collections_editor_view_mode">Modo de vista</string>
-    <string name="collections_editor_show_all_tab">Mostrar pestaña «Todos»</string>
-    <string name="collections_editor_show_all_tab_desc">Combina todos los catálogos en una sola pestaña</string>
     <string name="collections_editor_folders">Carpetas</string>
     <string name="collections_editor_add_folder">Agregar carpeta</string>
     <string name="collections_editor_new_folder">Nueva carpeta</string>
@@ -2470,9 +2463,6 @@
     <string name="collections_editor_source_count">%1$d fuente(s)</string>
     <string name="collections_editor_sources">Fuentes</string>
     <string name="collections_editor_source">Fuente</string>
-    <string name="collections_editor_view_mode_tabs">Pestañas</string>
-    <string name="collections_editor_view_mode_rows">Filas</string>
-    <string name="collections_editor_view_mode_follow">Seguir diseño de inicio</string>
     <string name="collections_editor_shape_poster">Póster</string>
     <string name="collections_editor_shape_wide">Panorámico</string>
     <string name="collections_editor_shape_square">Cuadrado</string>

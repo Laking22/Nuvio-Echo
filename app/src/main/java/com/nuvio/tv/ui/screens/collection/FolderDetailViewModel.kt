@@ -53,7 +53,6 @@ data class FolderDetailUiState(
     val hideUnreleasedContent: Boolean = false,
     val posterCardCornerRadiusDp: Int = 12,
     val tabs: List<FolderTab> = emptyList(),
-    val selectedTabIndex: Int = 0,
     val isLoading: Boolean = true,
     val movieWatchedStatus: Map<String, Boolean> = emptyMap()
 )
@@ -67,13 +66,6 @@ data class FolderTab(
     val isLoading: Boolean = true,
     val error: String? = null,
     val isAllTab: Boolean = false
-)
-
-data class FolderDetailGridFocusState(
-    val verticalScrollIndex: Int = 0,
-    val verticalScrollOffset: Int = 0,
-    val focusedItemKey: String? = null,
-    val hasSavedFocus: Boolean = false
 )
 
 @HiltViewModel
@@ -109,8 +101,6 @@ class FolderDetailViewModel @Inject constructor(
     private val _rowsFocusState = MutableStateFlow(com.nuvio.tv.ui.screens.home.HomeScreenFocusState())
     val rowsFocusState: StateFlow<com.nuvio.tv.ui.screens.home.HomeScreenFocusState> = _rowsFocusState.asStateFlow()
 
-    private val _tabFocusStates = MutableStateFlow<Map<Int, FolderDetailGridFocusState>>(emptyMap())
-    val tabFocusStates: StateFlow<Map<Int, FolderDetailGridFocusState>> = _tabFocusStates.asStateFlow()
 
     init {
         posterOptions.bind(viewModelScope)
@@ -493,27 +483,6 @@ class FolderDetailViewModel @Inject constructor(
             row.catalogId == catalogId && row.addonId == addonId && row.apiType == type
         }
         if (tabIndex >= 0) loadMoreItems(tabIndex)
-    }
-
-    fun selectTab(index: Int) {
-        _uiState.update { it.copy(selectedTabIndex = index) }
-    }
-
-    fun saveTabFocusState(
-        tabIndex: Int,
-        verticalScrollIndex: Int,
-        verticalScrollOffset: Int,
-        focusedItemKey: String?
-    ) {
-        val nextState = FolderDetailGridFocusState(
-            verticalScrollIndex = verticalScrollIndex,
-            verticalScrollOffset = verticalScrollOffset,
-            focusedItemKey = focusedItemKey,
-            hasSavedFocus = true
-        )
-        _tabFocusStates.update { states ->
-            if (states[tabIndex] == nextState) states else states + (tabIndex to nextState)
-        }
     }
 
     fun saveRowsFocusState(

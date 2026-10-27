@@ -111,6 +111,7 @@ class ImdbEpisodeRatingsRepository @Inject constructor(
     }
 
     private suspend fun fetchFromSeriesGraph(tmdbId: Int): Map<Pair<Int, Int>, Double> {
+        if (com.nuvio.tv.BuildConfig.IMDB_RATINGS_API_BASE_URL.isBlank()) return emptyMap()
         return try {
             val response = seriesGraphApi.getSeasonRatings(tmdbId)
             if (!response.isSuccessful) {
