@@ -1,0 +1,43 @@
+# Gradle and build output
+.gradle
+/build
+**/build/
+!app/src/**/java/**/core/build/
+!app/src/**/java/**/core/build/*.kt
+/captures
+.externalNativeBuild
+.cxx
+.kotlin/
+
+# IDE and OS
+*.iml
+/.idea/
+.DS_Store
+
+# Local configuration and secrets
+local.properties
+local.dev.properties
+*.jks
+*.keystore
+sentry.properties
+.mcp.json
+CLAUDE.md
+AGENTS.md
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Local-only notes and logs
+docs/
+logs
+
+# Scripts stay local unless listed here
+scripts/*
+!scripts/deploy-tv.sh
+!scripts/perf-check.sh
+!scripts/test-addons/
+scripts/test-addons/media/
+!scripts/intro/
+scripts/intro/*
+!scripts/intro/generate_intro_sound.py

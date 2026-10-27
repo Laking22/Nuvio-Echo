@@ -1,0 +1,363 @@
+package com.nuvio.tv.ui.components
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MergingMediaSource
+import com.nuvio.tv.core.player.LetterboxDetector
+import com.nuvio.tv.core.player.LetterboxSampler
+import com.nuvio.tv.core.player.LetterboxTracker
+import com.nuvio.tv.core.player.LocalTrailerPlayerPool
+import com.nuvio.tv.core.player.TrailerPlayerPool
+import com.nuvio.tv.data.trailer.YoutubeChunkedDataSourceFactory
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.TextureView
+import com.nuvio.tv.R
+import kotlinx.coroutines.delay
+
+private const val TAG = "TrailerPlayer"
+
+/** How a trailer's URLs are loaded. */
+internal enum class TrailerSourcePlan {
+    /** One URL with everything in it (HLS or a progressive file): loaded as it is. */
+    SINGLE_URL,
+    /** Separate video and audio files, sound off: the video alone, read in chunks. */
+    CHUNKED_VIDEO_ONLY,
+    /** Separate video and audio files, sound on: both read in chunks and played together. */
+    CHUNKED_VIDEO_AND_AUDIO
+}
+
+/**
+ * Separate YouTube video and audio files always go through [YoutubeChunkedDataSourceFactory]: YouTube throttles or
+ * drops a read of a whole adaptive file, so without the chunks the video never buffers enough to start. Losing
+ * that for the video when Trailer sound was off (the default) once stopped muted trailers playing.
+ */
+internal fun trailerSourcePlan(audioUrl: String?, muted: Boolean): TrailerSourcePlan = when {
+    audioUrl.isNullOrBlank() -> TrailerSourcePlan.SINGLE_URL
+    muted -> TrailerSourcePlan.CHUNKED_VIDEO_ONLY
+    else -> TrailerSourcePlan.CHUNKED_VIDEO_AND_AUDIO
+}
+
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+private fun ExoPlayer.loadTrailer(videoUrl: String, audioUrl: String?, muted: Boolean) {
+    val plan = trailerSourcePlan(audioUrl, muted)
+    if (plan == TrailerSourcePlan.SINGLE_URL) {
+        setMediaItem(MediaItem.fromUri(videoUrl))
+        return
+    }
+    val factory = DefaultMediaSourceFactory(YoutubeChunkedDataSourceFactory())
+    val video = factory.createMediaSource(MediaItem.fromUri(videoUrl))
+    setMediaSource(
+        if (plan == TrailerSourcePlan.CHUNKED_VIDEO_ONLY) video
+        else MergingMediaSource(video, factory.createMediaSource(MediaItem.fromUri(audioUrl!!)))
+    )
+}
+
+/** The new look's "Trailers on a video layer" switch, for the callers that pass it as [TrailerPlayer]'s surfaceView. */
+val LocalTrailerVideoLayer = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+@Composable
+fun TrailerPlayer(
+    trailerUrl: String?,
+    trailerAudioUrl: String? = null,
+    isPlaying: Boolean,
+    isPaused: Boolean = false,
+    onEnded: () -> Unit,
+    onFirstFrameRendered: () -> Unit = {},
+    muted: Boolean = false,
+    seekRequestToken: Int = 0,
+    seekDeltaMs: Long = 0L,
+    onProgressChanged: (positionMs: Long, durationMs: Long) -> Unit = { _, _ -> },
+    onRemoteKey: (keyCode: Int, action: Int, repeatCount: Int) -> Boolean = { _, _, _ -> false },
+    cropToFill: Boolean = false,
+    overscanZoom: Float = 1f,
+    autoCropLetterbox: Boolean = false,
+    modifier: Modifier = Modifier,
+    enter: EnterTransition = fadeIn(animationSpec = tween(800)),
+    exit: ExitTransition = fadeOut(animationSpec = tween(500)),
+    trailerPlayerPool: TrailerPlayerPool? = null,
+    /** False keeps the video view out of D-pad focus (the new look's hero and cards keep focus themselves). */
+    focusable: Boolean = true,
+    /**
+     * Video on its own layer (SurfaceView) instead of a TextureView, so a playing trailer doesn't make the app redraw
+     * the window on every video frame. It can't fade (alpha would turn the hole it punches into a black box) or be
+     * sampled for letterboxing, so it shows at once and the caller covers it with its backdrop until
+     * [onFirstFrameRendered]. Corners still follow the parent's clip, as the hole is drawn through it.
+     */
+    surfaceView: Boolean = false
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val activityLifecycleOwner = remember(context) { context as? androidx.lifecycle.LifecycleOwner ?: lifecycleOwner }
+    val currentIsPlaying by rememberUpdatedState(isPlaying)
+    val currentTrailerUrl by rememberUpdatedState(trailerUrl)
+    val currentTrailerAudioUrl by rememberUpdatedState(trailerAudioUrl)
+    val currentOnEnded by rememberUpdatedState(onEnded)
+    val currentOnFirstFrameRendered by rememberUpdatedState(onFirstFrameRendered)
+    val currentOnProgressChanged by rememberUpdatedState(onProgressChanged)
+    val currentOnRemoteKey by rememberUpdatedState(onRemoteKey)
+    val currentMuted by rememberUpdatedState(muted)
+    val zoomScale = if (cropToFill) overscanZoom.coerceAtLeast(1f) else 1f
+    var hasRenderedFirstFrame by remember(trailerUrl) { mutableStateOf(false) }
+    val playerAlphaState = animateFloatAsState(
+        targetValue = if (isPlaying && hasRenderedFirstFrame) 1f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "trailerFirstFrameAlpha"
+    )
+    val playerViewRef = remember { mutableStateOf<PlayerView?>(null) }
+    var letterboxZoom by remember(trailerUrl) { mutableFloatStateOf(1f) }
+    val letterboxZoomState = animateFloatAsState(
+        targetValue = if (autoCropLetterbox) letterboxZoom else 1f,
+        animationSpec = tween(durationMillis = 400),
+        label = "trailerLetterboxZoom"
+    )
+
+    // Resolve pool: explicit parameter > CompositionLocal
+    val resolvedPool = trailerPlayerPool ?: LocalTrailerPlayerPool.current
+
+    // Use the shared pool instance instead of creating a new ExoPlayer per focus.
+    // The pool keeps one ExoPlayer alive across poster focus changes, eliminating
+    // the expensive create/teardown cycle that was the app-launch bottleneck.
+    val trailerPlayer = remember(trailerUrl, resolvedPool) {
+        if (trailerUrl != null) {
+            resolvedPool?.acquire()
+        } else {
+            null
+        }
+    }
+
+    // Configure player settings when acquired
+    LaunchedEffect(trailerPlayer, muted, cropToFill) {
+        val player = trailerPlayer ?: return@LaunchedEffect
+        player.volume = if (muted) 0f else 1f
+        player.videoScalingMode = if (cropToFill) {
+            C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
+        } else {
+            C.VIDEO_SCALING_MODE_SCALE_TO_FIT
+        }
+    }
+
+    LaunchedEffect(isPlaying, trailerUrl, trailerAudioUrl, muted, trailerPlayer) {
+        val player = trailerPlayer ?: return@LaunchedEffect
+        player.volume = if (muted) 0f else 1f
+        // Muted means no audio at all: the audio renderer stays off, so no AudioTrack is opened, and a separate
+        // audio stream isn't fetched. The pool's player is shared, so this is set again on every start.
+        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+            .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, muted)
+            .build()
+        if (isPlaying && trailerUrl != null) {
+            hasRenderedFirstFrame = false
+            player.loadTrailer(trailerUrl, trailerAudioUrl, muted)
+            player.prepare()
+            player.playWhenReady = true
+        } else {
+            hasRenderedFirstFrame = false
+            player.playWhenReady = false
+            // Defer heavy stop and clear until focus settling/collapse has finished
+            delay(150)
+            if (!isPlaying) {
+                player.stop()
+                player.clearMediaItems()
+            }
+        }
+    }
+
+    LaunchedEffect(trailerPlayer, cropToFill) {
+        val player = trailerPlayer ?: return@LaunchedEffect
+        player.videoScalingMode = if (cropToFill) {
+            C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING
+        } else {
+            C.VIDEO_SCALING_MODE_SCALE_TO_FIT
+        }
+    }
+
+    LaunchedEffect(autoCropLetterbox, hasRenderedFirstFrame, trailerPlayer) {
+        letterboxZoom = 1f
+        if (!autoCropLetterbox || !hasRenderedFirstFrame || surfaceView) return@LaunchedEffect
+        val player = trailerPlayer ?: return@LaunchedEffect
+        val tracker = LetterboxTracker()
+        val sampler = LetterboxSampler()
+        try {
+            while (true) {
+                delay(LetterboxDetector.SAMPLE_INTERVAL_MS)
+                if (LetterboxDetector.isSampleWindowOver(player.currentPosition, player.duration)) break
+                if (!player.isPlaying) continue
+                val textureView = playerViewRef.value?.videoSurfaceView as? TextureView ?: continue
+                val bar = sampler.sample(textureView) ?: continue
+                letterboxZoom = tracker.onSample(bar) ?: continue
+                break
+            }
+        } finally {
+            sampler.release()
+        }
+    }
+
+    LaunchedEffect(isPaused, trailerPlayer) {
+        val player = trailerPlayer ?: return@LaunchedEffect
+        if (!isPlaying) return@LaunchedEffect
+        player.playWhenReady = !isPaused
+    }
+
+    LaunchedEffect(seekRequestToken, seekDeltaMs, trailerPlayer) {
+        val player = trailerPlayer ?: return@LaunchedEffect
+        if (seekRequestToken <= 0) return@LaunchedEffect
+        val duration = player.duration.takeIf { it > 0 } ?: 0L
+        val current = player.currentPosition
+        val target = (current + seekDeltaMs).coerceIn(0L, duration.coerceAtLeast(0L))
+        player.seekTo(target)
+    }
+
+    LaunchedEffect(trailerPlayer, isPlaying) {
+        val player = trailerPlayer ?: return@LaunchedEffect
+        while (isPlaying) {
+            val position = player.currentPosition.coerceAtLeast(0L)
+            val duration = player.duration.takeIf { it > 0 } ?: 0L
+            currentOnProgressChanged(position, duration)
+            delay(250)
+        }
+        currentOnProgressChanged(0L, 0L)
+    }
+
+    DisposableEffect(activityLifecycleOwner, trailerPlayer) {
+        val player = trailerPlayer ?: return@DisposableEffect onDispose {}
+        val listener = object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED) {
+                    currentOnEnded()
+                }
+            }
+
+            override fun onRenderedFirstFrame() {
+                hasRenderedFirstFrame = true
+                currentOnFirstFrameRendered()
+            }
+
+            // Without this a trailer that fails just never shows; the code says why (no URL is logged).
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                Log.w(TAG, "Trailer playback failed: ${error.errorCodeName} (videoLayer=$surfaceView, muted=$currentMuted)")
+            }
+        }
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    if (currentIsPlaying && !currentTrailerUrl.isNullOrBlank()) {
+                        if (player.currentMediaItem == null) {
+                            player.loadTrailer(currentTrailerUrl!!, currentTrailerAudioUrl, currentMuted)
+                            player.prepare()
+                        }
+                        player.playWhenReady = true
+                    }
+                }
+                Lifecycle.Event.ON_PAUSE,
+                Lifecycle.Event.ON_STOP -> {
+                    player.playWhenReady = false
+                    player.pause()
+                    player.stop()
+                    player.clearMediaItems()
+                }
+                // Do NOT release on destroy — the pool owns the lifecycle.
+                else -> Unit
+            }
+        }
+        player.addListener(listener)
+        activityLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            runCatching { activityLifecycleOwner.lifecycle.removeObserver(observer) }
+            runCatching { player.removeListener(listener) }
+            // Only stop — never release. The pool manages the ExoPlayer lifecycle.
+            resolvedPool?.stop()
+        }
+    }
+
+    if (trailerPlayer != null) {
+        val videoView: @Composable () -> Unit = {
+            AndroidView(
+                factory = { ctx ->
+                    (LayoutInflater.from(ctx).inflate(if (surfaceView) R.layout.trailer_player_surface_view else R.layout.trailer_player_view, null) as PlayerView).apply {
+                        playerViewRef.value = this
+                        player = trailerPlayer
+                        isFocusable = focusable
+                        isFocusableInTouchMode = focusable
+                        setOnKeyListener { _, keyCode, event ->
+                            currentOnRemoteKey(keyCode, event.action, event.repeatCount)
+                        }
+                        keepScreenOn = true
+                        resizeMode = if (cropToFill) {
+                            AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                        } else {
+                            AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        }
+                    }
+                },
+                update = { view ->
+                    // Re-attach player in case it was reclaimed after yield
+                    if (view.player !== trailerPlayer) {
+                        view.player = trailerPlayer
+                    }
+                    view.resizeMode = if (cropToFill) {
+                        AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    } else {
+                        AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    }
+                },
+                onRelease = { view ->
+                    playerViewRef.value = null
+                    view.player = null
+                    view.keepScreenOn = false
+                },
+                modifier = modifier
+                    .clipToBounds()
+                    .graphicsLayer {
+                        if (!surfaceView) alpha = playerAlphaState.value
+                        scaleX = zoomScale * letterboxZoomState.value
+                        scaleY = zoomScale * letterboxZoomState.value
+                    }
+            )
+        }
+        // Keyed on the layer: the view type is fixed when it's inflated, so a change of setting (or the settings
+        // loading after the first frame) builds a new view instead of leaving a SurfaceView treated as a TextureView.
+        androidx.compose.runtime.key(surfaceView) {
+            if (surfaceView) {
+                if (isPlaying) videoView()
+            } else {
+                AnimatedVisibility(
+                    visible = isPlaying,
+                    enter = enter,
+                    exit = exit
+                ) {
+                    videoView()
+                }
+            }
+        }
+    }
+}

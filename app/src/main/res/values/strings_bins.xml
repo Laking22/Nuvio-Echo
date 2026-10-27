@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Library bins: folders the viewer makes and names -->
+    <string name="bins_tab">Bins</string>
+    <string name="bins_default_name">Saved</string>
+    <string name="bins_sort">Sort</string>
+    <string name="bins_sort_recent">Recently viewed</string>
+    <string name="bins_sort_custom">Custom order</string>
+    <string name="bins_custom_order">Custom order</string>
+    <string name="bins_custom_order_done">Done</string>
+    <string name="bins_create">Create bin</string>
+    <string name="bins_refresh">Refresh</string>
+    <string name="bins_name_title">Name this bin</string>
+    <string name="bins_rename_title">Rename bin</string>
+    <string name="bins_name_hint">e.g. Horror Binge</string>
+    <string name="bins_create_button">Create</string>
+    <string name="bins_name_blank">Type a name for the bin first.</string>
+    <string name="bins_name_taken">You already have a bin called “%1$s”.</string>
+    <string name="bins_created">Created “%1$s”</string>
+    <string name="bins_deleted">Deleted “%1$s”</string>
+    <string name="bins_starred">“%1$s” is now your default bin</string>
+    <string name="bins_unstarred">No default bin. The Bin button will ask where titles go</string>
+    <string name="bins_custom_order_saved">Custom order saved</string>
+    <string name="bins_reorder_hint_bins">Pick a bin, then pick another to swap them</string>
+    <string name="bins_reorder_hint_titles">Pick a title, then pick another to swap them</string>
+    <string name="bins_reorder_pick_bin">Pick a bin to move · Back when done</string>
+    <string name="bins_reorder_pick_title">Pick a title to move · Back when done</string>
+    <string name="bins_reorder_place">Now pick where it goes · Back to cancel</string>
+    <plurals name="bins_title_count">
+        <item quantity="one">%d title</item>
+        <item quantity="other">%d titles</item>
+    </plurals>
+    <string name="bins_empty_label">Empty</string>
+    <string name="bins_viewed">Viewed %1$s</string>
+    <string name="bins_not_viewed">Not opened yet</string>
+    <string name="bins_default_label">Default bin</string>
+    <string name="bins_star_cd">Default bin star</string>
+    <string name="bins_empty_title">No bins yet</string>
+    <string name="bins_empty_subtitle">Press + to make your first bin, then add titles with the Bin button on any title\'s page.</string>
+    <string name="bin_empty_title">This bin is empty</string>
+    <string name="bin_empty_subtitle">Open any title and use its Bin button to add it here.</string>
+    <string name="bin_back_hint">Back for all bins</string>
+    <string name="bins_menu_star">Make default bin</string>
+    <string name="bins_menu_unstar">Remove star</string>
+    <string name="bins_menu_rename">Rename</string>
+    <string name="bins_menu_delete">Delete bin</string>
+    <string name="bins_delete_title">Delete “%1$s”?</string>
+    <string name="bins_delete_subtitle">Titles that are only in this bin leave your library too.</string>
+    <string name="bins_title_open">Open</string>
+    <string name="bins_title_remove">Remove from %1$s</string>
+    <string name="bins_removed_from">Removed from %1$s</string>
+
+    <!-- Details page Bin button (was Watchlist) -->
+    <string name="nd_bin_add">Add to bin</string>
+    <string name="nd_bin_in">In %1$s</string>
+    <string name="nd_bin_in_many">In %1$d bins</string>
+    <string name="nd_bin_picker_title">Add to bin</string>
+    <string name="nd_bin_new">New bin</string>
+    <string name="detail_added_to_bin">Added to %1$s</string>
+    <string name="detail_removed_from_bin">Removed from %1$s</string>
+    <!-- Home: holding a title -->
+    <string name="home_poster_add_to_bin">Add to “%1$s”</string>
+    <string name="home_poster_remove_from_bin">Remove from “%1$s”</string>
+    <string name="home_poster_choose_bin">Bins…</string>
+    <string name="home_poster_in_bins">In %1$d bins…</string>
+</resources>

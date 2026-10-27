@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="nd_rate_like">I like this</string>
+    <string name="nd_rate_love">I love this!</string>
+    <string name="nd_rate_dislike">Not for me</string>
+    <string name="nd_rate_saved">%1$s ✓</string>
+    <string name="nd_watchlist_add">Add to watchlist</string>
+    <string name="nd_watchlist_on">On your watchlist</string>
+    <string name="nd_mark_watched">Mark watched</string>
+    <string name="nd_watched">Watched</string>
+
+    <string name="nd_play">Play</string>
+    <string name="nd_menu_episodes">Episodes</string>
+    <string name="nd_menu_cast">Cast &amp; Crew</string>
+    <string name="nd_menu_trailer">Play trailer</string>
+    <string name="nd_menu_random">Random episode</string>
+    <plurals name="nd_seasons_count">
+        <item quantity="one">%d season</item>
+        <item quantity="other">%d seasons</item>
+    </plurals>
+    <plurals name="nd_seasons_title">
+        <item quantity="one">%d Season</item>
+        <item quantity="other">%d Seasons</item>
+    </plurals>
+
+    <string name="nd_credit_cast">Cast:</string>
+    <string name="nd_credit_creator">Creator:</string>
+    <string name="nd_credit_creators">Creators:</string>
+    <string name="nd_credit_director">Director:</string>
+
+    <string name="nd_fact_genres">Genres</string>
+    <string name="nd_fact_starring">Starring</string>
+    <string name="nd_fact_created_by">Created by</string>
+    <string name="nd_fact_director">Director</string>
+    <string name="nd_fact_seasons">Seasons</string>
+    <string name="nd_fact_seasons_value">%1$s · %2$d episodes</string>
+    <string name="nd_fact_status">Status</string>
+    <string name="nd_fact_runtime">Runtime</string>
+    <string name="nd_fact_episode_length">Episode length</string>
+    <string name="nd_fact_released">Released</string>
+    <string name="nd_fact_rated">Rated</string>
+    <string name="nd_fact_language">Original language</string>
+    <string name="nd_fact_country">Country of origin</string>
+
+    <string name="nd_row_similar">Similar titles</string>
+    <string name="nd_row_reviews">Reviews</string>
+    <string name="nd_reviews_loading">Loading reviews…</string>
+    <string name="nd_reviews_empty">No reviews yet.</string>
+    <string name="nd_review_score">%1$d/10</string>
+    <string name="nd_review_source_tmdb">TMDB</string>
+
+    <string name="nd_panel_seasons_episodes">%1$s · %2$d Episodes</string>
+    <string name="nd_panel_season">Season %1$d</string>
+    <string name="nd_panel_specials">Specials</string>
+    <plurals name="nd_panel_episodes_count">
+        <item quantity="one">%d episode</item>
+        <item quantity="other">%d episodes</item>
+    </plurals>
+    <string name="nd_panel_hold_hint">Hold OK on an episode for more</string>
+    <string name="nd_panel_episode_tag">E%1$02d</string>
+    <string name="nd_panel_minutes">%1$d min</string>
+
+    <string name="nd_hold_play">Play</string>
+    <string name="nd_hold_liked">Liked</string>
+    <string name="nd_hold_loved">Loved</string>
+    <string name="nd_hold_not_for_me">Not for me</string>
+    <string name="nd_hold_reviews">Reviews</string>
+    <string name="nd_episode_reviews_title">Reviews · E%1$02d %2$s</string>
+    <string name="nd_episode_reviews_back">Back to return</string>
+    <string name="nd_episode_reviews_empty">No reviews for this episode yet. Episode reviews come from Trakt, so they show when you\'re signed in to Trakt.</string>
+
+    <string name="nd_panel_cast_crew">Cast &amp; Crew</string>
+    <string name="nd_panel_cast">Cast</string>
+    <string name="nd_panel_crew">Crew</string>
+    <string name="nd_panel_network">Network</string>
+    <string name="nd_panel_production">Production</string>
+    <string name="nd_panel_cast_counts">%1$d cast · %2$d crew</string>
+    <string name="nd_panel_no_cast">No cast listed.</string>
+
+    <string name="nd_remind_me">Remind me</string>
+    <string name="nd_reminder_on">Reminder on</string>
+    <string name="nd_coming">Coming %1$s</string>
+    <string name="nd_episode_code">S%1$d E%2$d</string>
+    <string name="nd_reminder_movie_text">%1$s is out. You asked to be reminded.</string>
+    <string name="nd_panel_trailers">Trailers</string>
+    <plurals name="nd_panel_videos_count">
+        <item quantity="one">%d video</item>
+        <item quantity="other">%d videos</item>
+    </plurals>
+    <string name="nd_trailer_untitled">Trailer</string>
+</resources>

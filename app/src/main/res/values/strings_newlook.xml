@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings -->
+    <string name="beta_settings_group_new_look">New look</string>
+    <string name="beta_poster_delay_title">Poster expand delay</string>
+    <string name="beta_poster_delay_subtitle">Wait before a poster opens.</string>
+    <string name="beta_poster_delay_none">No delay</string>
+    <string name="beta_poster_delay_value">%.2g s</string>
+    <string name="beta_hide_menu_title">Hide menu until selected</string>
+    <string name="beta_hide_menu_subtitle">Side bar stays hidden until selected.</string>
+    <string name="beta_menu_on_top_title">Menu on top</string>
+    <string name="beta_menu_on_top_subtitle">A tab bar instead of the side bar.</string>
+    <string name="beta_notification_style_title">Notification style</string>
+    <string name="beta_notification_style_island">Island from the top</string>
+    <string name="beta_notification_style_profile">Out of the profile picture</string>
+    <string name="beta_notification_style_off">Off</string>
+    <string name="beta_notification_test">Show a sample notification</string>
+    <string name="beta_settings_group_highlighted">Highlighted rows</string>
+    <string name="beta_viewed_unit_title">Threshold for viewed</string>
+    <string name="beta_viewed_unit_subtitle">When a title counts as watched.</string>
+    <string name="beta_viewed_unit_minutes">Minutes</string>
+    <string name="beta_viewed_unit_percent">Percent</string>
+    <string name="beta_viewed_amount_title">Viewed after</string>
+    <string name="beta_viewed_amount_minutes">%d min</string>
+    <string name="beta_viewed_amount_percent">%d%%</string>
+
+    <string name="catalog_order_highlight">Highlight</string>
+    <string name="catalog_order_highlighted">Highlighted</string>
+    <string name="catalog_order_grand">Grand</string>
+    <string name="catalog_order_grand_on">Grand row</string>
+    <string name="catalog_order_built_in">Nuvio · built-in row</string>
+    <string name="catalog_order_built_in_subtitle">New look: Nuvio\'s own rows are listed with your catalogs. Move them, highlight them or turn them off like any other row.</string>
+
+    <!-- Built-in highlighted rows -->
+    <string name="home_row_trending_week">Trending This Week</string>
+    <string name="home_row_because_you_watched">Because You Watched - %s</string>
+    <string name="home_row_because_you_watched_setting">Because You Watched</string>
+    <string name="home_row_for_you">For You</string>
+    <string name="home_row_top_movies_today">Top 20 Movies Today</string>
+    <string name="home_row_top_shows_today">Top 20 Shows Today</string>
+
+    <!-- Home -->
+    <string name="home_watch_now">Watch Now</string>
+    <string name="home_more_info">More Info</string>
+    <string name="beta_trailer_sound_title">Trailer sound</string>
+    <string name="beta_trailer_sound_subtitle">Trailers play sound.</string>
+    <string name="beta_trailer_surface_title">Trailers on a video layer</string>
+    <string name="beta_trailer_surface_subtitle">Smoother. Experimental.</string>
+    <string name="home_animated_chip">Animated</string>
+    <string name="home_type_show">Show</string>
+    <string name="home_type_movie">Movie</string>
+    <string name="home_collection">Collection</string>
+    <plurals name="home_collection_titles">
+        <item quantity="one">%d title</item>
+        <item quantity="other">%d titles</item>
+    </plurals>
+    <string name="home_tag_award_winner">Award Winner</string>
+    <string name="home_tag_airing_now">Airing Now</string>
+    <string name="home_tag_new_episodes">New Episodes Airing</string>
+    <string name="home_tag_new_release">New Release</string>
+    <string name="home_tag_coming_soon">Season %d Coming Soon</string>
+    <string name="home_tag_top_10">Top 10 Today</string>
+    <string name="home_tag_trending">Trending Now</string>
+    <string name="home_tag_popular">Popular</string>
+    <string name="home_tag_highly_rated">Highly Rated</string>
+
+    <!-- Notifications -->
+    <string name="notif_new_episode_title">New episode today</string>
+    <string name="notif_new_episode_text">%1$s · %2$s airs today</string>
+    <plurals name="notif_new_episode_more">
+        <item quantity="one">%1$s · %2$s and %3$d more air today</item>
+        <item quantity="other">%1$s · %2$s and %3$d more air today</item>
+    </plurals>
+    <string name="notif_reminder_title">Now available</string>
+    <string name="notif_reminder_text">%1$s · %2$s is out. You asked to be reminded.</string>
+    <string name="notif_update_title">Update available</string>
+    <string name="notif_update_text">A new version of Nuvio is ready to install</string>
+    <string name="notif_quality_up">Upgrading to %1$s</string>
+    <string name="notif_quality_down">Downgrading to %1$s</string>
+    <string name="notif_source_failed_title">Source failed to play</string>
+    <string name="notif_source_failed_back">Back to what you were watching</string>
+    <string name="notif_source_failed_quality">No working %1$s source</string>
+    <string name="notif_source_failed_audio">No working source with %1$s audio</string>
+    <string name="notif_sample_title">Notifications look like this</string>
+    <string name="notif_sample_text">New episodes, reminders and updates show here</string>
+
+    <!-- Player -->
+    <string name="player_btn_audio_quality">Audio &amp; Quality</string>
+    <string name="player_btn_play">Play</string>
+    <string name="player_btn_pause">Pause</string>
+    <string name="player_btn_next_episode">Next episode</string>
+    <string name="player_btn_subtitles">Subtitles</string>
+    <string name="player_btn_episodes">Episodes</string>
+    <string name="player_btn_more">More</string>
+    <string name="player_btn_less">Less</string>
+    <string name="player_btn_sources">Sources</string>
+    <string name="player_btn_switch_player">Switch player</string>
+    <string name="player_btn_speed">Speed</string>
+    <string name="player_btn_aspect">Aspect ratio</string>
+    <string name="player_btn_external">External player</string>
+    <string name="player_btn_stream_info">Stream info</string>
+    <string name="player_btn_report">Report issue</string>
+    <string name="player_section_audio">Audio</string>
+    <string name="player_section_quality">Quality</string>
+    <!-- Smart Highlights -->
+    <string name="smart_highlight_dialog_subtitle">In “%1$s”</string>
+    <string name="smart_highlight_not_this_title">Doesn\'t fit this highlight</string>
+    <string name="smart_highlight_snooze">Hide “%1$s” for 30 days</string>
+    <string name="smart_highlight_block_name">Never show the name “%1$s”</string>
+    <string name="smart_highlight_block">Never show this highlight</string>
+    <string name="smart_highlight_more_options">More options</string>
+    <string name="settings_group_highlights">Highlights</string>
+    <string name="beta_enrichment_title">Enrichment</string>
+    <string name="beta_enrichment_subtitle">Spread of generated highlights on Home.</string>
+    <string name="beta_enrichment_off">Off</string>
+    <string name="beta_enrichment_low">Low</string>
+    <string name="beta_enrichment_medium">Medium</string>
+    <string name="beta_enrichment_heavy">Heavy</string>
+    <string name="beta_smart_highlight_ai_names_title">AI-named highlights</string>
+    <string name="beta_smart_highlight_ai_names_subtitle">Gemini names your highlights. Checks for bad language.</string>
+    <string name="beta_smart_highlights_reset_title">Bring back blocked highlights</string>
+    <string name="beta_smart_highlights_reset_subtitle">%1$d hidden.</string>
+    <string name="beta_smart_highlights_reset_none">Nothing hidden.</string>
+</resources>

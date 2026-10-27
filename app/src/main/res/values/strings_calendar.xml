@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_calendar">Calendar</string>
+
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_summary">%1$d with a date · %2$d followed</string>
+    <string name="calendar_view_list">List</string>
+    <string name="calendar_view_month">Month</string>
+    <string name="calendar_loading">Checking the shows you follow…</string>
+    <string name="calendar_empty">Nothing here yet. Shows in your library and shows you\'re watching appear with their next episode.</string>
+
+    <string name="calendar_group_today">Today</string>
+    <string name="calendar_group_week">This week</string>
+    <string name="calendar_group_later">Later</string>
+    <string name="calendar_group_no_date">No date announced</string>
+
+    <string name="calendar_today">Today</string>
+    <string name="calendar_tomorrow">Tomorrow</string>
+    <plurals name="calendar_in_days">
+        <item quantity="one">in %d day</item>
+        <item quantity="other">in %d days</item>
+    </plurals>
+    <plurals name="calendar_in_weeks">
+        <item quantity="one">in %d week</item>
+        <item quantity="other">in %d weeks</item>
+    </plurals>
+    <plurals name="calendar_in_months">
+        <item quantity="one">in %d month</item>
+        <item quantity="other">in %d months</item>
+    </plurals>
+    <string name="calendar_episode_code">S%1$d E%2$d</string>
+    <string name="calendar_last_episode">Last episode %s</string>
+    <string name="calendar_no_date">No date yet</string>
+    <string name="calendar_minutes">%d min</string>
+    <plurals name="calendar_seasons">
+        <item quantity="one">%d season</item>
+        <item quantity="other">%d seasons</item>
+    </plurals>
+    <plurals name="calendar_day_episodes">
+        <item quantity="one">%d episode</item>
+        <item quantity="other">%d episodes</item>
+    </plurals>
+    <string name="calendar_nothing_this_day">Nothing airs this day</string>
+
+    <string name="calendar_marker_series_premiere">Series premiere</string>
+    <string name="calendar_marker_season_premiere">Season premiere</string>
+    <string name="calendar_marker_finale">Season finale</string>
+    <string name="calendar_marker_mid_season">Mid-season finale</string>
+
+    <string name="calendar_open_show">Open the show</string>
+    <string name="calendar_remind_me">Remind me</string>
+    <string name="calendar_reminder_on">Reminder on</string>
+    <string name="calendar_turn_off_reminder">Turn off reminder</string>
+    <string name="calendar_reminder_hint">You\'ll see it on Home the day it comes out.</string>
+
+    <string name="calendar_due_title">New episodes are out</string>
+    <string name="calendar_due_subtitle">From the shows you asked to be reminded about</string>
+    <string name="calendar_due_today">Out today</string>
+    <string name="calendar_due_since">Out since %s</string>
+    <string name="calendar_due_dismiss">Dismiss</string>
+    <string name="beta_poster_colour_mesh_title">Colour mesh behind details</string>
+    <string name="beta_poster_colour_mesh_subtitle">Colours the details panel in Search and Genres.</string>
+</resources>

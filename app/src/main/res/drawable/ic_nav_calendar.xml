@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Calendar glyph for the sidebar and the new look's menu: binding rings, a solid header band, rounded day squares. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M7 2.5a1 1 0 0 1 1 1V5h8V3.5a1 1 0 1 1 2 0V5h1a2.5 2.5 0 0 1 2.5 2.5V19a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 19V7.5A2.5 2.5 0 0 1 5 5h1V3.5a1 1 0 0 1 1-1zM4.5 10v9a.5.5 0 0 0 .5.5h14a.5.5 0 0 0 .5-.5v-9z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7.3,12h1.4a0.8,0.8 0,0 1,0.8,0.8v1.4a0.8,0.8 0,0 1,-0.8,0.8h-1.4a0.8,0.8 0,0 1,-0.8,-0.8v-1.4a0.8,0.8 0,0 1,0.8,-0.8zM11.3,12h1.4a0.8,0.8 0,0 1,0.8,0.8v1.4a0.8,0.8 0,0 1,-0.8,0.8h-1.4a0.8,0.8 0,0 1,-0.8,-0.8v-1.4a0.8,0.8 0,0 1,0.8,-0.8zM15.3,12h1.4a0.8,0.8 0,0 1,0.8,0.8v1.4a0.8,0.8 0,0 1,-0.8,0.8h-1.4a0.8,0.8 0,0 1,-0.8,-0.8v-1.4a0.8,0.8 0,0 1,0.8,-0.8zM7.3,16h1.4a0.8,0.8 0,0 1,0.8,0.8v0.9a0.8,0.8 0,0 1,-0.8,0.8h-1.4a0.8,0.8 0,0 1,-0.8,-0.8v-0.9a0.8,0.8 0,0 1,0.8,-0.8zM11.3,16h1.4a0.8,0.8 0,0 1,0.8,0.8v0.9a0.8,0.8 0,0 1,-0.8,0.8h-1.4a0.8,0.8 0,0 1,-0.8,-0.8v-0.9a0.8,0.8 0,0 1,0.8,-0.8z" />
+</vector>

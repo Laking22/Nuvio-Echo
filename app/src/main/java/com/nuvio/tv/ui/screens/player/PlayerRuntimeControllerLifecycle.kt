@@ -1,0 +1,111 @@
+package com.nuvio.tv.ui.screens.player
+
+import android.content.Intent
+import android.media.audiofx.AudioEffect
+import kotlinx.coroutines.flow.update
+
+internal fun PlayerRuntimeController.releasePlayer() {
+    releasePlayer(flushPlaybackState = true)
+}
+
+internal fun PlayerRuntimeController.releasePlayer(flushPlaybackState: Boolean) {
+    logScrobbleDiagnostic("release_player", "flushPlaybackState=$flushPlaybackState")
+    // A hot swap's loading runs on this player's thread: let it go before the player is.
+    cancelAutoQualityHotSwap("player released")
+    isReleasingPlayer = true
+    com.nuvio.tv.core.recommendations.TvRecommendationManager.isPlaybackActive.value = false
+    if (flushPlaybackState) {
+        cancelSourceSwitch()
+        cancelAutoQualityChange(byViewer = false)
+        stopTorrentStream()
+        flushPlaybackSnapshotForSwitchOrExit()
+    }
+
+    notifyAudioSessionUpdate(false)
+    unregisterAudioDelayRouteCallback()
+    audioRouteChangeJob?.cancel()
+    audioRouteChangeJob = null
+
+    try {
+        currentMediaSession?.release()
+        currentMediaSession = null
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    progressJob?.cancel()
+    mpvTrackRefreshJob?.cancel()
+    mpvTrackRefreshJob = null
+    mpvTrackRefreshInProgress = false
+    hideControlsJob?.cancel()
+    watchProgressSaveJob?.cancel()
+    seekProgressSyncJob?.cancel()
+    seekSourceLogJob?.cancel()
+    seekSourceLogJob = null
+    frameRateProbeJob?.cancel()
+    hideStreamSourceIndicatorJob?.cancel()
+    hideStreamSourceIndicatorJob = null
+    _uiState.update { it.copy(showStreamSourceIndicator = false) }
+    hidePlayerEngineSwitchInfoJob?.cancel()
+    hideSubtitleDelayOverlayJob?.cancel()
+    subtitleAutoSyncLoadJob?.cancel()
+    cancelAutomaticSubtitleSync() // AutoSync hook
+    stopSidecarAddonSubtitle(clearView = true)
+    subtitleTimingRefreshJob?.cancel()
+    subtitleTimingRefreshJob = null
+    playbackPreparationJob?.cancel()
+    playbackPreparationJob = null
+    traktMappingJob?.cancel()
+    traktMappingJob = null
+    delayMpvResumeSeekUntilVideoTrack = false
+    mpvMediaLoadPrepared = false
+    nextEpisodeAutoPlayJob?.cancel()
+    nextEpisodeAutoPlayJob = null
+    cancelNextEpisodePreload()
+    debridResolveJob?.cancel()
+    debridResolveJob = null
+    stillWatchingPromptJob?.cancel()
+    stillWatchingPromptJob = null
+    errorRetryJob?.cancel()
+    errorRetryJob = null
+    stableProgressResetJob?.cancel()
+    stableProgressResetJob = null
+    mpvStableProgressResetJob?.cancel()
+    mpvStableProgressResetJob = null
+    releaseMpvPlayer()
+    _exoPlayer?.let { player ->
+        runCatching { player.playWhenReady = false }
+        runCatching { player.pause() }
+        runCatching { player.stop() }
+        runCatching { player.clearMediaItems() }
+        runCatching { player.clearVideoSurface() }
+        runCatching { player.release() }
+    }
+    _exoPlayer = null
+    _loadControl = null
+    currentBitrateAwareLoadControl = null
+    currentParallelChunkOverheadMb = 0
+    ffmpegAudioRenderer = null
+    updateAudioControlAvailability()
+    playbackSpeedAwareAudioSink = null
+    resetPlaybackTimeline()
+    isReleasingPlayer = false
+}
+
+internal fun PlayerRuntimeController.notifyAudioSessionUpdate(active: Boolean) {
+    _exoPlayer?.let { player ->
+        try {
+            val intent = Intent(
+                if (active) AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION
+                else AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION
+            )
+            intent.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.audioSessionId)
+            intent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
+            if (active) {
+                intent.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MOVIE)
+            }
+            context.sendBroadcast(intent)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
+    }
+}
