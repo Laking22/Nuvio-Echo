@@ -12,8 +12,6 @@
   </p>
 
   <img src="assets/readme/intro.gif" alt="The intro loader: the Nuvio Echo logo plays while a title loads" width="640" />
-  <br />
-  <sub>The intro loader, recorded on an Android TV box. <a href="assets/readme/intro.mp4">Full quality (MP4)</a></sub>
 
   <p></p>
 
