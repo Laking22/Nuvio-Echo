@@ -157,7 +157,6 @@
     <string name="home_poster_dialog_subtitle">Veprimet e titullit</string>
     <string name="catalog_from_addon">nga %1$s</string>
     <string name="action_see_all">Shfaq të gjitha</string>
-    <string name="action_load_more">Ngarko më shumë</string>
     <string name="hero_creator">Krijuesi: %1$s</string>
     <string name="hero_director">Regjisori: %1$s</string>
     <string name="hero_writer">Skenaristi: %1$s</string>
@@ -2108,7 +2107,6 @@
     <string name="collections_editor_choose_emoji">Zgjidh emoji</string>
     <string name="collections_editor_back">Kthehu</string>
     <string name="collections_editor_edit_collection">Redakto koleksionin</string>
-    <string name="collections_editor_catalog_count">%1$d katalog(ë)</string>
     <string name="collections_editor_source_count">%1$d burim(e)</string>
     <string name="collections_editor_sources">Burimet</string>
     <string name="collections_editor_source">Burimi</string>
@@ -2135,7 +2133,6 @@
     <string name="collections_editor_tmdb_collection_id">ID-ja e koleksionit</string>
     <string name="collections_editor_tmdb_company_search">Emri, ID-ja ose URL-ja e kompanisë së produksionit</string>
     <string name="collections_editor_tmdb_display_title">Titulli i shfaqjes</string>
-    <string name="collections_editor_tmdb_title_optional">Titulli (opsional)</string>
     <string name="collections_editor_tmdb_search">Kërko</string>
     <string name="collections_editor_add_source">Shto burim</string>
     <string name="collections_editor_save_source">Ruaj burimin</string>
@@ -2282,7 +2279,6 @@
     <string name="collections_card_title">Koleksionet</string>
     <string name="collections_card_subtitle">Grupo katalogët në dosje në ekranin kryesor</string>
     <string name="collections_tab_all">Të gjitha</string>
-    <string name="collections_tab_combined">I kombinuar</string>
     <string name="collection_editor_remove_cd">Hiq</string>
     <string name="collection_editor_choice_both">Të dyja</string>
     <string name="collection_editor_resolved_trakt_list">Lista Trakt u zgjidh</string>

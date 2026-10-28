@@ -162,7 +162,6 @@
 
     <string name="catalog_from_addon">מ-%1$s</string>
     <string name="action_see_all">הצגת הכול</string>
-    <string name="action_load_more">לטעון עוד</string>
 
     <string name="hero_creator">יוצר: %1$s</string>
     <string name="hero_director">בימוי: %1$s</string>
@@ -2459,7 +2458,6 @@
     <string name="collections_editor_choose_emoji">בחירת אימוג׳י</string>
     <string name="collections_editor_back">חזרה</string>
     <string name="collections_editor_edit_collection">עריכת אוסף</string>
-    <string name="collections_editor_catalog_count">%1$d קטלוגים</string>
     <string name="collections_editor_source_count">%1$d מקורות</string>
     <string name="collections_editor_sources">מקורות</string>
     <string name="collections_editor_source">מקור</string>
@@ -2487,7 +2485,6 @@
     <string name="collections_editor_tmdb_collection_id">מזהה אוסף</string>
     <string name="collections_editor_tmdb_company_search">שם חברת ההפקה, מזהה, או כתובת URL</string>
     <string name="collections_editor_tmdb_display_title">כותרת תצוגה</string>
-    <string name="collections_editor_tmdb_title_optional">כותרת (אופציונלי)</string>
     <string name="collections_editor_tmdb_search">חיפוש</string>
     <string name="collections_editor_add_source">הוספת מקור</string>
     <string name="collections_editor_save_source">שמירת מקור</string>
@@ -2634,7 +2631,6 @@
     <string name="collections_card_title">אוספים</string>
     <string name="collections_card_subtitle">קיבוץ קטלוגים לתיקיות במסך הבית שלך</string>
     <string name="collections_tab_all">הכול</string>
-    <string name="collections_tab_combined">משולב</string>
     <string name="collection_editor_remove_cd">הסרה</string>
     <string name="collection_editor_choice_both">שניהם</string>
     <string name="collection_editor_resolved_trakt_list">רשימת Trakt שזוהתה</string>

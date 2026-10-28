@@ -1551,7 +1551,6 @@
     <string name="collections_editor_choose_emoji">Wybierz emoji</string>
     <string name="collections_editor_back">Wstecz</string>
     <string name="collections_editor_edit_collection">Edytuj kolekcję</string>
-    <string name="collections_editor_catalog_count">%1$d katalogów</string>
     <string name="collections_editor_shape_poster">Plakat</string>
     <string name="collections_editor_shape_wide">Szeroki</string>
     <string name="collections_editor_shape_square">Kwadrat</string>
@@ -1574,10 +1573,8 @@
     <string name="collections_card_title">Kolekcje</string>
     <string name="collections_card_subtitle">Grupuj katalogi w folderach na ekranie głównym</string>
     <string name="collections_tab_all">Wszystko</string>
-    <string name="collections_tab_combined">Połączone</string>
 
     <!-- Load more -->
-    <string name="action_load_more">Załaduj więcej</string>
 
     <!-- P2P -->
     <string name="p2p_consent_title">Streaming P2P</string>
@@ -1748,7 +1745,6 @@
     <string name="collections_editor_tmdb_search_helper">Przykłady: Marvel Studios, 420 lub https://www.themoviedb.org/company/420.</string>
     <string name="collections_editor_tmdb_sources">Źródła TMDB</string>
     <string name="collections_editor_tmdb_title_helper">Wyświetlane jako nazwa wiersza/zakładki. Jeśli puste, Nuvio utworzy nazwę ze źródła.</string>
-    <string name="collections_editor_tmdb_title_optional">Tytuł (opcjonalnie)</string>
     <string name="collections_editor_tmdb_votes_helper">Użyj, aby uniknąć mało znanych tytułów z małą liczbą głosów. Przykład: 100.</string>
     <string name="collections_editor_tmdb_votes_min">Minimalna liczba głosów</string>
     <string name="collections_editor_tmdb_year">Rok</string>

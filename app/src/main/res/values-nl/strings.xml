@@ -162,7 +162,6 @@
 
     <string name="catalog_from_addon">van %1$s</string>
     <string name="action_see_all">Alles bekijken</string>
-    <string name="action_load_more">Meer laden</string>
 
     <string name="hero_creator">Maker: %1$s</string>
     <string name="hero_director">Regisseur: %1$s</string>
@@ -2308,7 +2307,6 @@
     <string name="collections_editor_choose_emoji">Emoji kiezen</string>
     <string name="collections_editor_back">Terug</string>
     <string name="collections_editor_edit_collection">Collectie bewerken</string>
-    <string name="collections_editor_catalog_count">%1$d catalogus(sen)</string>
     <string name="collections_editor_source_count">%1$d bron(nen)</string>
     <string name="collections_editor_sources">Bronnen</string>
     <string name="collections_editor_source">Bron</string>
@@ -2335,7 +2333,6 @@
     <string name="collections_editor_tmdb_collection_id">Collectie-ID</string>
     <string name="collections_editor_tmdb_company_search">Naam, ID of URL van productiebedrijf</string>
     <string name="collections_editor_tmdb_display_title">Weergavetitel</string>
-    <string name="collections_editor_tmdb_title_optional">Titel (optioneel)</string>
     <string name="collections_editor_tmdb_search">Zoeken</string>
     <string name="collections_editor_add_source">Bron toevoegen</string>
     <string name="collections_editor_save_source">Bron opslaan</string>
@@ -2482,7 +2479,6 @@
     <string name="collections_card_title">Collecties</string>
     <string name="collections_card_subtitle">Groepeer catalogi in mappen op je startscherm</string>
     <string name="collections_tab_all">Alle</string>
-    <string name="collections_tab_combined">Gecombineerd</string>
     <string name="collection_editor_remove_cd">Verwijderen</string>
     <string name="collection_editor_choice_both">Beide</string>
     <string name="collection_editor_resolved_trakt_list">Gevonden Trakt-lijst</string>

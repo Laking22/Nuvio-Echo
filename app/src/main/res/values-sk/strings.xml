@@ -170,7 +170,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">z %1$s</string>
     <string name="action_see_all">Zobraziť všetko</string>
-    <string name="action_load_more">Načítať viac</string>
 
     <!-- HeroSection -->
     <string name="hero_creator">Tvorca: %1$s</string>
@@ -1927,7 +1926,6 @@
     <string name="collections_editor_choose_emoji">Vybrať emoji</string>
     <string name="collections_editor_back">Späť</string>
     <string name="collections_editor_edit_collection">Upraviť kolekciu</string>
-    <string name="collections_editor_catalog_count">%1$d katalógov</string>
     <string name="collections_editor_source_count">%1$d zdrojov</string>
     <string name="collections_editor_sources">Zdroje</string>
     <string name="collections_editor_source">Zdroj</string>
@@ -1954,7 +1952,6 @@
     <string name="collections_editor_tmdb_collection_id">ID kolekcie</string>
     <string name="collections_editor_tmdb_company_search">Názov produkčnej spoločnosti, ID alebo URL</string>
     <string name="collections_editor_tmdb_display_title">Zobrazovaný názov</string>
-    <string name="collections_editor_tmdb_title_optional">Názov (voliteľné)</string>
     <string name="collections_editor_tmdb_search">Hľadať</string>
     <string name="collections_editor_add_source">Pridať zdroj</string>
     <string name="collections_editor_save_source">Uložiť zdroj</string>
@@ -2094,7 +2091,6 @@
     <string name="collections_card_title">Kolekcie</string>
     <string name="collections_card_subtitle">Zoskupte katalógy do priečinkov na domovskej obrazovke</string>
     <string name="collections_tab_all">Všetky</string>
-    <string name="collections_tab_combined">Kombinované</string>
     <string name="collection_editor_remove_cd">Odstrániť</string>
     <string name="collection_editor_choice_both">Oboje</string>
     <string name="collection_editor_resolved_trakt_list">Rozpoznaný Trakt zoznam</string>

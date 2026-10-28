@@ -167,7 +167,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">aus %1$s</string>
     <string name="action_see_all">Alle anzeigen</string>
-    <string name="action_load_more">Mehr laden</string>
 
     <!-- HeroSection -->
     <string name="hero_creator">Ersteller: %1$s</string>
@@ -1751,7 +1750,6 @@
     <string name="collections_editor_choose_emoji">Choose Emoji</string>
     <string name="collections_editor_back">Back</string>
     <string name="collections_editor_edit_collection">Edit Collection</string>
-    <string name="collections_editor_catalog_count">%1$d catalog(s)</string>
     <string name="collections_editor_source_count">%1$d source(s)</string>
     <string name="collections_editor_sources">Sources</string>
     <string name="collections_editor_source">Source</string>
@@ -1778,7 +1776,6 @@
     <string name="collections_editor_tmdb_collection_id">Collection ID</string>
     <string name="collections_editor_tmdb_company_search">Production company name, ID, or URL</string>
     <string name="collections_editor_tmdb_display_title">Display title</string>
-    <string name="collections_editor_tmdb_title_optional">Title (optional)</string>
     <string name="collections_editor_tmdb_search">Search</string>
     <string name="collections_editor_add_source">Add Source</string>
     <string name="collections_editor_save_source">Save Source</string>
@@ -1917,7 +1914,6 @@
     <string name="collections_editor_genre_optional">Genre filter available</string>
     <string name="collections_card_title">Collections</string>
     <string name="collections_tab_all">All</string>
-    <string name="collections_tab_combined">Combined</string>
     <string name="collection_editor_remove_cd">Remove</string>
     <string name="collection_editor_choice_both">Both</string>
     <string name="collection_editor_resolved_trakt_list">Resolved Trakt list</string>

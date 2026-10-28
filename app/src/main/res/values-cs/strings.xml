@@ -164,7 +164,6 @@
 
     <string name="catalog_from_addon">od %1$s</string>
     <string name="action_see_all">Zobrazit vše</string>
-    <string name="action_load_more">Načíst další</string>
 
     <string name="hero_creator">Tvůrce: %1$s</string>
     <string name="hero_director">Režisér: %1$s</string>
@@ -2071,7 +2070,6 @@
     <string name="collections_editor_choose_emoji">Vybrat emoji</string>
     <string name="collections_editor_back">Zpět</string>
     <string name="collections_editor_edit_collection">Upravit kolekci</string>
-    <string name="collections_editor_catalog_count">%1$d katalogů</string>
     <string name="collections_editor_source_count">%1$d zdrojů</string>
     <string name="collections_editor_sources">Zdroje</string>
     <string name="collections_editor_source">Zdroj</string>
@@ -2098,7 +2096,6 @@
     <string name="collections_editor_tmdb_collection_id">ID kolekce</string>
     <string name="collections_editor_tmdb_company_search">Název produkční společnosti, ID nebo URL</string>
     <string name="collections_editor_tmdb_display_title">Zobrazovaný název</string>
-    <string name="collections_editor_tmdb_title_optional">Název (volitelný)</string>
     <string name="collections_editor_tmdb_search">Hledat</string>
     <string name="collections_editor_add_source">Přidat zdroj</string>
     <string name="collections_editor_save_source">Uložit zdroj</string>
@@ -2238,7 +2235,6 @@
     <string name="collections_card_title">Kolekce</string>
     <string name="collections_card_subtitle">Seskupit katalogy do složek na domovské obrazovce</string>
     <string name="collections_tab_all">Vše</string>
-    <string name="collections_tab_combined">Kombinovaně</string>
     <string name="collection_editor_remove_cd">Odebrat</string>
     <string name="collection_editor_choice_both">Obojí</string>
     <string name="collection_editor_resolved_trakt_list">Vyřešený seznam Trakt</string>

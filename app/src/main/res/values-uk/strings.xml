@@ -165,7 +165,6 @@
 
     <string name="catalog_from_addon">від %1$s</string>
     <string name="action_see_all">Показати всі</string>
-    <string name="action_load_more">Завантажити ще</string>
 
     <string name="hero_creator">Автор: %1$s</string>
     <string name="hero_director">Режисер: %1$s</string>
@@ -1960,7 +1959,6 @@
     <string name="collections_editor_choose_emoji">Оберіть емодзі</string>
     <string name="collections_editor_back">Назад</string>
     <string name="collections_editor_edit_collection">Редагувати колекцію</string>
-    <string name="collections_editor_catalog_count">%1$d каталог(ів)</string>
     <string name="collections_editor_source_count">%1$d джерело(ел)</string>
     <string name="collections_editor_sources">Джерела</string>
     <string name="collections_editor_source">Джерело</string>
@@ -1987,7 +1985,6 @@
     <string name="collections_editor_tmdb_collection_id">ID колекції</string>
     <string name="collections_editor_tmdb_company_search">Назва, ID або URL студії</string>
     <string name="collections_editor_tmdb_display_title">Назва для відображення</string>
-    <string name="collections_editor_tmdb_title_optional">Назва (необов\'язково)</string>
     <string name="collections_editor_tmdb_search">Пошук</string>
     <string name="collections_editor_add_source">Додати джерело</string>
     <string name="collections_editor_save_source">Зберегти джерело</string>
@@ -2127,7 +2124,6 @@
     <string name="collections_card_title">Колекції</string>
     <string name="collections_card_subtitle">Групуйте каталоги в папки на вашому головному екрані</string>
     <string name="collections_tab_all">Всі</string>
-    <string name="collections_tab_combined">Об\'єднані</string>
     <string name="collection_editor_remove_cd">Видалити</string>
     <string name="collection_editor_choice_both">Обидва</string>
     <string name="collection_editor_resolved_trakt_list">Знайдений список Trakt</string>

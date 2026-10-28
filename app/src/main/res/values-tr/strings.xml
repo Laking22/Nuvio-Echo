@@ -167,7 +167,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">Kaynak: %1$s</string>
     <string name="action_see_all">Tümünü Gör</string>
-    <string name="action_load_more">Daha Fazla Yükle</string>
 
     <!-- HeroSection -->
     <string name="hero_creator">Yapımcı: %1$s</string>
@@ -2720,7 +2719,6 @@
     <string name="collections_editor_choose_emoji">Emoji Seç</string>
     <string name="collections_editor_back">Geri</string>
     <string name="collections_editor_edit_collection">Koleksiyonu Düzenle</string>
-    <string name="collections_editor_catalog_count">%1$d katalog</string>
     <string name="collections_editor_source_count">%1$d kaynak</string>
     <string name="collections_editor_sources">Kaynaklar</string>
     <string name="collections_editor_source">Kaynak</string>
@@ -2748,7 +2746,6 @@
     <string name="collections_editor_tmdb_collection_id">Koleksiyon ID</string>
     <string name="collections_editor_tmdb_company_search">Yapım Şirketi Adı, ID veya URL</string>
     <string name="collections_editor_tmdb_display_title">Görünüm Başlığı</string>
-    <string name="collections_editor_tmdb_title_optional">Başlık (İsteğe Bağlı)</string>
     <string name="collections_editor_tmdb_search">Ara</string>
     <string name="collections_editor_add_source">Kaynak Ekle</string>
     <string name="collections_editor_save_source">Kaynağı Kaydet</string>
@@ -2895,7 +2892,6 @@
     <string name="collections_card_title">Koleksiyonlar</string>
     <string name="collections_card_subtitle">Katalogları ana sayfanızda klasörler halinde gruplandırın</string>
     <string name="collections_tab_all">Tümü</string>
-    <string name="collections_tab_combined">Birleşik</string>
     <string name="collection_editor_remove_cd">Kaldır</string>
     <string name="collection_editor_choice_both">İkisi de</string>
     <string name="collection_editor_resolved_trakt_list">Trakt listesi çözüldü</string>

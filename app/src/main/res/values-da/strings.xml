@@ -162,7 +162,6 @@
 
     <string name="catalog_from_addon">fra %1$s</string>
     <string name="action_see_all">Se alle</string>
-    <string name="action_load_more">Indlæs mere</string>
 
     <string name="hero_creator">Skaber: %1$s</string>
     <string name="hero_director">Instruktør: %1$s</string>
@@ -1968,7 +1967,6 @@
     <string name="collections_editor_choose_emoji">Vælg emoji</string>
     <string name="collections_editor_back">Tilbage</string>
     <string name="collections_editor_edit_collection">Rediger samling</string>
-    <string name="collections_editor_catalog_count">%1$d katalog(er)</string>
     <string name="collections_editor_source_count">%1$d kilde(r)</string>
     <string name="collections_editor_sources">Kilder</string>
     <string name="collections_editor_source">Kilde</string>
@@ -1995,7 +1993,6 @@
     <string name="collections_editor_tmdb_collection_id">Samlings-ID</string>
     <string name="collections_editor_tmdb_company_search">Produktionsselskabsnavn, ID eller URL</string>
     <string name="collections_editor_tmdb_display_title">Visningstitel</string>
-    <string name="collections_editor_tmdb_title_optional">Titel (valgfri)</string>
     <string name="collections_editor_tmdb_search">Søg</string>
     <string name="collections_editor_add_source">Tilføj kilde</string>
     <string name="collections_editor_save_source">Gem kilde</string>
@@ -2135,7 +2132,6 @@
     <string name="collections_card_title">Samlinger</string>
     <string name="collections_card_subtitle">Gruppér kataloger i mapper på din hjemskærm</string>
     <string name="collections_tab_all">Alle</string>
-    <string name="collections_tab_combined">Kombineret</string>
     <string name="collection_editor_remove_cd">Fjern</string>
     <string name="collection_editor_choice_both">Begge</string>
     <string name="collection_editor_resolved_trakt_list">Løst Trakt-liste</string>

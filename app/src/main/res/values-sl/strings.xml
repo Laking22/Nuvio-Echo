@@ -164,7 +164,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">od %1$s</string>
     <string name="action_see_all">Prikaži vse</string>
-	<string name="action_load_more">Naloži več</string>												  
     <!-- HeroSection -->
     <string name="hero_creator">Ustvarjalec: %1$s</string>
     <string name="hero_director">Režiser: %1$s</string>
@@ -1663,7 +1662,6 @@
     <string name="collections_editor_choose_emoji">Izberi emodži</string>
     <string name="collections_editor_back">Nazaj</string>
     <string name="collections_editor_edit_collection">Uredi zbirko</string>
-    <string name="collections_editor_catalog_count">%1$d katalog(-ov)</string>
     <string name="collections_editor_source_count">%1$d vir(-ov)</string>
     <string name="collections_editor_sources">Viri</string>
     <string name="collections_editor_source">Vir</string>
@@ -1690,7 +1688,6 @@
     <string name="collections_editor_tmdb_collection_id">ID zbirke</string>
     <string name="collections_editor_tmdb_company_search">Ime, ID ali URL produkcijske hiše</string>
     <string name="collections_editor_tmdb_display_title">Naslov za prikaz</string>
-    <string name="collections_editor_tmdb_title_optional">Naslov (izbirno)</string>
     <string name="collections_editor_tmdb_search">Iskanje</string>
     <string name="collections_editor_add_source">Dodaj vir</string>
     <string name="collections_editor_save_source">Shrani vir</string>
@@ -1830,7 +1827,6 @@
     <string name="collections_card_title">Zbirke</string>
     <string name="collections_card_subtitle">Združi kataloge v mape na začetnem zaslonu</string>
     <string name="collections_tab_all">Vse</string>
-    <string name="collections_tab_combined">Združeno</string>
     <string name="collection_editor_remove_cd">Odstrani</string>
     <string name="collection_editor_choice_both">Oboje</string>
     <string name="collection_editor_resolved_trakt_list">Razrešen seznam Trakt</string>

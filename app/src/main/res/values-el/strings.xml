@@ -162,7 +162,6 @@
   <!-- CatalogRowSection -->
   <string name="catalog_from_addon">από %1$s</string>
   <string name="action_see_all">Προβολή όλων</string>
-  <string name="action_load_more">Φόρτωση περισσότερων</string>
   <!-- HeroSection -->
   <string name="hero_creator">Δημιουργός: %1$s</string>
   <string name="hero_director">Σκηνοθέτης: %1$s</string>
@@ -2258,7 +2257,6 @@
   <string name="collections_editor_choose_emoji">Επιλογή emoji</string>
   <string name="collections_editor_back">Πίσω</string>
   <string name="collections_editor_edit_collection">Επεξεργασία συλλογής</string>
-  <string name="collections_editor_catalog_count">%1$d κατάλογος(οι)</string>
   <string name="collections_editor_source_count">%1$d πηγή(ές)</string>
   <string name="collections_editor_sources">Πηγές</string>
   <string name="collections_editor_source">Πηγή</string>
@@ -2286,7 +2284,6 @@
   <string name="collections_editor_tmdb_collection_id">ID συλλογής</string>
   <string name="collections_editor_tmdb_company_search">Όνομα εταιρείας παραγωγής, ID ή URL</string>
   <string name="collections_editor_tmdb_display_title">Τίτλος εμφάνισης</string>
-  <string name="collections_editor_tmdb_title_optional">Τίτλος (προαιρετικό)</string>
   <string name="collections_editor_tmdb_search">Αναζήτηση</string>
   <string name="collections_editor_add_source">Προσθήκη πηγής</string>
   <string name="collections_editor_save_source">Αποθήκευση πηγής</string>
@@ -2426,7 +2423,6 @@
   <string name="collections_card_title">Συλλογές</string>
   <string name="collections_card_subtitle">Ομαδοποιήστε καταλόγους σε φακέλους στην αρχική οθόνη σας</string>
   <string name="collections_tab_all">Όλα</string>
-  <string name="collections_tab_combined">Συνδυασμένα</string>
   <string name="collection_editor_remove_cd">Αφαίρεση</string>
   <string name="collection_editor_choice_both">Και τα δύο</string>
   <string name="collection_editor_resolved_trakt_list">Επιλυμένη λίστα Trakt</string>

@@ -162,7 +162,6 @@
 
     <string name="catalog_from_addon">từ %1$s</string>
     <string name="action_see_all">Xem tất cả</string>
-    <string name="action_load_more">Tải thêm</string>
 
     <string name="hero_creator">Nhà sáng tạo: %1$s</string>
     <string name="hero_director">Đạo diễn: %1$s</string>
@@ -2466,7 +2465,6 @@
     <string name="collections_editor_choose_emoji">Chọn biểu tượng cảm xúc</string>
     <string name="collections_editor_back">Quay lại</string>
     <string name="collections_editor_edit_collection">Chỉnh sửa bộ sưu tập</string>
-    <string name="collections_editor_catalog_count">%1$d danh mục</string>
     <string name="collections_editor_source_count">%1$d nguồn · %2$s</string>
     <string name="collections_editor_sources">Nguồn</string>
     <string name="collections_editor_source">Nguồn</string>
@@ -2494,7 +2492,6 @@
     <string name="collections_editor_tmdb_collection_id">ID bộ sưu tập</string>
     <string name="collections_editor_tmdb_company_search">Tên, ID hoặc URL của hãng sản xuất</string>
     <string name="collections_editor_tmdb_display_title">Tên hiển thị</string>
-    <string name="collections_editor_tmdb_title_optional">Tên (tùy chọn)</string>
     <string name="collections_editor_tmdb_search">Tìm kiếm</string>
     <string name="collections_editor_add_source">Thêm nguồn</string>
     <string name="collections_editor_save_source">Lưu nguồn</string>
@@ -2641,7 +2638,6 @@
     <string name="collections_card_title">Bộ sưu tập</string>
     <string name="collections_card_subtitle">Nhóm các danh mục vào thư mục trên màn hình chính</string>
     <string name="collections_tab_all">Tất cả</string>
-    <string name="collections_tab_combined">Kết hợp</string>
     <string name="collection_editor_remove_cd">Xóa</string>
     <string name="collection_editor_choice_both">Tất cả</string>
     <string name="collection_editor_resolved_trakt_list">Danh sách Trakt đã xác thực</string>

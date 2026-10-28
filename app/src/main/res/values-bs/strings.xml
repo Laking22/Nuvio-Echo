@@ -131,7 +131,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">od %1$s</string>
     <string name="action_see_all">Prikaži Sve</string>
-    <string name="action_load_more">Učitaj Više</string>
 
     <!-- HeroSection -->
     <string name="hero_creator">Kreator: %1$s</string>
@@ -1396,7 +1395,6 @@
     <string name="collections_editor_choose_emoji">Odaberi Emoji</string>
     <string name="collections_editor_back">Nazad</string>
     <string name="collections_editor_edit_collection">Uredi Kolekciju</string>
-    <string name="collections_editor_catalog_count">%1$d katalog(a)</string>
     <string name="collections_editor_shape_poster">Poster</string>
     <string name="collections_editor_shape_wide">Široko (Wide)</string>
     <string name="collections_editor_shape_square">Kvadrat</string>
@@ -1408,7 +1406,6 @@
     <string name="collections_card_title">Kolekcije</string>
     <string name="collections_card_subtitle">Grupiši kataloge u foldere na svom početnom ekranu</string>
     <string name="collections_tab_all">Sve</string>
-    <string name="collections_tab_combined">Kombinovano</string>
 
     <string name="collections_editor_view_mode">Mod Prikaza</string>
     <string name="collections_editor_view_mode_tabs">Tabovi</string>

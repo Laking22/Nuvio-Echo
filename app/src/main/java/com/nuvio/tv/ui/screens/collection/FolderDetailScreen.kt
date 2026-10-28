@@ -209,7 +209,7 @@ private fun FolderRows(
     onWatchNow: (MetaPreview, String) -> Unit
 ) {
     val context = LocalContext.current
-    val focusState by viewModel.rowsFocusState.collectAsStateWithLifecycle()
+    val focusState by viewModel.rowsFocus.collectAsStateWithLifecycle()
     val openDelayMs = remember { BetaFeatures.settings(context).posterOpenDelayMs.toLong() }
     val scope = rememberCoroutineScope()
 
@@ -254,8 +254,8 @@ private fun FolderRows(
     val itemRequesters = remember { HashMap<String, FocusRequester>() }
     fun requester(rowKey: String, index: Int) = itemRequesters.getOrPut("$rowKey#$index") { FocusRequester() }
     val columnState = rememberLazyListState(
-        initialFirstVisibleItemIndex = if (focusState.hasSavedFocus) focusState.verticalScrollIndex else 0,
-        initialFirstVisibleItemScrollOffset = if (focusState.hasSavedFocus) focusState.verticalScrollOffset else 0
+        initialFirstVisibleItemIndex = focusState.pageIndex,
+        initialFirstVisibleItemScrollOffset = focusState.pageOffset
     )
     val rowStates = remember { HashMap<String, LazyListState>() }
     val itemsBeforeRows = 1 + if (slides.isNotEmpty()) 1 else 0
@@ -285,11 +285,11 @@ private fun FolderRows(
     // Opening: the hero's Watch Now (or the first card when nothing has art). Back from a title: the card it was on.
     val firstRowKey = rows.firstOrNull()?.catalogRow?.key()
     LaunchedEffect(Unit) {
-        val saved = focusState.focusedRowKey?.takeIf { focusState.hasSavedFocus }
+        val saved = focusState.rowKey
         repeat(40) {
             withFrameNanos { }
             val target = when {
-                saved != null -> itemRequesters["$saved#${focusState.focusedItemIndex}"]
+                saved != null -> itemRequesters["$saved#${focusState.itemIndex}"]
                 slides.isNotEmpty() -> watchFocus
                 firstRowKey != null -> itemRequesters["$firstRowKey#0"]
                 else -> null
@@ -365,11 +365,7 @@ private fun FolderRows(
                 item(key = "row_$rowKey", contentType = "row") {
                     val listState = rowStates.getOrPut(rowKey) {
                         // Back from a title: the row it came from starts on its card, so the card can take focus.
-                        val start = if (focusState.hasSavedFocus && focusState.focusedRowKey == rowKey) {
-                            focusState.focusedItemIndex
-                        } else {
-                            focusState.catalogRowScrollStates[rowKey] ?: 0
-                        }
+                        val start = if (focusState.rowKey == rowKey) focusState.itemIndex else focusState.rowStarts[rowKey] ?: 0
                         LazyListState(firstVisibleItemIndex = start)
                     }
                     FolderRow(
@@ -385,15 +381,14 @@ private fun FolderRows(
                             focusedItem = item
                             pinRow(rowIndex)
                             viewModel.onItemFocused(item)
-                            viewModel.saveRowsFocusState(
-                                verticalScrollIndex = itemsBeforeRows + rowIndex,
-                                verticalScrollOffset = -rowTopPx,
-                                focusedRowKey = rowKey,
-                                focusedItemKeyByRow = mapOf(rowKey to item.id),
-                                catalogRowScrollStates = rowStates.mapValues { it.value.firstVisibleItemIndex },
-                                catalogRowScrollAnchors = emptyMap(),
-                                focusedRowIndex = rowIndex,
-                                focusedItemIndex = index
+                            viewModel.saveRowsFocus(
+                                FolderRowsFocus(
+                                    rowKey = rowKey,
+                                    itemIndex = index,
+                                    pageIndex = itemsBeforeRows + rowIndex,
+                                    pageOffset = -rowTopPx,
+                                    rowStarts = rowStates.mapValues { it.value.firstVisibleItemIndex }
+                                )
                             )
                             val row = tab.catalogRow
                             if (row != null && row.hasMore && !row.isLoading && index >= row.items.size - LOAD_MORE_AHEAD) {

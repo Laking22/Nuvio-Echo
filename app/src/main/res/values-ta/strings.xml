@@ -160,7 +160,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">%1$s இலிருந்து</string>
     <string name="action_see_all">அனைத்தையும் காண்க</string>
-    <string name="action_load_more">மேலும் ஏற்று</string>
 
     <!-- HeroSection -->
     <string name="hero_creator">உருவாக்கியவர்: %1$s</string>
@@ -1746,7 +1745,6 @@
     <string name="collections_editor_choose_emoji">ஈமோஜி தேர்ந்தெடு</string>
     <string name="collections_editor_back">பின்</string>
     <string name="collections_editor_edit_collection">தொகுப்பைத் திருத்து</string>
-    <string name="collections_editor_catalog_count">%1$d கேட்டலாக்(கள்)</string>
     <string name="collections_editor_source_count">%1$d மூலம்(கள்)</string>
     <string name="collections_editor_sources">மூலங்கள்</string>
     <string name="collections_editor_source">மூலம்</string>
@@ -1773,7 +1771,6 @@
     <string name="collections_editor_tmdb_collection_id">தொகுப்பு ஐடி</string>
     <string name="collections_editor_tmdb_company_search">தயாரிப்பு நிறுவனம் பெயர், ஐடி, அல்லது யுஆர்எல்</string>
     <string name="collections_editor_tmdb_display_title">காட்சி தலைப்பு</string>
-    <string name="collections_editor_tmdb_title_optional">தலைப்பு (விருப்பம்)</string>
     <string name="collections_editor_tmdb_search">தேடு</string>
     <string name="collections_editor_add_source">மூலம் சேர்</string>
     <string name="collections_editor_save_source">மூலத்தை சேமி</string>
@@ -1913,7 +1910,6 @@
     <string name="collections_card_title">தொகுப்புகள்</string>
     <string name="collections_card_subtitle">உங்கள் முகப்புத்திரையில் கேட்டலாக்களை கோப்புறைகளாக குழுவாக்குங்கள்</string>
     <string name="collections_tab_all">அனைத்தும்</string>
-    <string name="collections_tab_combined">இணைந்தது</string>
     <string name="collection_editor_remove_cd">அகற்று</string>
     <string name="collection_editor_choice_both">இரண்டும்</string>
     <string name="collection_editor_resolved_trakt_list">தீர்மானிக்கப்பட்ட ட்ராக்ட் பட்டியல்</string>

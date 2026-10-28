@@ -1632,7 +1632,6 @@
     <string name="collections_editor_choose_emoji">Выберите эмодзи</string>
     <string name="collections_editor_back">Назад</string>
     <string name="collections_editor_edit_collection">Редактировать коллекцию</string>
-    <string name="collections_editor_catalog_count">%1$d каталог(ов)</string>
     <string name="collections_editor_shape_poster">Постер</string>
     <string name="collections_editor_shape_wide">Широкий</string>
     <string name="collections_editor_shape_square">Квадрат</string>
@@ -1644,7 +1643,6 @@
     <string name="collections_card_title">Коллекции</string>
     <string name="collections_card_subtitle">Группируйте каталоги в папки на вашем главном экране</string>
     <string name="collections_tab_all">Все</string>
-    <string name="collections_tab_combined">Объединенные</string>
 
     <string name="playback_player_auto">Авто (Лучшее для контента)</string>
     <string name="playback_player_auto_desc">ExoPlayer для фильмов и сериалов · MPV для аниме</string>
@@ -1686,7 +1684,6 @@
     <string name="web_import_error_source_missing_trakt_id">Коллекция \"{collection}\", папка \"{folder}\", источник {index}: отсутствует ID списка Trakt</string>
     <string name="web_import_success">Импортировано {count} коллекций(и). Проверьте и нажмите «Сохранить изменения».</string>
     <string name="web_import_invalid_json">Неверный JSON</string>
-    <string name="action_load_more">Загрузить ещё</string>
     <string name="detail_all_previous_seasons_watched">Все предыдущие сезоны уже просмотрены</string>
     <string name="detail_tab_trailer">Трейлер</string>
     <string name="detail_trailer_loading">Загрузка трейлера...</string>
@@ -2373,7 +2370,6 @@
     <string name="collections_editor_tmdb_collection_id">ID коллекции</string>
     <string name="collections_editor_tmdb_company_search">Название, ID или URL студии</string>
     <string name="collections_editor_tmdb_display_title">Отображаемое название</string>
-    <string name="collections_editor_tmdb_title_optional">Название (необязательно)</string>
     <string name="collections_editor_tmdb_search">Поиск</string>
     <string name="collections_editor_add_source">Добавить источник</string>
     <string name="collections_editor_save_source">Сохранить источник</string>

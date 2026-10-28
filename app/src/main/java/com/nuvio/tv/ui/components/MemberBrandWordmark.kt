@@ -14,6 +14,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -72,6 +73,15 @@ internal fun MemberTier.badgeStyle(): MemberBadgeStyle = when (this) {
     )
 }
 
+/**
+ * Where "echo" sits on the wordmark image (1085 × 344, its letters 96–224 px down and running to its right edge), as
+ * parts of the image's height: a gap after the letters, level with their top, and 45% of their height. The intro
+ * draws it at 30%, but this logo is much smaller and "echo" was too thin to read from across the room.
+ */
+private const val ECHO_LEFT = (1085f + 18f) / 344f
+private const val ECHO_TOP = 96f / 344f
+private const val ECHO_HEIGHT = 58f / 344f
+
 @Composable
 fun MemberBrandWordmark(
     height: Dp,
@@ -85,17 +95,30 @@ fun MemberBrandWordmark(
         modifier = modifier.height(height),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Crossfade(
-            targetState = drawableOverride,
-            animationSpec = tween(durationMillis = 180),
-            label = "brandWordmarkCrossfade"
-        ) { currentDrawable ->
-            BrandWordmark(
-                modifier = Modifier.height(height),
-                contentDescription = contentDescription,
-                contentScale = ContentScale.Fit,
-                drawableOverride = currentDrawable
-            )
+        androidx.compose.foundation.layout.Box {
+            Crossfade(
+                targetState = drawableOverride,
+                animationSpec = tween(durationMillis = 180),
+                label = "brandWordmarkCrossfade"
+            ) { currentDrawable ->
+                BrandWordmark(
+                    modifier = Modifier.height(height),
+                    contentDescription = contentDescription,
+                    contentScale = ContentScale.Fit,
+                    drawableOverride = currentDrawable
+                )
+            }
+            // Nuvio Echo's "echo", small at the word's top right, as the playback intro draws it.
+            if (androidx.compose.ui.platform.LocalContext.current.resources.getBoolean(com.nuvio.tv.R.bool.intro_echo)) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(com.nuvio.tv.R.drawable.intro_echo),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .padding(start = height * ECHO_LEFT, top = height * ECHO_TOP)
+                        .height(height * ECHO_HEIGHT)
+                )
+            }
         }
 
         access.tier?.let { tier ->

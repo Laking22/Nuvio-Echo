@@ -1181,7 +1181,6 @@
     <string name="web_import_tab_url">URL</string>
 
     <!-- CatalogRowSection -->
-    <string name="action_load_more">Ladda mer</string>
 
     <!-- MetaDetailsScreen -->
     <string name="detail_tab_trailer">Trailer</string>
@@ -1497,7 +1496,6 @@
     <string name="collections_editor_choose_emoji">Välj emoji</string>
     <string name="collections_editor_back">Tillbaka</string>
     <string name="collections_editor_edit_collection">Redigera samling</string>
-    <string name="collections_editor_catalog_count">%1$d katalog(er)</string>
     <string name="collections_editor_shape_poster">Affisch</string>
     <string name="collections_editor_shape_wide">Bred</string>
     <string name="collections_editor_shape_square">Fyrkantig</string>
@@ -1519,7 +1517,6 @@
     <string name="collections_card_title">Samlingar</string>
     <string name="collections_card_subtitle">Gruppera kataloger i mappar på din hemskärm</string>
     <string name="collections_tab_all">Alla</string>
-    <string name="collections_tab_combined">Kombinerat</string>
     <string name="collections_editor_view_mode">Visningsläge</string>
     <string name="collections_editor_view_mode_tabs">Flikar</string>
     <string name="collections_editor_view_mode_rows">Rader</string>

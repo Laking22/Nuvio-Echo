@@ -164,7 +164,6 @@
 
     <string name="catalog_from_addon">de %1$s</string>
     <string name="action_see_all">Ver todo</string>
-    <string name="action_load_more">Cargar más</string>
 
     <string name="hero_creator">Creador: %1$s</string>
     <string name="hero_director">Director: %1$s</string>
@@ -2386,7 +2385,6 @@
     <string name="collections_editor_choose_emoji">Elegir emoji</string>
     <string name="collections_editor_back">Atrás</string>
     <string name="collections_editor_edit_collection">Editar colección</string>
-    <string name="collections_editor_catalog_count">%1$d catálogo(s)</string>
     <string name="collections_editor_source_count">%1$d fuente(s)</string>
     <string name="collections_editor_sources">Fuentes</string>
     <string name="collections_editor_source">Fuente</string>
@@ -2413,7 +2411,6 @@
     <string name="collections_editor_tmdb_collection_id">ID de la colección</string>
     <string name="collections_editor_tmdb_company_search">Nombre, ID o URL de la productora</string>
     <string name="collections_editor_tmdb_display_title">Título mostrado</string>
-    <string name="collections_editor_tmdb_title_optional">Título (opcional)</string>
     <string name="collections_editor_tmdb_search">Buscar</string>
     <string name="collections_editor_add_source">Añadir fuente</string>
     <string name="collections_editor_save_source">Guardar fuente</string>
@@ -2560,7 +2557,6 @@
     <string name="collections_card_title">Colecciones</string>
     <string name="collections_card_subtitle">Agrupa catálogos en carpetas en tu pantalla de inicio</string>
     <string name="collections_tab_all">Todo</string>
-    <string name="collections_tab_combined">Combinado</string>
     <string name="collection_editor_remove_cd">Eliminar</string>
     <string name="collection_editor_choice_both">Ambos</string>
     <string name="collection_editor_resolved_trakt_list">Lista de Trakt resuelta</string>

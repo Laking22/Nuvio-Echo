@@ -167,7 +167,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">dari %1$s</string>
     <string name="action_see_all">Lihat Semua</string>
-    <string name="action_load_more">Muat Lebih Banyak</string>
 
     <!-- HeroSection -->
     <string name="hero_creator">Pencipta: %1$s</string>
@@ -1923,7 +1922,6 @@
     <string name="collections_editor_choose_emoji">Pilih Emoji</string>
     <string name="collections_editor_back">Kembali</string>
     <string name="collections_editor_edit_collection">Edit Koleksi</string>
-    <string name="collections_editor_catalog_count">%1$d katalog</string>
     <string name="collections_editor_source_count">%1$d sumber</string>
     <string name="collections_editor_sources">Sumber</string>
     <string name="collections_editor_source">Sumber</string>
@@ -1950,7 +1948,6 @@
     <string name="collections_editor_tmdb_collection_id">ID Koleksi</string>
     <string name="collections_editor_tmdb_company_search">Nama, ID, atau URL perusahaan produksi</string>
     <string name="collections_editor_tmdb_display_title">Judul tampilan</string>
-    <string name="collections_editor_tmdb_title_optional">Judul (opsional)</string>
     <string name="collections_editor_tmdb_search">Cari</string>
     <string name="collections_editor_add_source">Tambah Sumber</string>
     <string name="collections_editor_save_source">Simpan Sumber</string>
@@ -2090,7 +2087,6 @@
     <string name="collections_card_title">Koleksi</string>
     <string name="collections_card_subtitle">Kelompokkan katalog ke dalam folder di layar beranda Anda</string>
     <string name="collections_tab_all">Semua</string>
-    <string name="collections_tab_combined">Gabungan</string>
     <string name="collection_editor_remove_cd">Hapus</string>
     <string name="collection_editor_choice_both">Keduanya</string>
     <string name="collection_editor_resolved_trakt_list">Daftar Trakt yang diselesaikan</string>

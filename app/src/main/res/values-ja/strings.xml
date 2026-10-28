@@ -162,7 +162,6 @@
 
     <string name="catalog_from_addon">%1$s から</string>
     <string name="action_see_all">すべて表示</string>
-    <string name="action_load_more">さらに読み込む</string>
 
     <string name="hero_creator">原作: %1$s</string>
     <string name="hero_director">監督: %1$s</string>
@@ -1969,7 +1968,6 @@
     <string name="collections_editor_choose_emoji">絵文字を選択</string>
     <string name="collections_editor_back">戻る</string>
     <string name="collections_editor_edit_collection">コレクションを編集</string>
-    <string name="collections_editor_catalog_count">%1$d個のカタログ</string>
     <string name="collections_editor_source_count">%1$d個のソース</string>
     <string name="collections_editor_sources">ソース</string>
     <string name="collections_editor_source">ソース</string>
@@ -1996,7 +1994,6 @@
     <string name="collections_editor_tmdb_collection_id">コレクションID</string>
     <string name="collections_editor_tmdb_company_search">制作会社名、ID、またはURL</string>
     <string name="collections_editor_tmdb_display_title">表示タイトル</string>
-    <string name="collections_editor_tmdb_title_optional">タイトル（任意）</string>
     <string name="collections_editor_tmdb_search">検索</string>
     <string name="collections_editor_add_source">ソースを追加</string>
     <string name="collections_editor_save_source">ソースを保存</string>
@@ -2136,7 +2133,6 @@
     <string name="collections_card_title">コレクション</string>
     <string name="collections_card_subtitle">ホーム画面でカタログをフォルダにグループ化</string>
     <string name="collections_tab_all">すべて</string>
-    <string name="collections_tab_combined">統合</string>
     <string name="collection_editor_remove_cd">削除</string>
     <string name="collection_editor_choice_both">両方</string>
     <string name="collection_editor_resolved_trakt_list">解決済みTraktリスト</string>

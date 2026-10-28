@@ -59,6 +59,19 @@ data class FolderDetailUiState(
     val movieWatchedStatus: Map<String, Boolean> = emptyMap()
 )
 
+/** Rows: where focus was, so coming back from a title lands on the same card, with the page and rows as they were. */
+@androidx.compose.runtime.Immutable
+data class FolderRowsFocus(
+    val rowKey: String? = null,
+    val itemIndex: Int = 0,
+    val pageIndex: Int = 0,
+    val pageOffset: Int = 0,
+    /** Each row's first visible card. */
+    val rowStarts: Map<String, Int> = emptyMap()
+) {
+    val saved: Boolean get() = rowKey != null
+}
+
 data class FolderTab(
     val label: String,
     val typeLabel: String = "",
@@ -107,8 +120,8 @@ class FolderDetailViewModel @Inject constructor(
     /** Tabbed folders: the poster each tab last had focus on, so coming back from a title lands on it again. */
     val tabFocusIndex = mutableMapOf<Int, Int>()
 
-    private val _rowsFocusState = MutableStateFlow(com.nuvio.tv.ui.screens.home.HomeScreenFocusState())
-    val rowsFocusState: StateFlow<com.nuvio.tv.ui.screens.home.HomeScreenFocusState> = _rowsFocusState.asStateFlow()
+    private val _rowsFocus = MutableStateFlow(FolderRowsFocus())
+    val rowsFocus: StateFlow<FolderRowsFocus> = _rowsFocus.asStateFlow()
 
 
     init {
@@ -197,7 +210,6 @@ class FolderDetailViewModel @Inject constructor(
                 listOf(
                     FolderTab(
                         label = appContext.getString(com.nuvio.tv.R.string.collections_tab_all),
-                        typeLabel = appContext.getString(com.nuvio.tv.R.string.collections_tab_combined),
                         isLoading = true,
                         isAllTab = true
                     )
@@ -498,30 +510,8 @@ class FolderDetailViewModel @Inject constructor(
         if (_uiState.value.selectedTabIndex != index) _uiState.update { it.copy(selectedTabIndex = index) }
     }
 
-    fun saveRowsFocusState(
-        verticalScrollIndex: Int,
-        verticalScrollOffset: Int,
-        focusedRowKey: String?,
-        focusedItemKeyByRow: Map<String, String>,
-        catalogRowScrollStates: Map<String, Int>,
-        catalogRowScrollAnchors: Map<String, String>,
-        focusedRowIndex: Int = 0,
-        focusedItemIndex: Int = 0
-    ) {
-        val nextState = com.nuvio.tv.ui.screens.home.HomeScreenFocusState(
-            verticalScrollIndex = verticalScrollIndex,
-            verticalScrollOffset = verticalScrollOffset,
-            focusedRowKey = focusedRowKey,
-            focusedItemKeyByRow = focusedItemKeyByRow,
-            catalogRowScrollStates = catalogRowScrollStates,
-            catalogRowScrollAnchors = catalogRowScrollAnchors,
-            focusedRowIndex = focusedRowIndex,
-            focusedItemIndex = focusedItemIndex,
-            hasSavedFocus = true
-        )
-        if (_rowsFocusState.value != nextState) {
-            _rowsFocusState.value = nextState
-        }
+    fun saveRowsFocus(focus: FolderRowsFocus) {
+        _rowsFocus.value = focus
     }
 
     private fun loadTmdbSourceForTab(tabIndex: Int, source: TmdbCollectionSource, page: Int, append: Boolean) {

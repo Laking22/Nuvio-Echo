@@ -166,7 +166,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">depuis %1$s</string>
     <string name="action_see_all">Voir tout</string>
-    <string name="action_load_more">Charger plus</string>
 
     <!-- HeroSection -->
     <string name="hero_creator">Créateur : %1$s</string>
@@ -1734,7 +1733,6 @@
     <string name="collections_editor_choose_emoji">Choisir un emoji</string>
     <string name="collections_editor_back">Retour</string>
     <string name="collections_editor_edit_collection">Modifier la collection</string>
-    <string name="collections_editor_catalog_count">%1$d catalogue(s)</string>
     <string name="collections_editor_source_count">%1$d source(s)</string>
     <string name="collections_editor_sources">Sources</string>
     <string name="collections_editor_source">Source</string>
@@ -1761,7 +1759,6 @@
     <string name="collections_editor_tmdb_collection_id">ID de collection</string>
     <string name="collections_editor_tmdb_company_search">Nom, ID ou URL de société de production</string>
     <string name="collections_editor_tmdb_display_title">Titre d’affichage</string>
-    <string name="collections_editor_tmdb_title_optional">Titre (optionnel)</string>
     <string name="collections_editor_tmdb_search">Recherche</string>
     <string name="collections_editor_add_source">Ajouter une source</string>
     <string name="collections_editor_save_source">Enregistrer la source</string>
@@ -1894,7 +1891,6 @@
     <string name="collections_card_title">Collections</string>
     <string name="collections_card_subtitle">Regroupez les catalogues dans des dossiers sur votre écran d’accueil</string>
     <string name="collections_tab_all">Tout</string>
-    <string name="collections_tab_combined">Combiné</string>
     <string name="collection_editor_remove_cd">Supprimer</string>
     <string name="collection_editor_choice_both">Les deux</string>
     <string name="collection_editor_resolved_trakt_list">Liste Trakt résolue</string>

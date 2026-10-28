@@ -162,7 +162,6 @@
 
     <string name="catalog_from_addon">来自 %1$s</string>
     <string name="action_see_all">查看全部</string>
-    <string name="action_load_more">加载更多</string>
 
     <string name="hero_creator">创作者：%1$s</string>
     <string name="hero_director">导演：%1$s</string>
@@ -2389,7 +2388,6 @@
     <string name="collections_editor_choose_emoji">选择表情符号</string>
     <string name="collections_editor_back">返回</string>
     <string name="collections_editor_edit_collection">编辑收藏</string>
-    <string name="collections_editor_catalog_count">%1$d 个目录</string>
     <string name="collections_editor_source_count">%1$d 个来源</string>
     <string name="collections_editor_sources">来源</string>
     <string name="collections_editor_source">来源</string>
@@ -2416,7 +2414,6 @@
     <string name="collections_editor_tmdb_collection_id">收藏 ID</string>
     <string name="collections_editor_tmdb_company_search">制作公司名称、ID 或网址</string>
     <string name="collections_editor_tmdb_display_title">显示标题</string>
-    <string name="collections_editor_tmdb_title_optional">标题 (可选)</string>
     <string name="collections_editor_tmdb_search">搜索</string>
     <string name="collections_editor_add_source">添加来源</string>
     <string name="collections_editor_save_source">保存来源</string>
@@ -2563,7 +2560,6 @@
     <string name="collections_card_title">收藏</string>
     <string name="collections_card_subtitle">将目录分组到首页画面上的文件夹中</string>
     <string name="collections_tab_all">全部</string>
-    <string name="collections_tab_combined">合并</string>
     <string name="collection_editor_remove_cd">移除</string>
     <string name="collection_editor_choice_both">两者</string>
     <string name="collection_editor_resolved_trakt_list">已解析的 Trakt 列表</string>

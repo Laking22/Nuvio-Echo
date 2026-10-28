@@ -167,7 +167,6 @@
     <!-- CatalogRowSection -->
     <string name="catalog_from_addon">من %1$s</string>
     <string name="action_see_all">عرض الكل</string>
-    <string name="action_load_more">تحميل المزيد</string>    
 
     <!-- HeroSection -->
     <string name="hero_creator">المؤلف: %1$s</string>
@@ -1977,7 +1976,6 @@
     <string name="collections_editor_choose_emoji">اختيار رمز</string>
     <string name="collections_editor_back">رجوع</string>
     <string name="collections_editor_edit_collection">تعديل المجموعة</string>
-    <string name="collections_editor_catalog_count">%1$d فهرس</string>
     <string name="collections_editor_source_count">%1$d مصدر</string>
     <string name="collections_editor_sources">المصادر</string>
     <string name="collections_editor_source">المصدر</string>
@@ -2004,7 +2002,6 @@
     <string name="collections_editor_tmdb_collection_id">معرف المجموعة</string>
     <string name="collections_editor_tmdb_company_search">اسم أو معرف أو رابط شركة الإنتاج</string>
     <string name="collections_editor_tmdb_display_title">عنوان العرض</string>
-    <string name="collections_editor_tmdb_title_optional">العنوان (اختياري)</string>
     <string name="collections_editor_tmdb_search">بحث</string>
     <string name="collections_editor_add_source">إضافة مصدر</string>
     <string name="collections_editor_save_source">حفظ المصدر</string>
@@ -2144,7 +2141,6 @@
     <string name="collections_card_title">المجموعات</string>
     <string name="collections_card_subtitle">تجميع الفهارس في مجلدات بالرئيسية</string>
     <string name="collections_tab_all">الكل</string>
-    <string name="collections_tab_combined">مدمجة</string>
     <string name="collection_editor_remove_cd">إزالة</string>
     <string name="collection_editor_choice_both">كلاهما</string>
     <string name="collection_editor_resolved_trakt_list">قائمة Trakt محللة</string>

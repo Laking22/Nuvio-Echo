@@ -161,7 +161,6 @@
 
     <string name="catalog_from_addon">forrás: %1$s</string>
     <string name="action_see_all">Összes megtekintése</string>
-    <string name="action_load_more">Több betöltése</string>
 
     <string name="hero_creator">Alkotó: %1$s</string>
     <string name="hero_director">Rendező: %1$s</string>
@@ -2194,7 +2193,6 @@
     <string name="collections_editor_choose_emoji">Hangulatjel kiválasztása</string>
     <string name="collections_editor_back">Vissza</string>
     <string name="collections_editor_edit_collection">Gyűjtemény szerkesztése</string>
-    <string name="collections_editor_catalog_count">%1$d katalógus</string>
     <string name="collections_editor_source_count">%1$d forrás</string>
     <string name="collections_editor_sources">Források</string>
     <string name="collections_editor_source">Forrás</string>
@@ -2221,7 +2219,6 @@
     <string name="collections_editor_tmdb_collection_id">Gyűjtemény ID</string>
     <string name="collections_editor_tmdb_company_search">Stúdió neve, azonosítója vagy URL-je</string>
     <string name="collections_editor_tmdb_display_title">Megjelenített cím</string>
-    <string name="collections_editor_tmdb_title_optional">Cím (opcionális)</string>
     <string name="collections_editor_tmdb_search">Keresés</string>
     <string name="collections_editor_add_source">Forrás hozzáadása</string>
     <string name="collections_editor_save_source">Forrás mentése</string>
@@ -2368,7 +2365,6 @@
     <string name="collections_card_title">Gyűjtemények</string>
     <string name="collections_card_subtitle">Csoportosítsd a katalógusaid mappákba a kezdőlapodon</string>
     <string name="collections_tab_all">Összes</string>
-    <string name="collections_tab_combined">Egyesített</string>
     <string name="collection_editor_remove_cd">Eltávolítás</string>
     <string name="collection_editor_choice_both">Mindkettő</string>
     <string name="collection_editor_resolved_trakt_list">Feloldott Trakt lista</string>

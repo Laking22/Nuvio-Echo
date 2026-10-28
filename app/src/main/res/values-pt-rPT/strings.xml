@@ -157,7 +157,6 @@
     <string name="home_poster_dialog_subtitle">Ações do título</string>
     <string name="catalog_from_addon">de %1$s</string>
     <string name="action_see_all">Ver tudo</string>
-    <string name="action_load_more">Carregar mais</string>
     <string name="hero_creator">Criação: %1$s</string>
     <string name="hero_director">Realização: %1$s</string>
     <string name="hero_writer">Argumento: %1$s</string>
@@ -1879,7 +1878,6 @@
     <string name="collections_editor_choose_emoji">Escolher Emoji</string>
     <string name="collections_editor_back">Voltar</string>
     <string name="collections_editor_edit_collection">Editar coleção</string>
-    <string name="collections_editor_catalog_count">%1$d catálogos</string>
     <string name="collections_editor_source_count">%1$d fonte(s)</string>
     <string name="collections_editor_sources">Fontes</string>
     <string name="collections_editor_source">Fonte</string>
@@ -1906,7 +1904,6 @@
     <string name="collections_editor_tmdb_collection_id">ID da coleção</string>
     <string name="collections_editor_tmdb_company_search">Nome, ID ou URL da produtora</string>
     <string name="collections_editor_tmdb_display_title">Título a apresentar</string>
-    <string name="collections_editor_tmdb_title_optional">Título (opcional)</string>
     <string name="collections_editor_tmdb_search">Pesquisar</string>
     <string name="collections_editor_add_source">Adicionar fonte</string>
     <string name="collections_editor_save_source">Guardar Fonte</string>
@@ -2046,7 +2043,6 @@
     <string name="collections_card_title">Coleções</string>
     <string name="collections_card_subtitle">Agrupa catálogos em pastas na tua página inicial</string>
     <string name="collections_tab_all">Tudo</string>
-    <string name="collections_tab_combined">Combinado</string>
     <string name="collection_editor_remove_cd">Remover</string>
     <string name="collection_editor_choice_both">Ambos</string>
     <string name="collection_editor_resolved_trakt_list">Lista do Trakt resolvida</string>

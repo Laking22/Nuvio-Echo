@@ -153,7 +153,6 @@
     <string name="home_poster_dialog_subtitle">টাইটেল অ্যাকশন</string>
     <string name="catalog_from_addon">%1$s থেকে</string>
     <string name="action_see_all">সবগুলো দেখুন</string>
-    <string name="action_load_more">আরও লোড করুন</string>
     <string name="hero_creator">ক্রিয়েটর: %1$s</string>
     <string name="hero_director">ডিরেক্টর: %1$s</string>
     <string name="hero_writer">রাইটার: %1$s</string>
@@ -2321,7 +2320,6 @@
     <string name="collections_editor_choose_emoji">ইমোজি বেছে নিন</string>
     <string name="collections_editor_back">পিছনে</string>
     <string name="collections_editor_edit_collection">কালেকশন এডিট করুন</string>
-    <string name="collections_editor_catalog_count">%1$d ক্যাটালগ</string>
     <string name="collections_editor_source_count">%1$dটি সোর্স</string>
     <string name="collections_editor_sources">সোর্স</string>
     <string name="collections_editor_source">সোর্স</string>
@@ -2349,7 +2347,6 @@
     <string name="collections_editor_tmdb_collection_id">কালেকশন আইডি</string>
     <string name="collections_editor_tmdb_company_search">প্রোডাকশন কোম্পানির নাম, আইডি বা URL</string>
     <string name="collections_editor_tmdb_display_title">ডিসপ্লে শিরোনাম</string>
-    <string name="collections_editor_tmdb_title_optional">টাইটেল (অপশনাল)</string>
     <string name="collections_editor_tmdb_search">সার্চ</string>
     <string name="collections_editor_add_source">সোর্স যোগ করুন</string>
     <string name="collections_editor_save_source">সোর্স সেভ করুন</string>
@@ -2496,7 +2493,6 @@
     <string name="collections_card_title">কালেকশন</string>
     <string name="collections_card_subtitle">আপনার হোম স্ক্রিনে ক্যাটালগগুলোকে ফোল্ডারে গ্রুপ করুন</string>
     <string name="collections_tab_all">সব</string>
-    <string name="collections_tab_combined">কম্বাইন্ড</string>
     <string name="collection_editor_remove_cd">সরান</string>
     <string name="collection_editor_choice_both">উভয়</string>
     <string name="collection_editor_resolved_trakt_list">সমাধান করা Trakt তালিকা</string>
