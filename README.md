@@ -11,6 +11,12 @@
     Bring your own addons. Nuvio Echo turns them into a library with artwork, trailers, ratings, subtitles, and your place saved.
   </p>
 
+  <img src="assets/readme/intro.gif" alt="The intro loader: the Nuvio Echo logo plays while a title loads" width="640" />
+  <br />
+  <sub>The intro loader, recorded on an Android TV box. <a href="assets/readme/intro.mp4">Full quality (MP4)</a></sub>
+
+  <p></p>
+
   <a href="https://github.com/Laking22/Nuvio-Echo/releases/tag/beta"><b>Download the latest beta</b></a>
 
 </div>
@@ -42,7 +48,7 @@ Playback starts sooner because the waiting happens earlier:
 Every speed-up has its own switch under **Settings → Beta speed-ups**.
 
 ### The intro loader
-A short animation of the logo plays while a title loads, so the wait reads as part of the show instead of a spinner. It lasts 3 to 6 seconds (your choice) and ends as soon as the video is ready.
+A short animation of the logo (shown at the top of this page) plays while a title loads, so the wait reads as part of the show instead of a spinner. It lasts 3 to 6 seconds (your choice) and ends as soon as the video is ready.
 
 ### Audio and quality parser
 Addons describe their streams in very different ways, so Echo reads every part of a source: the quality field, the resolution the addon reports, the file name and the label. A resolution stated outright ("1080p", "4K") beats a loose word ("HD", "UHD"), and when an addon gives every quality the same file name, the label's own resolution wins. Audio languages are read the same way ("ENG DUB", "Dual", "Hindi", flags), so the audio menu lists the languages available across all your sources, not only the one that's playing.
@@ -103,6 +109,14 @@ cd Nuvio-Echo
 ```
 
 The APKs land in `app/build/outputs/apk/full/beta/`. Nuvio Echo is built with Kotlin, Jetpack Compose, TV Material 3, and Media3; you need Android Studio (or a JDK 17+) and the Android SDK. Optional settings go in `local.properties`, with `local.example.properties` as the template.
+
+## Security notes
+
+Some of how Echo works comes unchanged from NuvioTV and is worth knowing:
+- **Addon connections don't check HTTPS certificates,** so self-hosted addons with self-signed certificates work, and playback retries without the check if a certificate fails. On a network you don't trust, someone could read addon and stream links, which can contain debrid or other API keys.
+- **CloudStream extensions run with the app's full access,** including your accounts' sign-ins. Only add repositories you trust, and only over `https://`.
+- **Opening a `stremio://` or `nuvio://` link installs that addon without asking.**
+- **While a "set up on your phone" page is open,** anyone on the same network can reach it. Close it when you're done.
 
 ## License
 

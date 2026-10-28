@@ -454,7 +454,10 @@ class PluginRuntime @Inject constructor() {
                 val settingsJson = gson.toJson(scraperSettings)
                 function("__get_scraper_id") { scraperId }
                 function("__get_scraper_settings") { settingsJson }
-                function("__get_tmdb_api_key") { com.nuvio.tv.core.apikeys.ApiKeys.tmdb }
+                // Plugins are third-party code: they get the built-in key, never the personal one set in API keys.
+                function("__get_tmdb_api_key") {
+                    com.nuvio.tv.core.apikeys.ApiKeys.builtIn(com.nuvio.tv.core.apikeys.ApiKeyKind.TMDB)
+                }
 
                 val polyfillBytecode = getCompiledPolyfillBytecode(this)
                 evaluate<Any?>(polyfillBytecode)
