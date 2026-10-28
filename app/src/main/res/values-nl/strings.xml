@@ -2998,4 +2998,9 @@
     <string name="stream_test_video_bitrate">Gemiddelde videobitrate: %1$s</string>
     <string name="stream_test_error_connection">Verbinding mislukt. De link van de laatst afgespeelde stream is mogelijk verlopen of onbereikbaar. Speel de video opnieuw af en probeer het nogmaals.</string>
 
+    <string name="collections_editor_view_mode">Weergavemodus</string>
+    <string name="collections_editor_view_mode_tabs">Tabbladen</string>
+    <string name="collections_editor_view_mode_rows">Rijen</string>
+    <string name="collections_editor_show_all_tab">Tabblad \"Alle\" tonen</string>
+    <string name="collections_editor_show_all_tab_desc">Voeg alle catalogi samen in één tabblad</string>
 </resources>

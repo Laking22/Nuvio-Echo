@@ -2968,4 +2968,9 @@
         <item quantity="one">%dটি নির্বাচিত</item>
         <item quantity="other">%dটি নির্বাচিত</item>
     </plurals>
-    </resources>
+        <string name="collections_editor_view_mode">দেখুন মোড</string>
+    <string name="collections_editor_view_mode_tabs">ট্যাব</string>
+    <string name="collections_editor_view_mode_rows">সারি</string>
+    <string name="collections_editor_show_all_tab">"সমস্ত" ট্যাব দেখান</string>
+    <string name="collections_editor_show_all_tab_desc">একটি ট্যাবে সমস্ত ক্যাটালগ একত্রিত করুন</string>
+</resources>

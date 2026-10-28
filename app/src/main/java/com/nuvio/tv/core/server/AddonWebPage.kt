@@ -1152,6 +1152,10 @@ var i18n = {
   backdrop: '${context.getString(R.string.collections_editor_backdrop).replace("'", "\\'")}',
   pinAbove: '${context.getString(R.string.collections_editor_pin_above).replace("'", "\\'")}',
   focusGlow: '${context.getString(R.string.collections_editor_focus_glow).replace("'", "\\'")}',
+  viewMode: '${context.getString(R.string.collections_editor_view_mode).replace("'", "\\'")}',
+  tabs: '${context.getString(R.string.collections_editor_view_mode_tabs).replace("'", "\\'")}',
+  rows: '${context.getString(R.string.collections_editor_view_mode_rows).replace("'", "\\'")}',
+  showAllTab: '${context.getString(R.string.collections_editor_show_all_tab).replace("'", "\\'")}',
   cover: '${context.getString(R.string.collections_editor_cover).replace("'", "\\'")}',
   coverNone: '${context.getString(R.string.collections_editor_cover_none).replace("'", "\\'")}',
   coverEmoji: '${context.getString(R.string.collections_editor_cover_emoji).replace("'", "\\'")}',
@@ -2272,6 +2276,15 @@ function setFolderCoverMode(ci, fi, mode) {
   renderCollections();
 }
 
+function updateCollectionViewMode(ci, val) {
+  collections[ci].viewMode = val;
+  renderCollections();
+}
+
+function updateCollectionShowAllTab(ci, checked) {
+  collections[ci].showAllTab = checked;
+}
+
 function updateCollectionPinToTop(ci, checked) {
   collections[ci].pinToTop = checked;
 }
@@ -2966,6 +2979,22 @@ function renderCollections() {
             '<span class="toggle-thumb"></span>' +
           '</label>' +
         '</div>' +
+        '<div class="col-setting-row">' +
+          '<span class="col-meta-label">' + i18n.viewMode + '</span>' +
+          '<div class="cover-mode-picker">' +
+            '<button class="cover-mode-btn' + ((col.viewMode === 'TABBED_GRID' || !col.viewMode) ? ' active' : '') + '" onclick="updateCollectionViewMode(' + ci + ',\'TABBED_GRID\')">' + i18n.tabs + '</button>' +
+            '<button class="cover-mode-btn' + ((col.viewMode === 'ROWS' || col.viewMode === 'FOLLOW_LAYOUT') ? ' active' : '') + '" onclick="updateCollectionViewMode(' + ci + ',\'ROWS\')">' + i18n.rows + '</button>' +
+          '</div>' +
+        '</div>' +
+        ((col.viewMode === 'TABBED_GRID' || !col.viewMode) ?
+        '<div class="col-setting-row">' +
+          '<span class="toggle-label">' + i18n.showAllTab + '</span>' +
+          '<label class="toggle-switch" onclick="event.stopPropagation()">' +
+            '<input type="checkbox"' + (col.showAllTab !== false ? ' checked' : '') + ' onchange="updateCollectionShowAllTab(' + ci + ',this.checked)">' +
+            '<span class="toggle-track"></span>' +
+            '<span class="toggle-thumb"></span>' +
+          '</label>' +
+        '</div>' : '') +
       '</div>';
 
     // ── Folders ──

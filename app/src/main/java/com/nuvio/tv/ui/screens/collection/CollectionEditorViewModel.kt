@@ -218,6 +218,14 @@ class CollectionEditorViewModel @Inject constructor(
         _uiState.update { it.copy(pinToTop = pinToTop) }
     }
 
+    fun setViewMode(viewMode: FolderViewMode) {
+        _uiState.update { it.copy(viewMode = viewMode) }
+    }
+
+    fun setShowAllTab(show: Boolean) {
+        _uiState.update { it.copy(showAllTab = show) }
+    }
+
     fun setFocusGlowEnabled(enabled: Boolean) {
         _uiState.update { it.copy(focusGlowEnabled = enabled) }
     }

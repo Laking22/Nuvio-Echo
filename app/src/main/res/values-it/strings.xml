@@ -2993,4 +2993,9 @@
 <string name="stream_test_video_bitrate">Bitrate video medio: %1$s</string>
 <string name="stream_test_error_connection">Connessione fallita. Il link dell\'ultimo stream riprodotto potrebbe essere scaduto o non raggiungibile. Riproduci di nuovo il video e riprova.</string>
 
+<string name="collections_editor_view_mode">Modalità di visualizzazione</string>
+<string name="collections_editor_view_mode_tabs">Schede</string>
+<string name="collections_editor_view_mode_rows">Righe</string>
+<string name="collections_editor_show_all_tab">Mostra scheda \"Tutte\"</string>
+<string name="collections_editor_show_all_tab_desc">Combina tutti i cataloghi in un\'unica scheda</string>
 </resources>

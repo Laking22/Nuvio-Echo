@@ -2449,4 +2449,9 @@
     <string name="profile_default_name">Perfil %1$d</string>
     <string name="detail_tmdb_fallback_title">TMDB %1$d</string>
     <string name="collections_editor_tmdb_collection_fallback">Coleção TMDB %1$d</string>
+    <string name="collections_editor_view_mode">Modo de visualização</string>
+    <string name="collections_editor_view_mode_tabs">Separadores</string>
+    <string name="collections_editor_view_mode_rows">Linhas</string>
+    <string name="collections_editor_show_all_tab">Mostrar separador \"Tudo\"</string>
+    <string name="collections_editor_show_all_tab_desc">Combinar todos os catálogos num único separador</string>
 </resources>

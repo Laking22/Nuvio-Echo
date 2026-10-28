@@ -3113,4 +3113,9 @@
     <string name="diag_value_disk_cache_unavailable">Nedostupné</string>
     <string name="diag_value_disk_cache_not_used">Vypnuté - nepoužíva sa pre tento stream</string>
     <string name="diag_value_disk_cache_usage">%1$s prečítané, %2$s uvoľnené</string>
+    <string name="collections_editor_view_mode">Režim zobrazenia</string>
+    <string name="collections_editor_view_mode_tabs">Karty</string>
+    <string name="collections_editor_view_mode_rows">Riadky</string>
+    <string name="collections_editor_show_all_tab">Zobraziť kartu „Všetko“</string>
+    <string name="collections_editor_show_all_tab_desc">Skombinovať všetky katalógy do jednej karty</string>
 </resources>

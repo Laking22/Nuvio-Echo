@@ -2567,4 +2567,9 @@
     <string name="profile_default_name">Профил %1$d</string>
     <string name="detail_tmdb_fallback_title">TMDB %1$d</string>
     <string name="collections_editor_tmdb_collection_fallback">TMDB колекция %1$d</string>
+    <string name="collections_editor_view_mode">Режим на изглед</string>
+    <string name="collections_editor_view_mode_tabs">Раздели</string>
+    <string name="collections_editor_view_mode_rows">Редове</string>
+    <string name="collections_editor_show_all_tab">Показвай „Всички“ раздел</string>
+    <string name="collections_editor_show_all_tab_desc">Комбинирай всички каталози в един раздел</string>
 </resources>

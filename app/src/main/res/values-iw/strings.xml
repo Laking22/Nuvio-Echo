@@ -3192,4 +3192,9 @@
     <string name="autosync_toast_failed_no_reference">הסנכרון נכשל: אין בסרטון הזה כתוביות מוטמעות להשוואה.</string>
     <string name="autosync_toast_failed_unsupported">הסנכרון נכשל: הסנכרון האוטומטי לא תומך בפורמט הכתוביות הזה.</string>
     <string name="autosync_label_synced">מסונכרן אוטומטית</string>
+    <string name="collections_editor_view_mode">מצב תצוגה</string>
+    <string name="collections_editor_view_mode_tabs">לשוניות</string>
+    <string name="collections_editor_view_mode_rows">שורות</string>
+    <string name="collections_editor_show_all_tab">הצגת לשונית \"הכול\"</string>
+    <string name="collections_editor_show_all_tab_desc">שילוב כל הקטלוגים בכרטיסייה אחת</string>
 </resources>

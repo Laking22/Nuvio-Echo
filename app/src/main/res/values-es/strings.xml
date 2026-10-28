@@ -3084,4 +3084,9 @@
     <string name="stream_test_video_bitrate">Tasa de bits de vídeo media: %1$s</string>
     <string name="stream_test_error_connection">Error de conexión. Es posible que el enlace de la última transmisión reproducida haya caducado o no sea accesible. Reproduce el vídeo de nuevo e inténtalo otra vez.</string>
 
+    <string name="collections_editor_view_mode">Modo de vista</string>
+    <string name="collections_editor_view_mode_tabs">Pestañas</string>
+    <string name="collections_editor_view_mode_rows">Filas</string>
+    <string name="collections_editor_show_all_tab">Mostrar pestaña \"Todo\"</string>
+    <string name="collections_editor_show_all_tab_desc">Combina todos los catálogos en una sola pestaña</string>
 </resources>

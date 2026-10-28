@@ -2898,4 +2898,9 @@
     <string name="web_stream_badge_imported">استُورد رابط الشارة.</string>
     <string name="web_stream_badge_importing">جارٍ الاستيراد\u2026</string>
     <string name="web_stream_badge_load_error">تعذر تحميل إعدادات شارات البث</string>
+    <string name="collections_editor_view_mode">وضع العرض</string>
+    <string name="collections_editor_view_mode_tabs">تبويبات</string>
+    <string name="collections_editor_view_mode_rows">صفوف</string>
+    <string name="collections_editor_show_all_tab">عرض علامة "الكل"</string>
+    <string name="collections_editor_show_all_tab_desc">دمج جميع الفهارس في علامة تبويب واحدة</string>
 </resources>

@@ -53,6 +53,8 @@ data class FolderDetailUiState(
     val hideUnreleasedContent: Boolean = false,
     val posterCardCornerRadiusDp: Int = 12,
     val tabs: List<FolderTab> = emptyList(),
+    /** Tabbed folders: the source being shown. */
+    val selectedTabIndex: Int = 0,
     val isLoading: Boolean = true,
     val movieWatchedStatus: Map<String, Boolean> = emptyMap()
 )
@@ -84,6 +86,7 @@ class FolderDetailViewModel @Inject constructor(
     private val metaRepository: com.nuvio.tv.domain.repository.MetaRepository,
     private val tmdbCollectionSourceResolver: TmdbCollectionSourceResolver,
     private val traktPublicListSourceResolver: TraktPublicListSourceResolver,
+    detailsLoader: com.nuvio.tv.core.browse.BrowseDetailsLoader,
     val posterOptions: com.nuvio.tv.ui.components.posteroptions.PosterOptionsController
 ) : ViewModel() {
 
@@ -97,6 +100,12 @@ class FolderDetailViewModel @Inject constructor(
     private var enrichFocusJob: Job? = null
     private val enrichedItemIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
     private val backgroundMetaPrefetchedIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+    /** Tabbed folders: the focused poster's details, for the panel beside the grid. */
+    val focusedDetails = com.nuvio.tv.ui.screens.browse.FocusedDetailsTracker(viewModelScope, detailsLoader)
+
+    /** Tabbed folders: the poster each tab last had focus on, so coming back from a title lands on it again. */
+    val tabFocusIndex = mutableMapOf<Int, Int>()
 
     private val _rowsFocusState = MutableStateFlow(com.nuvio.tv.ui.screens.home.HomeScreenFocusState())
     val rowsFocusState: StateFlow<com.nuvio.tv.ui.screens.home.HomeScreenFocusState> = _rowsFocusState.asStateFlow()
@@ -483,6 +492,10 @@ class FolderDetailViewModel @Inject constructor(
             row.catalogId == catalogId && row.addonId == addonId && row.apiType == type
         }
         if (tabIndex >= 0) loadMoreItems(tabIndex)
+    }
+
+    fun selectTab(index: Int) {
+        if (_uiState.value.selectedTabIndex != index) _uiState.update { it.copy(selectedTabIndex = index) }
     }
 
     fun saveRowsFocusState(

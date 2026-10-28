@@ -1520,4 +1520,9 @@
     <string name="collections_card_subtitle">Gruppera kataloger i mappar på din hemskärm</string>
     <string name="collections_tab_all">Alla</string>
     <string name="collections_tab_combined">Kombinerat</string>
+    <string name="collections_editor_view_mode">Visningsläge</string>
+    <string name="collections_editor_view_mode_tabs">Flikar</string>
+    <string name="collections_editor_view_mode_rows">Rader</string>
+    <string name="collections_editor_show_all_tab">Visa \"Alla\"-flik</string>
+    <string name="collections_editor_show_all_tab_desc">Kombinera alla kataloger i en flik</string>
 </resources>

@@ -43,14 +43,19 @@ internal val focusRingColor: Color
  *
  * The glints are straight lines 1 dp in from the top and bottom, so they only suit a wide shape: on the narrow
  * sidebar the rounded ends curve away from them and they showed as white patches past the edge ([glints] off).
+ *
+ * [shadow] off for glass that lies flat on the page with text scrolling inside it (a list panel): the shadow shows
+ * through the clear body, and on the TV it redrew as lighter blocks wherever the text inside changed.
  */
-internal fun Modifier.glassSurface(shape: Shape, glints: Boolean = true): Modifier = this
-    .shadow(
-        elevation = 14.dp,
-        shape = shape,
-        clip = false,
-        ambientColor = Color.Black.copy(alpha = 0.38f),
-        spotColor = Color.Black.copy(alpha = 0.38f)
+internal fun Modifier.glassSurface(shape: Shape, glints: Boolean = true, shadow: Boolean = true): Modifier = this
+    .then(
+        if (!shadow) Modifier else Modifier.shadow(
+            elevation = 14.dp,
+            shape = shape,
+            clip = false,
+            ambientColor = Color.Black.copy(alpha = 0.38f),
+            spotColor = Color.Black.copy(alpha = 0.38f)
+        )
     )
     .drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)

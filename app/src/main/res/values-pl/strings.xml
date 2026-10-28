@@ -3263,4 +3263,9 @@
     <string name="autosync_toast_failed_no_reference">Synchronizacja nie powiodła się: wideo nie zawiera osadzonych napisów do porównania.</string>
     <string name="autosync_toast_failed_unsupported">Synchronizacja nie powiodła się: ten format napisów nie jest obsługiwany.</string>
     <string name="autosync_label_synced">Zsynchronizowane automatycznie</string>
+    <string name="collections_editor_view_mode">Tryb widoku</string>
+    <string name="collections_editor_view_mode_tabs">Karty</string>
+    <string name="collections_editor_view_mode_rows">Wiersze</string>
+    <string name="collections_editor_show_all_tab">Pokaż kartę \"Wszystko\"</string>
+    <string name="collections_editor_show_all_tab_desc">Połącz wszystkie katalogi w jednej karcie</string>
 </resources>

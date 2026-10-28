@@ -78,6 +78,7 @@ import com.nuvio.tv.domain.model.AddonCatalogCollectionSource
 import com.nuvio.tv.domain.model.CollectionFolder
 import com.nuvio.tv.domain.model.CollectionSource
 import com.nuvio.tv.domain.model.PosterShape
+import com.nuvio.tv.domain.model.FolderViewMode
 import com.nuvio.tv.domain.model.TmdbCollectionFilters
 import com.nuvio.tv.domain.model.TmdbCollectionMediaType
 import com.nuvio.tv.domain.model.TmdbCollectionSort
@@ -304,6 +305,107 @@ fun CollectionEditorScreen(
                 }
             }
             Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
+        }
+
+        item(key = "view_mode") {
+            Text(
+                text = stringResource(R.string.collections_editor_view_mode),
+                style = MaterialTheme.typography.labelLarge,
+                color = NuvioTheme.colors.TextSecondary
+            )
+            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)
+            ) {
+                // Rows are laid out as Home's now, so the old "follow Home's layout" is the same as Rows.
+                val viewModes = listOf(
+                    FolderViewMode.TABBED_GRID to stringResource(R.string.collections_editor_view_mode_tabs),
+                    FolderViewMode.ROWS to stringResource(R.string.collections_editor_view_mode_rows)
+                )
+                viewModes.forEach { (mode, label) ->
+                    val isSelected = uiState.viewMode == mode ||
+                        (mode == FolderViewMode.ROWS && uiState.viewMode == FolderViewMode.FOLLOW_LAYOUT)
+                    Button(
+                        onClick = { viewModel.setViewMode(mode) },
+                        colors = ButtonDefaults.colors(
+                            containerColor = if (isSelected) NuvioTheme.colors.Secondary.copy(alpha = 0.3f) else NuvioTheme.colors.BackgroundCard,
+                            contentColor = if (isSelected) NuvioTheme.colors.Secondary else NuvioTheme.colors.TextSecondary,
+                            focusedContainerColor = NuvioTheme.colors.FocusBackground,
+                            focusedContentColor = NuvioTheme.colors.Primary
+                        ),
+                        border = ButtonDefaults.border(
+                            border = if (isSelected) Border(
+                                border = BorderStroke(NuvioTheme.spacing.xxs, NuvioTheme.colors.Secondary),
+                                shape = RoundedCornerShape(NuvioTheme.radii.md)
+                            ) else Border.None,
+                            focusedBorder = Border(
+                                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                                shape = RoundedCornerShape(NuvioTheme.radii.md)
+                            )
+                        ),
+                        shape = ButtonDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md))
+                    ) {
+                        Text(label)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+        }
+
+        if (uiState.viewMode == FolderViewMode.TABBED_GRID) {
+            item(key = "show_all_tab") {
+                Card(
+                    onClick = { viewModel.setShowAllTab(!uiState.showAllTab) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.colors(
+                        containerColor = NuvioTheme.colors.BackgroundCard,
+                        focusedContainerColor = NuvioTheme.colors.FocusBackground
+                    ),
+                    border = CardDefaults.border(
+                        focusedBorder = Border(
+                            border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                            shape = RoundedCornerShape(NuvioTheme.radii.md)
+                        )
+                    ),
+                    shape = CardDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md)),
+                    scale = CardDefaults.scale(focusedScale = 1.02f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.collections_editor_show_all_tab),
+                                style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
+                                color = NuvioTheme.colors.TextPrimary,
+                            )
+                            Spacer(modifier = Modifier.height(NuvioTheme.spacing.xs))
+                            Text(
+                                text = stringResource(R.string.collections_editor_show_all_tab_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = NuvioTheme.colors.TextSecondary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(NuvioTheme.spacing.md))
+                        Switch(
+                            checked = uiState.showAllTab,
+                            onCheckedChange = { viewModel.setShowAllTab(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = NuvioTheme.colors.Secondary,
+                                checkedTrackColor = NuvioTheme.colors.Secondary.copy(alpha = 0.3f),
+                                uncheckedThumbColor = NuvioTheme.colors.TextSecondary,
+                                uncheckedTrackColor = NuvioTheme.colors.BackgroundCard
+                            )
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+            }
         }
 
         item(key = "folders_header") {

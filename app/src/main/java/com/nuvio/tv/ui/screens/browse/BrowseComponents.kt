@@ -55,6 +55,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import com.nuvio.tv.ui.newlook.glassSurface
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -121,7 +123,8 @@ internal fun BrowseListRow(
 ) {
     var focused by remember { mutableStateOf(false) }
     val colors = NuvioTheme.colors
-    val container = if (selected) Plain.focusBackground else Color.Transparent
+    // The selection that drives the grid: a faint frost, so it reads on glass as well as on the page.
+    val container = if (selected) Color.White.copy(alpha = 0.12f) else Color.Transparent
     val content = when {
         focused -> Color.White
         selected -> colors.TextPrimary
@@ -131,7 +134,7 @@ internal fun BrowseListRow(
         modifier = modifier
             .fillMaxWidth()
             .height(28.dp)
-            .selectionSurface(focused, RoundedCornerShape(NuvioTheme.radii.sm), container)
+            .selectionSurface(focused, RoundedCornerShape(NuvioTheme.radii.sm), container, lifted = false)
             .onFocusChanged {
                 focused = it.isFocused
                 if (it.isFocused) onFocused()
@@ -154,24 +157,33 @@ internal fun BrowseListRow(
     }
 }
 
-/** Outlined pill used for Movies / Shows / All and for recent searches. */
+/**
+ * Outlined pill used for Movies / Shows / All and for recent searches. Not [outlined] inside a glass capsule, where
+ * the capsule is the outline: the selected one is then a faint frost.
+ */
 @Composable
 internal fun BrowsePill(
     text: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    outlined: Boolean = true,
     onFocused: () -> Unit = {},
     onClick: () -> Unit
 ) {
     var focused by remember { mutableStateOf(false) }
     val colors = NuvioTheme.colors
-    val shape = RoundedCornerShape(NuvioTheme.radii.md)
+    val shape = RoundedCornerShape(if (outlined) NuvioTheme.radii.md else 14.dp)
+    val idle = when {
+        !selected -> Color.Transparent
+        outlined -> Plain.focusBackground
+        else -> Color.White.copy(alpha = 0.16f)
+    }
     Box(
         modifier = modifier
             .height(28.dp)
-            .selectionSurface(focused, shape, if (selected) Plain.focusBackground else Color.Transparent)
+            .selectionSurface(focused, shape, idle)
             .then(
-                if (focused) Modifier else Modifier.border(
+                if (focused || !outlined) Modifier else Modifier.border(
                     BorderStroke(NuvioTheme.spacing.hairline, if (selected) Plain.focusRing.copy(alpha = 0.6f) else colors.Border),
                     shape
                 )
@@ -414,7 +426,6 @@ private fun BrowsePosterCard(
 ) {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(NuvioTheme.radii.md)
-    val ring = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs)
     val placeholder = Plain.backgroundCard
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -463,10 +474,11 @@ private fun BrowsePosterCard(
             )
         }
         if (focused) {
+            // Home's focus edge: a 1 dp hairline in the Appearance colour, not a thick frame.
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .border(ring, shape)
+                    .border(BorderStroke(1.dp, com.nuvio.tv.ui.newlook.focusRingColor), shape)
             )
         }
     }
@@ -584,25 +596,26 @@ private fun BrowseInfoPanelContent(
             }
         }
         Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
-        val shape = RoundedCornerShape(NuvioTheme.radii.xl)
+        val shape = RoundedCornerShape(20.dp)
+        // Glass, as the rest of the app: the poster's colours glow through it, darkened towards the bottom so the
+        // synopsis reads.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .glassSurface(shape, glints = false, shadow = false)
                 .clip(shape)
-                .background(Color.Black)
-                .border(BorderStroke(NuvioTheme.spacing.hairline, colors.Border.copy(alpha = 0.7f)), shape)
         ) {
             PosterMeshBackground(
                 mesh = rememberPosterMesh(details?.poster?.takeIf { it.isNotBlank() && LocalPosterColourMesh.current }),
-                modifier = Modifier.matchParentSize()
+                modifier = Modifier.matchParentSize().graphicsLayer { alpha = 0.75f }
             )
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color.Black.copy(alpha = 0.32f), Color.Black.copy(alpha = 0.62f))
+                            listOf(Color.Black.copy(alpha = 0.12f), Color.Black.copy(alpha = 0.42f))
                         )
                     )
             )
@@ -780,3 +793,39 @@ internal fun browseSortLabel(sort: com.nuvio.tv.core.browse.BrowseSort): String 
 
 /** Width of the keyboard column; it doesn't change with its contents, so the grid never shifts. */
 internal val BrowseSubColumnWidth: Dp = 200.dp
+
+/**
+ * Fades a scrolling list out at its edges instead of cutting it off: at the bottom while there's more below, at the
+ * top once it has scrolled. Goes before the scroll modifier, so it masks the moving content and not what's around it.
+ */
+internal fun Modifier.scrollFade(state: androidx.compose.foundation.ScrollState, edge: Dp = 28.dp): Modifier =
+    scrollFade({ state.value > 0 }, { state.value < state.maxValue }, edge)
+
+/** [scrollFade] for a lazy list. */
+internal fun Modifier.scrollFade(state: androidx.compose.foundation.lazy.LazyListState, edge: Dp = 28.dp): Modifier =
+    scrollFade({ state.canScrollBackward }, { state.canScrollForward }, edge)
+
+private fun Modifier.scrollFade(scrolled: () -> Boolean, more: () -> Boolean, edge: Dp): Modifier = this
+    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val fade = edge.toPx()
+        if (more()) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0f to Color.Black, 1f to Color.Transparent,
+                    startY = size.height - fade, endY = size.height
+                ),
+                topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - fade),
+                size = androidx.compose.ui.geometry.Size(size.width, fade),
+                blendMode = androidx.compose.ui.graphics.BlendMode.DstIn
+            )
+        }
+        if (scrolled()) {
+            drawRect(
+                brush = Brush.verticalGradient(0f to Color.Transparent, 1f to Color.Black, startY = 0f, endY = fade),
+                size = androidx.compose.ui.geometry.Size(size.width, fade),
+                blendMode = androidx.compose.ui.graphics.BlendMode.DstIn
+            )
+        }
+    }

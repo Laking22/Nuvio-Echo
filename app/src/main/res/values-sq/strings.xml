@@ -2759,4 +2759,9 @@
     <string name="stream_test_error_prefix">Gabim: %1$s</string>
     <string name="stream_test_video_bitrate">Bitrate mesatar i videos: %1$s</string>
     <string name="stream_test_error_connection">Lidhja dështoi. Lidhja e transmetimit të luajtur së fundi mund të ketë skaduar ose të jetë e paarritshme. Ju lutemi luajeni videon përsëri dhe provoni sërish.</string>
+    <string name="collections_editor_view_mode">Modaliteti i pamjes</string>
+    <string name="collections_editor_view_mode_tabs">Skedat</string>
+    <string name="collections_editor_view_mode_rows">Rreshtat</string>
+    <string name="collections_editor_show_all_tab">Shfaq skedën \"Të gjitha\"</string>
+    <string name="collections_editor_show_all_tab_desc">Kombino të gjithë katalogët në një skedë</string>
 </resources>

@@ -3206,4 +3206,9 @@
     <string name="autosync_toast_failed_no_reference">Sync failed: this video has no embedded subtitles to compare with.</string>
     <string name="autosync_toast_failed_unsupported">Sync failed: Auto Sync doesn\'t support this subtitle format.</string>
     <string name="autosync_label_synced">Auto synced</string>
+    <string name="collections_editor_view_mode">View Mode</string>
+    <string name="collections_editor_view_mode_tabs">Tabs</string>
+    <string name="collections_editor_view_mode_rows">Rows</string>
+    <string name="collections_editor_show_all_tab">Show \"All\" Tab</string>
+    <string name="collections_editor_show_all_tab_desc">Combine all catalogs into one tab</string>
 </resources>

@@ -3192,4 +3192,9 @@
     <string name="autosync_toast_failed_no_reference">Error de sincronización: este video no tiene subtítulos integrados para comparar.</string>
     <string name="autosync_toast_failed_unsupported">Error de sincronización: la sincronización automática no admite este formato de subtítulos.</string>
     <string name="autosync_label_synced">Sincronizado automáticamente</string>
-    </resources>
+        <string name="collections_editor_view_mode">Modo de vista</string>
+    <string name="collections_editor_view_mode_tabs">Pestañas</string>
+    <string name="collections_editor_view_mode_rows">Filas</string>
+    <string name="collections_editor_show_all_tab">Mostrar pestaña «Todos»</string>
+    <string name="collections_editor_show_all_tab_desc">Combina todos los catálogos en una sola pestaña</string>
+</resources>

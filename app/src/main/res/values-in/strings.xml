@@ -2326,4 +2326,9 @@
     <string name="trakt_comments_error_request_failed">Permintaan komentar Trakt gagal</string>
     <string name="trakt_library_error_fetch_list_items">Gagal mengambil item daftar</string>
 
+    <string name="collections_editor_view_mode">Mode Tampilan</string>
+    <string name="collections_editor_view_mode_tabs">Tab</string>
+    <string name="collections_editor_view_mode_rows">Baris</string>
+    <string name="collections_editor_show_all_tab">Tampilkan Tab \"Semua\"</string>
+    <string name="collections_editor_show_all_tab_desc">Gabungkan semua katalog menjadi satu tab</string>
 </resources>

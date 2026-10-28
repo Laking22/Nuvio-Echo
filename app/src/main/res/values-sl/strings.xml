@@ -2066,4 +2066,9 @@
     <string name="trakt_comments_error_request_failed">Zahteva za komentarje Trakt ni uspela</string>
     <string name="trakt_library_error_fetch_list_items">Pridobivanje elementov seznama ni uspelo</string>
 
+ <string name="collections_editor_view_mode">Način prikaza</string>
+ <string name="collections_editor_view_mode_tabs">Zavihki</string>
+ <string name="collections_editor_view_mode_rows">Vrstice</string>
+ <string name="collections_editor_show_all_tab">Prikaži zavihek \"Vse\"</string>
+ <string name="collections_editor_show_all_tab_desc">Združi vse kataloge v en zavihek</string>
 </resources>

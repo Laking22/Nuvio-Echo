@@ -2878,4 +2878,9 @@ Próbálj meg egy másik forrást. [%1$s]</string>
     <string name="stream_test_video_bitrate">Átlagos videó bitráta: %1$s</string>
     <string name="stream_test_error_connection">A kapcsolat nem jött létre. A legutóbb lejátszott stream link lejárhatott, vagy nem elérhető. Játszd le újra a videót, majd próbáld meg ismét.</string>
 
+    <string name="collections_editor_view_mode">Nézet mód</string>
+    <string name="collections_editor_view_mode_tabs">Fülek</string>
+    <string name="collections_editor_view_mode_rows">Sorok</string>
+    <string name="collections_editor_show_all_tab">"Összes" fül megjelenítése</string>
+    <string name="collections_editor_show_all_tab_desc">Összes katalógus egyesítése egyetlen fülön</string>
 </resources>

@@ -3208,4 +3208,9 @@
     <string name="autosync_toast_failed_no_reference">Eşitleme başarısız: Bu videoda karşılaştırılacak gömülü altyazı yok.</string>
     <string name="autosync_toast_failed_unsupported">Eşitleme başarısız: Otomatik Eşitleme bu altyazı formatını desteklemiyor.</string>
     <string name="autosync_label_synced">Otomatik eşitlendi</string>
+    <string name="collections_editor_view_mode">Görünüm Modu</string>
+    <string name="collections_editor_view_mode_tabs">Sekmeler</string>
+    <string name="collections_editor_view_mode_rows">Satırlar</string>
+    <string name="collections_editor_show_all_tab">\"Tümü\" Sekmesini Göster</string>
+    <string name="collections_editor_show_all_tab_desc">Tüm katalogları tek bir sekmede birleştir</string>
 </resources>

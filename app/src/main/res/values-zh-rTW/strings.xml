@@ -3087,4 +3087,9 @@
     <string name="stream_test_video_bitrate">平均影片位元率：%1$s</string>
     <string name="stream_test_error_connection">連線失敗。上次播放的串流連結可能已過期或無法存取。請重新播放影片並重試。</string>
 
+    <string name="collections_editor_view_mode">檢視模式</string>
+    <string name="collections_editor_view_mode_tabs">標籤</string>
+    <string name="collections_editor_view_mode_rows">列</string>
+    <string name="collections_editor_show_all_tab">顯示「全部」標籤</string>
+    <string name="collections_editor_show_all_tab_desc">將所有目錄合併為一個標籤</string>
 </resources>

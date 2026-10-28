@@ -3199,4 +3199,9 @@
     <string name="autosync_toast_failed_no_reference">Đồng bộ thất bại: video này không có phụ đề nhúng sẵn để so sánh.</string>
     <string name="autosync_toast_failed_unsupported">Đồng bộ thất bại: Tự động đồng bộ không hỗ trợ đồng bộ định dạng phụ đề này.</string>
     <string name="autosync_label_synced">Đã tự động đồng bộ</string>
+    <string name="collections_editor_view_mode">Chế độ hiển thị</string>
+    <string name="collections_editor_view_mode_tabs">Thẻ</string>
+    <string name="collections_editor_view_mode_rows">Hàng</string>
+    <string name="collections_editor_show_all_tab">Hiển thị thẻ \"Tất cả\"</string>
+    <string name="collections_editor_show_all_tab_desc">Gộp tất cả danh mục vào một thẻ</string>
 </resources>

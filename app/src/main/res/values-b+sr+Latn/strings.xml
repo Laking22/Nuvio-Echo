@@ -3025,4 +3025,9 @@
     <string name="stream_test_video_bitrate">Prosečni video bitrejt: %1$s</string>
     <string name="stream_test_error_connection">Povezivanje nije uspelo. Veza poslednje puštenog strima je možda istekla ili je nedostupna. Pustite video ponovo i pokušajte opet.</string>
 
+    <string name="collections_editor_view_mode">Režim prikaza</string>
+    <string name="collections_editor_view_mode_tabs">Kartice</string>
+    <string name="collections_editor_view_mode_rows">Redovi</string>
+    <string name="collections_editor_show_all_tab">Prikaži karticu „Sve“</string>
+    <string name="collections_editor_show_all_tab_desc">Kombinujte sve kataloge u jednu karticu</string>
 </resources>

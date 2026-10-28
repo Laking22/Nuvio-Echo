@@ -86,6 +86,7 @@ import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.newlook.glassSurface
 import com.nuvio.tv.ui.newlook.home.AmbientPageWash
 import com.nuvio.tv.ui.screens.browse.BrowsePill
+import com.nuvio.tv.ui.screens.browse.scrollFade
 import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.theme.ThemeColors
 import kotlinx.coroutines.launch
@@ -319,19 +320,21 @@ private fun Header(
         val capsule = RoundedCornerShape(20.dp)
         Row(
             modifier = Modifier
-                .glassSurface(capsule, glints = false)
+                .glassSurface(capsule, glints = false, shadow = false)
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             BrowsePill(
                 text = stringResource(R.string.calendar_view_list),
                 selected = view == CalendarView.LIST,
+                outlined = false,
                 modifier = Modifier.widthIn(min = 72.dp).focusRequester(listPillFocus),
                 onClick = { onSelect(CalendarView.LIST) }
             )
             BrowsePill(
                 text = stringResource(R.string.calendar_view_month),
                 selected = view == CalendarView.MONTH,
+                outlined = false,
                 modifier = Modifier.widthIn(min = 72.dp).focusRequester(monthPillFocus),
                 onClick = { onSelect(CalendarView.MONTH) }
             )
@@ -367,7 +370,7 @@ private fun CalendarList(
     val firstId = state.entries.first().show.id
     LazyColumn(
         state = listStateHolder,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().scrollFade(listStateHolder),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = PaddingValues(top = 2.dp, bottom = NuvioTheme.spacing.xxl, end = 4.dp)
     ) {
@@ -587,7 +590,11 @@ private fun MonthGrid(
         val shift = (first.dayOfWeek.value - firstDayOfWeek.value + 7) % 7
         first.minusDays(shift.toLong())
     }
-    val days = remember(gridStart) { List(42) { gridStart.plusDays(it.toLong()) } }
+    // Only the weeks the month reaches into: five for most months, six when it starts late in the week.
+    val weeks = remember(month, gridStart) {
+        ((java.time.temporal.ChronoUnit.DAYS.between(gridStart, month.atEndOfMonth()) / 7) + 1).toInt()
+    }
+    val days = remember(gridStart, weeks) { List(weeks * 7) { gridStart.plusDays(it.toLong()) } }
     // Focus lands on the day last looked at when it's on this page, else today, else the 1st.
     val anchor = focusedDay?.takeIf { YearMonth.from(it) == month }
         ?: state.today.takeIf { YearMonth.from(it) == month }
@@ -625,7 +632,7 @@ private fun MonthGrid(
         }
         Spacer(modifier = Modifier.height(6.dp))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (week in 0 until 6) {
+            for (week in 0 until weeks) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (d in 0 until 7) {
                         val day = days[week * 7 + d]
@@ -699,7 +706,7 @@ private fun DayCell(
     val art = entries.firstNotNullOfOrNull { it.show.backdrop ?: it.show.poster }
     Box(
         modifier = modifier
-            .height(58.dp)
+            .height(54.dp)
             .selectionSurface(
                 focused, shape,
                 when {

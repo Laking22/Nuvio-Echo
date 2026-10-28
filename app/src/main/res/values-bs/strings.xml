@@ -1410,4 +1410,9 @@
     <string name="collections_tab_all">Sve</string>
     <string name="collections_tab_combined">Kombinovano</string>
 
+    <string name="collections_editor_view_mode">Mod Prikaza</string>
+    <string name="collections_editor_view_mode_tabs">Tabovi</string>
+    <string name="collections_editor_view_mode_rows">Redovi</string>
+    <string name="collections_editor_show_all_tab">Prikaži tab "Sve"</string>
+    <string name="collections_editor_show_all_tab_desc">Kombinuj sve kataloge u jedan tab</string>
 </resources>

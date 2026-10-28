@@ -66,10 +66,11 @@ internal fun Modifier.detailGlassLens(shape: Shape, lifted: Boolean = true): Mod
 
 /**
  * The app's one selection look (hero buttons, the details page, Search, Genres, Calendar, Library): the glass lens
- * while focused, [idle] otherwise. Text on it stays white.
+ * while focused, [idle] otherwise. Text on it stays white. [lifted] off for rows in a list on glass, where the lens's
+ * shadow showed through it as a strip behind the text.
  */
-internal fun Modifier.selectionSurface(focused: Boolean, shape: Shape, idle: Color = Color.Transparent): Modifier =
-    if (focused) detailGlassLens(shape) else clip(shape).background(idle)
+internal fun Modifier.selectionSurface(focused: Boolean, shape: Shape, idle: Color = Color.Transparent, lifted: Boolean = true): Modifier =
+    if (focused) detailGlassLens(shape, lifted) else clip(shape).background(idle)
 
 /**
  * A larger glass sheet (the open synopsis, the episode hold menu): darker so text on it reads over any backdrop,

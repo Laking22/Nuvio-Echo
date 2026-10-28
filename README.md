@@ -11,7 +11,7 @@
     Bring your own addons. Nuvio Echo turns them into a library with artwork, trailers, ratings, subtitles, and your place saved.
   </p>
 
-  <a href="https://github.com/Laking22/Nuvio-Echo/releases/latest"><b>Download the latest release</b></a>
+  <a href="https://github.com/Laking22/Nuvio-Echo/releases/tag/beta"><b>Download the latest beta</b></a>
 
 </div>
 
@@ -19,9 +19,9 @@
 
 | Your device | File |
 | --- | --- |
-| Most Android TV and Google TV boxes (32-bit) | [NuvioEcho-armeabi-v7a.apk](https://github.com/Laking22/Nuvio-Echo/releases/latest/download/NuvioEcho-armeabi-v7a.apk) |
-| 64-bit devices (NVIDIA Shield, newer Google TV devices) | [NuvioEcho-arm64-v8a.apk](https://github.com/Laking22/Nuvio-Echo/releases/latest/download/NuvioEcho-arm64-v8a.apk) |
-| Not sure | [NuvioEcho-universal.apk](https://github.com/Laking22/Nuvio-Echo/releases/latest/download/NuvioEcho-universal.apk) (works on any device, bigger download) |
+| Most Android TV and Google TV boxes (32-bit) | [NuvioEcho-armeabi-v7a.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/beta/NuvioEcho-armeabi-v7a.apk) |
+| 64-bit devices (NVIDIA Shield, newer Google TV devices) | [NuvioEcho-arm64-v8a.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/beta/NuvioEcho-arm64-v8a.apk) |
+| Not sure | [NuvioEcho-universal.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/beta/NuvioEcho-universal.apk) (works on any device, bigger download) |
 
 To install, open the APK on your TV with a file manager or the Downloader app and allow installs from that app when asked. A newer APK installs over the old one and keeps your settings.
 
@@ -71,7 +71,7 @@ Any catalog or built-in row can be made a Grand row: hero-sized cards with the t
 The Library is now Bins: your own collections of titles, shown as fanned posters over a blurred mix of their artwork. Make as many as you like, star your favourites, reorder them, and add titles from a title's page or by holding OK on a poster on Home. A Cloud tab lists the files in your debrid services, ready to play.
 
 ### Collections, Calendar and the pause screen
-Opening a collection folder shows it as a small Home: a hero of its titles, then a row per source with the same cards that open out to the backdrop and logo when you rest on them. The Calendar was redesigned to match the app: the focused show in a spotlight on the left, the page tinted with its colours, date tiles beside each show, and artwork in the month grid. When a video has been paused for a while, a quiet overlay shows the title, the episode, the synopsis and how much is left.
+A collection folder opens as rows or as tabs, whichever the collection is set to. Rows make it a small Home: a hero of its titles, then a row per source with the same cards that open out to the backdrop and logo when you rest on them. Tabs put each source (and an optional "All") in a tab over a poster grid, with the focused title's details beside it. The Calendar was redesigned to match the app: the focused show in a spotlight on the left, the page tinted with its colours, date tiles beside each show, and artwork in the month grid. When a video has been paused for a while, a quiet overlay shows the title, the episode, the synopsis and how much is left.
 
 Settings that take some explaining have a small **i** button beside them that explains how they work (pre-fetching, seek preview quality, hot swap and others).
 
@@ -91,7 +91,7 @@ These were removed in the redesign and no longer work:
 - **The old focus and trailer options:** expand-on-focus and its delay, where trailers play, and the "Trailer" chips. Focused cards now always open out, and trailers play inside them and on the hero, with a single Trailer sound setting.
 - **Blurring the next episode in Continue Watching,** and **choosing which player buttons sit on the main row.**
 - **Automatic subtitle sync,** which was tried and taken out.
-- **Collection view modes** (tabbed grid, rows, follow layout) and the "All" tab: every folder opens as a small Home now.
+- **The "follow Home's layout" collection mode,** now the same as Rows.
 - **In-app updates.** Echo doesn't update itself; new versions are on the releases page.
 
 ## Build from source

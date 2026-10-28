@@ -3085,4 +3085,9 @@
   <string name="shuffle_artwork_hidden">Η εικόνα αποκρύπτεται για αποφυγή spoilers</string>
   <string name="shuffle_stop">Διακοπή ανακατέματος</string>
   <string name="shuffle_change_selection">Επιλογή επεισοδίων</string>
+  <string name="collections_editor_view_mode">Τρόπος προβολής</string>
+  <string name="collections_editor_view_mode_tabs">Καρτέλες</string>
+  <string name="collections_editor_view_mode_rows">Γραμμές</string>
+  <string name="collections_editor_show_all_tab">Εμφάνιση καρτέλας «Όλα»</string>
+  <string name="collections_editor_show_all_tab_desc">Συνδυάστε όλους τους καταλόγους σε μία καρτέλα</string>
 </resources>

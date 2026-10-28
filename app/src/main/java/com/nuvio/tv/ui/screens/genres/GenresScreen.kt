@@ -65,6 +65,7 @@ import com.nuvio.tv.ui.screens.browse.BrowseListRow
 import com.nuvio.tv.ui.screens.browse.BrowsePill
 import com.nuvio.tv.ui.screens.browse.BrowsePosterGrid
 import com.nuvio.tv.ui.screens.browse.browseSortLabel
+import com.nuvio.tv.ui.screens.browse.scrollFade
 import com.nuvio.tv.ui.newlook.glassSurface
 import com.nuvio.tv.ui.newlook.home.AmbientPageWash
 import com.nuvio.tv.ui.theme.NuvioTheme
@@ -246,8 +247,9 @@ fun GenresScreen(
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(bottom = NuvioTheme.spacing.lg)
-                    .glassSurface(ListPanelShape, glints = false)
+                    .glassSurface(ListPanelShape, glints = false, shadow = false)
                     .padding(6.dp)
+                    .scrollFade(genreScroll)
                     .verticalScroll(genreScroll),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
@@ -295,7 +297,7 @@ fun GenresScreen(
             Row(
                 modifier = Modifier
                     .padding(top = TopInset - 2.dp, bottom = 10.dp)
-                    .glassSurface(RoundedCornerShape(18.dp), glints = false)
+                    .glassSurface(RoundedCornerShape(18.dp), glints = false, shadow = false)
                     .padding(3.dp),
                 horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
@@ -310,6 +312,7 @@ fun GenresScreen(
                     BrowsePill(
                         text = stringResource(label),
                         selected = state.mode == mode,
+                        outlined = false,
                         modifier = Modifier
                             .focusProperties { canFocus = zone != GenresZone.GRID }
                             .onPreviewKeyEvent { event ->
@@ -341,8 +344,9 @@ fun GenresScreen(
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(bottom = NuvioTheme.spacing.lg)
-                    .glassSurface(ListPanelShape, glints = false)
+                    .glassSurface(ListPanelShape, glints = false, shadow = false)
                     .padding(6.dp)
+                    .scrollFade(entryScroll)
                     .verticalScroll(entryScroll),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {

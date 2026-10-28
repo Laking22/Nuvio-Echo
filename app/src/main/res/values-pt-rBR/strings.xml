@@ -3024,4 +3024,9 @@
     <string name="stream_test_error_prefix">Erro: %1$s</string>
     <string name="stream_test_video_bitrate">Taxa média de bits do vídeo: %1$s</string>
     <string name="stream_test_error_connection">Falha na conexão. O link do último stream reproduzido pode ter expirado ou estar inacessível. Por favor, reproduza o vídeo novamente e tente de novo.</string>
+    <string name="collections_editor_view_mode">Modo de visualização</string>
+    <string name="collections_editor_view_mode_tabs">Abas</string>
+    <string name="collections_editor_view_mode_rows">Linhas</string>
+    <string name="collections_editor_show_all_tab">Mostrar aba "Todos"</string>
+    <string name="collections_editor_show_all_tab_desc">Combinar todos os catálogos em uma aba</string>
 </resources>

@@ -2714,4 +2714,9 @@
     <string name="stream_test_video_bitrate">Průměrný datový tok videa: %1$s</string>
     <string name="stream_test_error_connection">Připojení selhalo. Platnost posledního přehraného odkazu na stream mohla vypršet, nebo je nedostupný. Přehrajte prosím video znovu a zkuste to opět.</string>
 
+    <string name="collections_editor_view_mode">Režim zobrazení</string>
+    <string name="collections_editor_view_mode_tabs">Karty</string>
+    <string name="collections_editor_view_mode_rows">Řádky</string>
+    <string name="collections_editor_show_all_tab">Zobrazit kartu \"Vše\"</string>
+    <string name="collections_editor_show_all_tab_desc">Sloučit všechny katalogy do jedné karty</string>
 </resources>

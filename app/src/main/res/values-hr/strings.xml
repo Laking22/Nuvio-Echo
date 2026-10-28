@@ -3149,4 +3149,9 @@
     <string name="shuffle_artwork_hidden">Grafika skrivena kako bi se izbjegli spojleri</string>
     <string name="shuffle_stop">Zaustavi nasumično</string>
     <string name="shuffle_change_selection">Odaberi epizode</string>
+    <string name="collections_editor_view_mode">Način prikaza</string>
+    <string name="collections_editor_view_mode_tabs">Kartice</string>
+    <string name="collections_editor_view_mode_rows">Redovi</string>
+    <string name="collections_editor_show_all_tab">Prikaži karticu \"Sve\"</string>
+    <string name="collections_editor_show_all_tab_desc">Spoji sve kataloge u jednu karticu</string>
 </resources>

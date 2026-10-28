@@ -2971,4 +2971,9 @@
     <string name="stream_test_video_bitrate">Средний битрейт видео: %1$s</string>
     <string name="stream_test_error_connection">Ошибка соединения. Возможно, ссылка на последний воспроизведённый поток устарела или недоступна. Воспроизведите видео заново и повторите попытку.</string>
 
+    <string name="collections_editor_view_mode">Режим просмотра</string>
+    <string name="collections_editor_view_mode_tabs">Вкладки</string>
+    <string name="collections_editor_view_mode_rows">Строки</string>
+    <string name="collections_editor_show_all_tab">Показывать вкладку \"Все\"</string>
+    <string name="collections_editor_show_all_tab_desc">Объединить все каталоги в одну вкладку</string>
 </resources>
