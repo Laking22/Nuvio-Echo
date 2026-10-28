@@ -107,3 +107,7 @@ The APKs land in `app/build/outputs/apk/full/beta/`. Nuvio Echo is built with Ko
 ## License
 
 Nuvio Echo is free software under the [GNU General Public License v3.0](./LICENSE). It is a modified version of NuvioTV, also licensed under the GPL-3.0, and keeps that project's copyright notices as the license requires.
+
+## AI disclosure
+
+AI was used heavily in the development of this fork.
