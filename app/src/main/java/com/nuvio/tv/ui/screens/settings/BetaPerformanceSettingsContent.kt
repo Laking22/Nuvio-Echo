@@ -286,10 +286,10 @@ internal fun HomeMotionRows(viewModel: BetaPerformanceSettingsViewModel = hiltVi
         subtitle = stringResource(R.string.beta_poster_delay_subtitle),
         values = BetaPerformanceSettings.POSTER_OPEN_DELAYS,
         selected = settings.posterOpenDelayMs,
-        valueText = if (settings.posterOpenDelayMs == 0) {
-            stringResource(R.string.beta_poster_delay_none)
-        } else {
-            stringResource(R.string.beta_poster_delay_value, settings.posterOpenDelayMs / 1000f)
+        valueText = when {
+            settings.posterOpenDelayMs < 0 -> stringResource(R.string.beta_poster_delay_off)
+            settings.posterOpenDelayMs == 0 -> stringResource(R.string.beta_poster_delay_instant)
+            else -> stringResource(R.string.beta_poster_delay_value, settings.posterOpenDelayMs / 1000f)
         },
         onValueChange = viewModel::setPosterOpenDelay
     )

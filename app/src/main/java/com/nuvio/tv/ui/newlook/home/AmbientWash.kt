@@ -12,6 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -65,10 +67,16 @@ internal fun AmbientPageWash(url: String?, modifier: Modifier = Modifier) {
     val fade = remember { Animatable(1f) }
     // The menu's frosted glass takes its colours from what's on screen; leaving, this wash is no longer there.
     androidx.compose.runtime.DisposableEffect(Unit) {
-        shown?.let { com.nuvio.tv.ui.newlook.AmbientWashState.image = it }
+        com.nuvio.tv.ui.newlook.AmbientWashState.staticHomePaletteActive = false
+        com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = emptyList()
+        shown?.let {
+            com.nuvio.tv.ui.newlook.AmbientWashState.image = it
+            com.nuvio.tv.ui.newlook.AmbientWashState.lastImage = it
+        }
         onDispose { if (com.nuvio.tv.ui.newlook.AmbientWashState.image === shown) com.nuvio.tv.ui.newlook.AmbientWashState.image = null }
     }
     LaunchedEffect(url) {
+        com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = emptyList()
         if (url.isNullOrBlank()) return@LaunchedEffect
         val next = synchronized(washCache) { washCache[url] } ?: withContext(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)
@@ -83,6 +91,7 @@ internal fun AmbientPageWash(url: String?, modifier: Modifier = Modifier) {
         previous = shown
         shown = next
         com.nuvio.tv.ui.newlook.AmbientWashState.image = next
+        com.nuvio.tv.ui.newlook.AmbientWashState.lastImage = next
         if (com.nuvio.tv.ui.newlook.AmbientWashState.lastUrl != url) {
             com.nuvio.tv.ui.newlook.AmbientWashState.lastUrl = url
             context.getSharedPreferences(AMBIENT_PREFS, android.content.Context.MODE_PRIVATE).edit()
@@ -103,6 +112,42 @@ internal fun AmbientPageWash(url: String?, modifier: Modifier = Modifier) {
             shown?.let {
                 drawImage(it, IntOffset.Zero, IntSize(it.width, it.height), IntOffset.Zero, dst, alpha = alpha, filterQuality = FilterQuality.Low)
             }
+        }
+    )
+}
+
+/** Home's saved static theme: a lightweight gradient made from the sampled artwork palette. */
+@Composable
+internal fun StaticHomePaletteWash(palette: List<Int>, modifier: Modifier = Modifier) {
+    val colors = remember(palette) {
+        palette.take(3).map { Color(0xFF000000L or it.toLong()) }
+            .ifEmpty { listOf(Color(0xFF33343A), Color(0xFF25262B), Color(0xFF17181C)) }
+    }
+    androidx.compose.runtime.DisposableEffect(colors) {
+        com.nuvio.tv.ui.newlook.AmbientWashState.staticHomePaletteActive = true
+        com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = palette.take(3)
+        com.nuvio.tv.ui.newlook.AmbientWashState.image = null
+        onDispose {
+            com.nuvio.tv.ui.newlook.AmbientWashState.staticHomePaletteActive = false
+            com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = emptyList()
+        }
+    }
+    Box(
+        modifier = modifier.drawBehind {
+            drawRect(
+                brush = Brush.linearGradient(
+                    colors = colors,
+                    start = androidx.compose.ui.geometry.Offset.Zero,
+                    end = androidx.compose.ui.geometry.Offset(size.width, size.height * 0.55f)
+                )
+            )
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0f to Color.Black.copy(alpha = 0.12f),
+                    0.42f to Color.Black.copy(alpha = 0.32f),
+                    1f to Color.Black.copy(alpha = 0.82f)
+                )
+            )
         }
     )
 }

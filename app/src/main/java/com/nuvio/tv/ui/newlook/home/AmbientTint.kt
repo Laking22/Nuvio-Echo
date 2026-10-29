@@ -1,6 +1,7 @@
 package com.nuvio.tv.ui.newlook.home
 
 import android.graphics.Bitmap
+import android.content.Context
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,19 @@ import kotlin.math.max
 
 /** The tint's strength. */
 private const val TINT_STRENGTH = 0.51f
+
+/** Samples the three horizontal colour bands of artwork for a saved, network-independent Home palette. */
+internal suspend fun sampleArtworkPalette(context: Context, url: String): List<Int>? = withContext(Dispatchers.IO) {
+    if (url.isBlank()) return@withContext null
+    val request = ImageRequest.Builder(context)
+        .data(url)
+        .allowHardware(false)
+        .size(coil3.size.Size(48, 27))
+        .build()
+    val bitmap = ((context.imageLoader.execute(request) as? SuccessResult)?.image as? BitmapImage)?.bitmap
+        ?: return@withContext null
+    samplePalette(bitmap)
+}
 
 private val tintCache = object : LinkedHashMap<String, Color>(64, 0.75f, true) {
     override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Color>?) = size > 120
@@ -93,6 +107,39 @@ private fun sampleTint(bitmap: Bitmap): Color? {
     out[1] = (out[1] * 1.6f).coerceAtMost(0.85f)
     out[2] = out[2].coerceIn(0.45f, 0.9f)
     return Color(android.graphics.Color.HSVToColor(out))
+}
+
+private fun samplePalette(bitmap: Bitmap): List<Int>? {
+    if (bitmap.width <= 0 || bitmap.height <= 0) return null
+    val hsv = FloatArray(3)
+    return (0..2).map { band ->
+        val startX = band * bitmap.width / 3
+        val endX = (band + 1) * bitmap.width / 3
+        var red = 0f
+        var green = 0f
+        var blue = 0f
+        var total = 0f
+        val step = max(1, bitmap.width / 24)
+        for (y in 0 until bitmap.height step max(1, bitmap.height / 12)) {
+            for (x in startX until endX step step) {
+                val pixel = bitmap.getPixel(x, y)
+                android.graphics.Color.colorToHSV(pixel, hsv)
+                val weight = 0.15f + hsv[1] * hsv[2] * 2f
+                red += android.graphics.Color.red(pixel) * weight
+                green += android.graphics.Color.green(pixel) * weight
+                blue += android.graphics.Color.blue(pixel) * weight
+                total += weight
+            }
+        }
+        if (total <= 0f) return@map null
+        android.graphics.Color.colorToHSV(
+            android.graphics.Color.rgb((red / total).toInt(), (green / total).toInt(), (blue / total).toInt()),
+            hsv
+        )
+        hsv[1] = (hsv[1] * 1.55f).coerceAtMost(0.9f)
+        hsv[2] = hsv[2].coerceIn(0.38f, 0.78f)
+        android.graphics.Color.HSVToColor(hsv) and 0xFFFFFF
+    }.takeIf { colors -> colors.size == 3 && colors.none { it == null } }?.filterNotNull()
 }
 
 /**

@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -21,6 +26,14 @@ internal fun ProfileSettingsContent(
     onManageProfiles: () -> Unit,
     initialFocusRequester: FocusRequester? = null
 ) {
+    var showingAvatars by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = showingAvatars) { showingAvatars = false }
+
+    if (showingAvatars) {
+        AvatarSettingsContent(onBack = { showingAvatars = false })
+        return
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md)
@@ -31,14 +44,19 @@ internal fun ProfileSettingsContent(
         )
         SettingsGroupCard(modifier = Modifier.fillMaxWidth()) {
             SettingsActionRow(
-                title = stringResource(R.string.profile_manage_button),
-                subtitle = null,
-                onClick = onManageProfiles,
+                title = stringResource(R.string.profile_avatars),
+                subtitle = stringResource(R.string.profile_avatars_subtitle),
+                onClick = { showingAvatars = true },
                 modifier = if (initialFocusRequester != null) {
                     Modifier.focusRequester(initialFocusRequester)
                 } else {
                     Modifier
                 }
+            )
+            SettingsActionRow(
+                title = stringResource(R.string.profile_manage_button),
+                subtitle = null,
+                onClick = onManageProfiles,
             )
         }
     }

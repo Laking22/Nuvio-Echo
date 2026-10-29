@@ -4,7 +4,8 @@
     <string name="beta_settings_group_new_look">New look</string>
     <string name="beta_poster_delay_title">Poster expand delay</string>
     <string name="beta_poster_delay_subtitle">Wait before a poster opens.</string>
-    <string name="beta_poster_delay_none">No delay</string>
+    <string name="beta_poster_delay_off">Off</string>
+    <string name="beta_poster_delay_instant">Instant</string>
     <string name="beta_poster_delay_value">%.2g s</string>
     <string name="beta_hide_menu_title">Hide menu until selected</string>
     <string name="beta_hide_menu_subtitle">Side bar stays hidden until selected.</string>

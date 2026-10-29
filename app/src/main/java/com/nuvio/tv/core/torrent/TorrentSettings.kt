@@ -1,24 +1,18 @@
 package com.nuvio.tv.core.torrent
 
-import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.nuvio.tv.core.profile.ProfileManager
+import com.nuvio.tv.data.local.ProfileDataStoreFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import javax.inject.Singleton
-
-private val Context.torrentDataStore by preferencesDataStore(
-    name = "torrent_settings",
-    corruptionHandler = androidx.datastore.core.handlers.ReplaceFileCorruptionHandler { androidx.datastore.preferences.core.emptyPreferences() }
-)
 
 enum class TorrentProfile {
     SOFT,
@@ -42,10 +36,14 @@ data class TorrentSettingsData(
 )
 
 @Singleton
-class TorrentSettings @Inject constructor(
-    @ApplicationContext private val context: Context
+class TorrentSettings constructor(
+    private val factory: ProfileDataStoreFactory,
+    private val profileManager: ProfileManager
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private fun store(profileId: Int = profileManager.activeProfileId.value) =
+        factory.get(profileId, FEATURE)
 
     private object Keys {
         val P2P_ENABLED = booleanPreferencesKey("p2p_enabled")
@@ -55,47 +53,53 @@ class TorrentSettings @Inject constructor(
         val CACHE_SIZE = stringPreferencesKey("cache_size")
     }
 
-    val settings: Flow<TorrentSettingsData> = context.torrentDataStore.data.map { prefs ->
-        TorrentSettingsData(
-            p2pEnabled = prefs[Keys.P2P_ENABLED] ?: false,
-            enableUpload = prefs[Keys.ENABLE_UPLOAD] ?: true,
-            hideTorrentStats = prefs[Keys.HIDE_TORRENT_STATS] ?: true,
-            torrentProfile = prefs[Keys.TORRENT_PROFILE]
-                ?.let { stored -> TorrentProfile.entries.firstOrNull { it.name == stored } }
-                ?: TorrentProfile.BALANCED,
-            cacheSize = prefs[Keys.CACHE_SIZE]
-                ?.let { stored -> TorrentCacheSize.entries.firstOrNull { it.name == stored } }
-                ?: TorrentCacheSize.GB_2
-        )
+    val settings: Flow<TorrentSettingsData> = profileManager.activeProfileId.flatMapLatest { profileId ->
+        store(profileId).data.map { prefs ->
+            TorrentSettingsData(
+                p2pEnabled = prefs[Keys.P2P_ENABLED] ?: false,
+                enableUpload = prefs[Keys.ENABLE_UPLOAD] ?: true,
+                hideTorrentStats = prefs[Keys.HIDE_TORRENT_STATS] ?: true,
+                torrentProfile = prefs[Keys.TORRENT_PROFILE]
+                    ?.let { stored -> TorrentProfile.entries.firstOrNull { it.name == stored } }
+                    ?: TorrentProfile.BALANCED,
+                cacheSize = prefs[Keys.CACHE_SIZE]
+                    ?.let { stored -> TorrentCacheSize.entries.firstOrNull { it.name == stored } }
+                    ?: TorrentCacheSize.GB_2
+            )
+        }
     }
 
     fun setP2pEnabled(enabled: Boolean) {
         scope.launch {
-            context.torrentDataStore.edit { it[Keys.P2P_ENABLED] = enabled }
+            store().edit { it[Keys.P2P_ENABLED] = enabled }
         }
     }
 
     fun setEnableUpload(enabled: Boolean) {
         scope.launch {
-            context.torrentDataStore.edit { it[Keys.ENABLE_UPLOAD] = enabled }
+            store().edit { it[Keys.ENABLE_UPLOAD] = enabled }
         }
     }
 
     fun setHideTorrentStats(enabled: Boolean) {
         scope.launch {
-            context.torrentDataStore.edit { it[Keys.HIDE_TORRENT_STATS] = enabled }
+            store().edit { it[Keys.HIDE_TORRENT_STATS] = enabled }
         }
     }
 
     fun setTorrentProfile(profile: TorrentProfile) {
         scope.launch {
-            context.torrentDataStore.edit { it[Keys.TORRENT_PROFILE] = profile.name }
+            store().edit { it[Keys.TORRENT_PROFILE] = profile.name }
         }
     }
 
     fun setCacheSize(size: TorrentCacheSize) {
         scope.launch {
-            context.torrentDataStore.edit { it[Keys.CACHE_SIZE] = size.name }
+            store().edit { it[Keys.CACHE_SIZE] = size.name }
         }
+    }
+
+    private companion object {
+        const val FEATURE = "torrent_settings"
     }
 }

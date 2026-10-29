@@ -479,6 +479,15 @@ private fun MembershipPanelBack(
                     .clip(RoundedCornerShape(NuvioTheme.spacing.xl))
             )
         }
+        if (!manageMembership) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = stringResource(R.string.supporter_membership_upstream_notice),
+                style = MaterialTheme.typography.bodySmall,
+                color = MembershipTertiaryText,
+                textAlign = TextAlign.Center
+            )
+        }
         Spacer(modifier = Modifier.height(18.dp))
         Button(
             onClick = onHideQr,

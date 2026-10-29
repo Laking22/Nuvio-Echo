@@ -202,7 +202,10 @@ class ProfileSettingsSyncService @Inject constructor(
         "trakt_settings",
         "debrid_settings",
         "animeskip_settings",
-        "track_preference"
+        "track_preference",
+        "beta_performance_settings",
+        "torrent_settings",
+        "general_settings"
     )
 
     init {

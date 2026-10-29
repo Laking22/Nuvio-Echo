@@ -1,8 +1,10 @@
 package com.nuvio.tv.core.di
 
 import android.content.Context
+import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.torrent.TorrentService
 import com.nuvio.tv.core.torrent.TorrentSettings
+import com.nuvio.tv.data.local.ProfileDataStoreFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,8 +19,9 @@ object TorrentModule {
     @Provides
     @Singleton
     fun provideTorrentSettings(
-        @ApplicationContext context: Context
-    ): TorrentSettings = TorrentSettings(context)
+        factory: ProfileDataStoreFactory,
+        profileManager: ProfileManager
+    ): TorrentSettings = TorrentSettings(factory, profileManager)
 
     @Provides
     @Singleton

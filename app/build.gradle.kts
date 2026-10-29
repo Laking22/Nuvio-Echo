@@ -106,8 +106,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1067
-        versionName = "1.1.0-beta.4"
+        versionCode = 1068
+        versionName = "1.1.0-beta.5"
 
         buildConfigField("String", "PARENTAL_GUIDE_API_URL", "\"${localProperties.getProperty("PARENTAL_GUIDE_API_URL", "")}\"")
         buildConfigField("String", "INTRODB_API_URL", "\"${localProperties.getProperty("INTRODB_API_URL", "").ifBlank { "https://api.introdb.app/" }}\"")
@@ -272,7 +272,9 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             isDebuggable = false
             buildConfigField("String", "SENTRY_ENVIRONMENT", buildConfigString("beta"))
-            buildConfigField("boolean", "IN_APP_UPDATES_ALLOWED", "false")
+            buildConfigField("boolean", "IN_APP_UPDATES_ALLOWED", "true")
+            buildConfigField("String", "GITHUB_OWNER", buildConfigString("Laking22"))
+            buildConfigField("String", "GITHUB_REPO", buildConfigString("Nuvio-Echo"))
             matchingFallbacks += "release"
         }
         create("benchmark") {

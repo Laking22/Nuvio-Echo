@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -197,9 +199,36 @@ fun LibraryScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(NuvioTheme.colors.Background)
             .onGloballyPositioned { rootOffset = it.positionInRoot() }
     ) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRect(
+                Brush.linearGradient(
+                    colors = listOf(Color(0xFF403A40), Color(0xFF29272D), Color(0xFF343137)),
+                    start = Offset.Zero,
+                    end = Offset(size.width, size.height)
+                )
+            )
+            val radius = size.maxDimension * 0.78f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x668F858E), Color(0x228F858E), Color.Transparent),
+                    center = Offset(size.width * 0.78f, size.height * 0.12f),
+                    radius = radius
+                ),
+                radius = radius,
+                center = Offset(size.width * 0.78f, size.height * 0.12f)
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x444C5A61), Color(0x224C5A61), Color.Transparent),
+                    center = Offset(size.width * 0.18f, size.height * 0.88f),
+                    radius = radius * 0.82f
+                ),
+                radius = radius * 0.82f,
+                center = Offset(size.width * 0.18f, size.height * 0.88f)
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()

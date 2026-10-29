@@ -3,6 +3,7 @@
 package com.nuvio.tv.ui.screens.settings
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import com.nuvio.tv.ui.theme.NuvioTheme
 
 import android.app.Activity
@@ -32,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -71,6 +73,8 @@ import com.nuvio.tv.domain.model.SettingsUiStyle
 import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.screens.detail.requestFocusAfterFrames
 import com.nuvio.tv.ui.theme.ThemeColors
+import com.nuvio.tv.ui.newlook.home.rememberArtworkTint
+import com.nuvio.tv.data.local.SavedHomeColorTheme
 import com.nuvio.tv.ui.theme.accentBrush
 import com.nuvio.tv.ui.theme.getFontFamily
 import kotlinx.coroutines.delay
@@ -160,15 +164,22 @@ fun ThemeSettingsContent(
     }
 
     val themeScrollState = rememberScrollState()
-    val themeRowState = rememberLazyListState()
-    var initialTheme by remember { mutableStateOf<AppTheme?>(null) }
-    LaunchedEffect(uiState.themesLoaded) {
-        if (!uiState.themesLoaded || initialTheme != null) return@LaunchedEffect
-        initialTheme = uiState.selectedTheme
-        val selectedIndex = uiState.availableThemes.indexOf(initialTheme)
-        if (selectedIndex < 0) return@LaunchedEffect
-        themeRowState.scrollToItem(selectedIndex)
-        initialFocusRequester?.requestFocusAfterFrames()
+    val homeThemeRowState = rememberLazyListState()
+    var initialHomeThemeFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.themesLoaded, uiState.homeColorThemeSettings.savedThemes, uiState.homeColorThemeSettings.selectedStaticThemeId, uiState.homeColorThemeSettings.dynamic) {
+        if (!uiState.themesLoaded) return@LaunchedEffect
+        val homeThemeSettings = uiState.homeColorThemeSettings
+        val selectedIndex = if (homeThemeSettings.dynamic) 0 else {
+            homeThemeSettings.savedThemes.indexOfFirst { it.id == homeThemeSettings.selectedStaticThemeId }
+                .let { if (it < 0) 0 else it + 1 }
+        }
+        if (homeThemeRowState.layoutInfo.totalItemsCount > 0) {
+            homeThemeRowState.scrollToItem(selectedIndex.coerceAtMost(homeThemeRowState.layoutInfo.totalItemsCount - 1))
+        }
+        if (!initialHomeThemeFocused) {
+            initialHomeThemeFocused = true
+            initialFocusRequester?.requestFocusAfterFrames()
+        }
     }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -189,51 +200,47 @@ fun ThemeSettingsContent(
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     LazyRow(
-                        state = themeRowState,
+                        state = homeThemeRowState,
                         modifier = Modifier
                             .fillMaxWidth()
                             .settingsOptionRow(firstThemeFocusRequester),
                         contentPadding = PaddingValues(horizontal = NuvioTheme.spacing.xs, vertical = NuvioTheme.spacing.xs),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        itemsIndexed(
-                            items = uiState.availableThemes,
-                            key = { _, theme -> theme.name }
-                        ) { themeIndex, theme ->
-                            ThemeSwatchChip(
-                                theme = theme,
-                                customColors = uiState.customThemeColors,
-                                isSelected = theme == uiState.selectedTheme,
-                                onClick = {
-                                    if (theme == AppTheme.CUSTOM) {
-                                        restoreCustomThemeFocus = true
-                                        showCustomThemeDialog = true
-                                    } else {
-                                        viewModel.onEvent(ThemeSettingsEvent.SelectTheme(theme))
-                                    }
-                                },
+                        item(key = "home-theme-dynamic") {
+                            HomeThemeChip(
+                                title = stringResource(R.string.home_theme_dynamic),
+                                imageUrl = null,
+                                isDynamic = true,
+                                isSelected = uiState.homeColorThemeSettings.dynamic,
+                                onClick = { viewModel.onEvent(ThemeSettingsEvent.SelectDynamicHomeTheme) },
+                                modifier = Modifier
+                                    .focusRequester(firstThemeFocusRequester)
+                                    .then(
+                                        if (uiState.homeColorThemeSettings.dynamic && initialFocusRequester != null) {
+                                            Modifier.focusRequester(initialFocusRequester)
+                                        } else Modifier
+                                    )
+                            )
+                        }
+                        items(uiState.homeColorThemeSettings.savedThemes, key = SavedHomeColorTheme::id) { theme ->
+                            HomeThemeChip(
+                                title = theme.title,
+                                imageUrl = theme.backdropUrl,
+                                palette = theme.palette,
+                                isDynamic = false,
+                                isSelected = !uiState.homeColorThemeSettings.dynamic &&
+                                    theme.id == uiState.homeColorThemeSettings.selectedStaticThemeId,
+                                onClick = { viewModel.onEvent(ThemeSettingsEvent.SelectStaticHomeTheme(theme.id)) },
                                 modifier = if (
-                                    uiState.themesLoaded &&
-                                    theme == initialTheme &&
+                                    !uiState.homeColorThemeSettings.dynamic &&
+                                    theme.id == uiState.homeColorThemeSettings.selectedStaticThemeId &&
                                     initialFocusRequester != null
-                                ) {
-                                    Modifier.focusRequester(initialFocusRequester)
-                                } else {
-                                    Modifier
-                                }.then(
-                                    if (themeIndex == 0) {
-                                        Modifier.focusRequester(firstThemeFocusRequester)
-                                    } else {
-                                        Modifier
-                                    }
-                                ).then(
-                                    if (theme == AppTheme.CUSTOM) Modifier.focusRequester(customThemeFocusRequester)
-                                    else Modifier
-                                )
+                                ) Modifier.focusRequester(initialFocusRequester) else Modifier
                             )
                         }
                     }
-                    SettingsHorizontalScrollIndicators(state = themeRowState)
+                    SettingsHorizontalScrollIndicators(state = homeThemeRowState)
                 }
                 SettingsToggleRow(
                     title = stringResource(R.string.appearance_amoled_mode),
@@ -479,6 +486,81 @@ private fun ThemeSwatchChip(
                 style = MaterialTheme.typography.labelMedium,
                 color = if (isFocused || isSelected) NuvioTheme.colors.TextPrimary else NuvioTheme.colors.TextSecondary,
                 maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeThemeChip(
+    title: String,
+    imageUrl: String?,
+    palette: List<Int> = emptyList(),
+    isDynamic: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var focused by remember { mutableStateOf(false) }
+    val sample = rememberArtworkTint(imageUrl)
+    val shape = RoundedCornerShape(18.dp)
+    val swatchBrush = if (isDynamic) {
+        Brush.linearGradient(
+            listOf(Color(0xFF267FB5), Color(0xFF9A6476), Color(0xFFB07A41))
+        )
+    } else {
+        val colors = palette.take(3).map { Color(0xFF000000L or it.toLong()) }
+        if (colors.size >= 3) {
+            Brush.linearGradient(colors)
+        } else {
+            val color = sample ?: Color(0xFF50535A)
+            Brush.linearGradient(listOf(color.copy(alpha = 0.78f), color, Color.Black.copy(alpha = 0.45f)))
+        }
+    }
+
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .width(116.dp)
+            .onFocusChanged { focused = it.isFocused }
+            .settingsFocusGlass(focused, shape),
+        colors = CardDefaults.colors(
+            containerColor = SettingsGlassFill,
+            focusedContainerColor = Color.Transparent
+        ),
+        border = CardDefaults.border(border = Border.None, focusedBorder = Border.None),
+        shape = CardDefaults.shape(shape),
+        scale = CardDefaults.scale(focusedScale = 1f, pressedScale = 1f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = NuvioTheme.spacing.sm, vertical = NuvioTheme.spacing.md),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(swatchBrush),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = stringResource(R.string.cd_selected),
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (focused || isSelected) NuvioTheme.colors.TextPrimary else NuvioTheme.colors.TextSecondary,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
         }
     }

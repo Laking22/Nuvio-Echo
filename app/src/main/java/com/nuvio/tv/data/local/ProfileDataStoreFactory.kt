@@ -69,7 +69,6 @@ class ProfileDataStoreFactory @Inject constructor(
         "profile_lock_state",
         "profile_settings",
         "sentry_settings",
-        "torrent_settings",
         "tv_channel_prefs"
     )
 

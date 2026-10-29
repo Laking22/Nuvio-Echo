@@ -31,7 +31,8 @@ data class SimklApiRequest(
     val body: String = "",
     val requiresAuthentication: Boolean = true,
     val retryPolicy: SimklRetryPolicy = SimklRetryPolicy.TRANSIENT_FAILURES,
-    val scrobbleStopConflictIsSuccess: Boolean = false
+    val scrobbleStopConflictIsSuccess: Boolean = false,
+    val form: Map<String, String> = emptyMap()
 )
 
 data class SimklRawHttpResponse(
@@ -68,6 +69,7 @@ class SimklApiClient(
     private val configuration: SimklApiConfiguration,
     private val authorization: () -> SimklAuthorization?,
     private val onUnauthorized: (SimklAuthorization) -> Unit,
+    private val onTokensRefreshed: (SimklAuthorization, String, String) -> Unit = { _, _, _ -> },
     private val nowEpochMs: () -> Long = System::currentTimeMillis,
     private val sleep: suspend (Long) -> Unit = { delay(it) },
     private val retryJitterMs: () -> Long = { Random.nextLong(RETRY_JITTER_BOUND_MS + 1L) }
@@ -96,7 +98,7 @@ class SimklApiClient(
                         (nowEpochMs() - queuedAtEpochMs).coerceAtLeast(0L)
                 )
             }
-            val requestAuthorization = if (request.requiresAuthentication) {
+            var requestAuthorization = if (request.requiresAuthentication) {
                 authorization()?.takeIf { it.accessToken.isNotBlank() }
                     ?.also { current ->
                         if (expectedAuthScope != null && current.scope != expectedAuthScope) {
@@ -111,7 +113,7 @@ class SimklApiClient(
             } else {
                 null
             }
-            val token = requestAuthorization?.accessToken
+            var token = requestAuthorization?.accessToken
             val maxAttempts = if (request.retryPolicy == SimklRetryPolicy.NEVER) 1 else MAX_ATTEMPTS
             var syncWriteLockRetried = false
             repeat(maxAttempts) { attempt ->
@@ -123,9 +125,11 @@ class SimklApiClient(
                             headers = simklRequestHeaders(
                                 configuration = configuration,
                                 accessToken = token,
-                                contentTypeJson = request.method != SimklHttpMethod.GET
-                            ),
-                            body = request.body
+                                contentTypeJson = request.method != SimklHttpMethod.GET && request.form.isEmpty()
+                            ) + if (request.form.isNotEmpty()) mapOf("Content-Type" to "application/x-www-form-urlencoded") else emptyMap(),
+                            body = if (request.form.isEmpty()) request.body else request.form.entries.joinToString("&") { (k, v) ->
+                                java.net.URLEncoder.encode(k, "UTF-8") + "=" + java.net.URLEncoder.encode(v, "UTF-8")
+                            }
                         )
                     }
                 } catch (error: CancellationException) {
@@ -139,6 +143,24 @@ class SimklApiClient(
                 }
 
                 logSyncResponse(request, response, attempt + 1)
+                if (request.path == "/oauth2/token" && response.status == 400) return@withLock response.toApiResponse()
+                if (response.status == 401 && attempt == 0 && requestAuthorization?.refreshToken != null) {
+                    val old = requestAuthorization!!
+                    val form = mapOf("grant_type" to "refresh_token", "client_id" to configuration.clientId, "refresh_token" to old.refreshToken!!)
+                    val body = form.entries.joinToString("&") { (k, v) -> java.net.URLEncoder.encode(k, "UTF-8") + "=" + java.net.URLEncoder.encode(v, "UTF-8") }
+                    val refreshed = runCatching {
+                        engine.execute("POST", buildSimklApiUrl(configuration, "/oauth2/token"), mapOf("Content-Type" to "application/x-www-form-urlencoded", "Accept" to "application/json", "User-Agent" to "NuvioTV/${configuration.appVersion}"), body)
+                    }.getOrNull()
+                    val data = refreshed?.takeIf { it.status in 200..299 }?.body?.let { runCatching { json.decodeFromString<SimklTokenResponse>(it) }.getOrNull() }
+                    val newAccess = data?.accessToken?.takeIf(String::isNotBlank)
+                    val newRefresh = data?.refreshToken?.takeIf(String::isNotBlank) ?: old.refreshToken
+                    if (newAccess != null && newRefresh != null) {
+                        onTokensRefreshed(old, newAccess, newRefresh)
+                        requestAuthorization = old.copy(accessToken = newAccess, refreshToken = newRefresh)
+                        token = newAccess
+                        return@repeat
+                    }
+                }
                 if (request.path.startsWith("/scrobble/")) {
                     Log.d(
                         TRACKING_SCROBBLE_DIAGNOSTIC_TAG,
@@ -304,3 +326,6 @@ private data class SimklErrorEnvelope(
     val message: String? = null,
     @SerialName("error_description") val errorDescription: String? = null
 )
+
+@Serializable
+private data class SimklTokenResponse(@SerialName("access_token") val accessToken: String? = null, @SerialName("refresh_token") val refreshToken: String? = null)

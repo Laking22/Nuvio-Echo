@@ -630,6 +630,7 @@ internal fun NewDetailsContent(
                 onRateEpisode = { video, rating -> extras.toggleEpisodeRating(meta, video, rating) },
                 onLoadEpisodeReviews = { video -> extras.loadEpisodeReviews(meta, video) },
                 onOpenReview = { list, index -> reviewDirection = 0; openReview = list to index },
+                onAddToBin = onLibraryLongPress,
                 trailers = trailers,
                 onPlayTrailer = onTrailerSelected,
                 onClose = { panel = null },

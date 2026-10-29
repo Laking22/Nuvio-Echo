@@ -8,6 +8,7 @@ import com.nuvio.tv.core.sync.ProfileSettingsSyncService
 import com.nuvio.tv.core.sync.ProfileSyncService
 import com.nuvio.tv.core.sync.SetProfilePinResult
 import com.nuvio.tv.data.local.ProfileLockStateDataStore
+import com.nuvio.tv.data.local.CustomAvatarDataStore
 import com.nuvio.tv.data.remote.supabase.AvatarCatalogItem
 import com.nuvio.tv.data.remote.supabase.AvatarRepository
 import com.nuvio.tv.data.remote.supabase.ProfileBackgroundCatalogItem
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -51,7 +53,8 @@ class ProfileSelectionViewModel @Inject constructor(
     private val profileBackgroundRepository: ProfileBackgroundRepository,
     memberAccessRepository: MemberAccessRepository,
     private val profileLockStateDataStore: ProfileLockStateDataStore,
-    private val themeDataStore: com.nuvio.tv.data.local.ThemeDataStore
+    private val themeDataStore: com.nuvio.tv.data.local.ThemeDataStore,
+    private val customAvatarDataStore: CustomAvatarDataStore
 ) : ViewModel() {
     val activeProfileId: StateFlow<Int> = profileManager.activeProfileId
     val profiles: StateFlow<List<UserProfile>> = profileManager.profiles
@@ -61,6 +64,7 @@ class ProfileSelectionViewModel @Inject constructor(
 
     private val _avatarCatalog = MutableStateFlow<List<AvatarCatalogItem>>(emptyList())
     val avatarCatalog: StateFlow<List<AvatarCatalogItem>> = _avatarCatalog.asStateFlow()
+    private var defaultAvatarCatalog: List<AvatarCatalogItem> = emptyList()
 
     val hasProfileAvatarAccess: StateFlow<Boolean> = memberAccessRepository.access
         .map { access -> access.entitlements.includes(CosmeticEntitlement.PROFILE_AVATARS) }
@@ -95,6 +99,11 @@ class ProfileSelectionViewModel @Inject constructor(
 
     init {
         refreshProfilePinStates()
+        viewModelScope.launch {
+            customAvatarDataStore.avatars.collectLatest { customAvatars ->
+                _avatarCatalog.value = defaultAvatarCatalog + customAvatars
+            }
+        }
         viewModelScope.launch {
             hasProfileAvatarAccess.collectLatest { hasAccess ->
                 loadAvatarCatalog(hasAccess)
@@ -138,7 +147,8 @@ class ProfileSelectionViewModel @Inject constructor(
 
     private suspend fun loadAvatarCatalog(hasMemberAccess: Boolean) {
         try {
-            _avatarCatalog.value = avatarRepository.getAvatarCatalog(hasMemberAccess)
+            defaultAvatarCatalog = avatarRepository.getAvatarCatalog(hasMemberAccess)
+            _avatarCatalog.value = defaultAvatarCatalog + customAvatarDataStore.avatars.first()
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {

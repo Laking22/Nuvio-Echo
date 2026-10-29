@@ -147,6 +147,7 @@ internal fun EpisodesPanel(
     onRateEpisode: (Video, TitleRating) -> Unit,
     onLoadEpisodeReviews: (Video) -> Unit,
     onOpenReview: (List<TraktCommentReview>, Int) -> Unit,
+    onAddToBin: () -> Unit,
     trailers: List<com.nuvio.tv.domain.model.MetaTrailer>,
     onPlayTrailer: (com.nuvio.tv.domain.model.MetaTrailer) -> Unit,
     onClose: () -> Unit,
@@ -396,6 +397,10 @@ internal fun EpisodesPanel(
                     onLoadEpisodeReviews(video)
                     menuFor = null
                     reviewsFor = video
+                },
+                onAddToBin = {
+                    menuFor = null
+                    onAddToBin()
                 }
             )
         }
@@ -753,7 +758,8 @@ private fun EpisodeHoldMenu(
     reminderOn: Boolean,
     onPlay: () -> Unit,
     onRate: (TitleRating) -> Unit,
-    onReviews: () -> Unit
+    onReviews: () -> Unit,
+    onAddToBin: () -> Unit
 ) {
     val density = LocalDensity.current
     val first = remember { FocusRequester() }
@@ -763,7 +769,7 @@ private fun EpisodeHoldMenu(
             delay(40)
         }
     }
-    val menuHeight = with(density) { 262.dp.toPx() }
+    val menuHeight = with(density) { 300.dp.toPx() }
     val screenHeight = with(density) { androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val x = anchor.left + with(density) { 214.dp.toPx() }
     val y = (anchor.top - with(density) { 4.dp.toPx() })
@@ -807,6 +813,9 @@ private fun EpisodeHoldMenu(
             DetailGlyphIcon(DetailGlyph.THUMB_DOWN, current == TitleRating.DISLIKE, c, 17.dp)
         }
         Box(Modifier.padding(horizontal = 10.dp, vertical = 4.dp).fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.12f)))
+        HoldItem(stringResource(R.string.nd_bin_picker_title), false, null, onAddToBin) { c ->
+            Icon(Icons.AutoMirrored.Filled.List, null, tint = c, modifier = Modifier.size(17.dp))
+        }
         HoldItem(stringResource(R.string.nd_hold_reviews), false, null, onReviews) { c ->
             Icon(Icons.Outlined.ChatBubbleOutline, null, tint = c, modifier = Modifier.size(17.dp))
         }

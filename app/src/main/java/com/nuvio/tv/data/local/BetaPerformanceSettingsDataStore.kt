@@ -1,36 +1,27 @@
 package com.nuvio.tv.data.local
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.streams.AudioLanguage
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.betaPerformanceSettingsDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "beta_performance_settings",
-    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() }
-)
-
-/** Device-wide switches for the beta's speed-ups and new screens. All default to on. */
+/** Profile-specific switches for the beta's speed-ups and new screens. All default to on. */
 data class BetaPerformanceSettings(
     /** Start the source search as soon as a title is opened. */
     val prefetchOnOpen: Boolean = true,
@@ -192,7 +183,7 @@ data class BetaPerformanceSettings(
         val MENU_GLASS_LEVELS = listOf(0, 1, 2)
         const val TRAILER_QUALITY_AUTO = com.nuvio.tv.core.player.TrailerVideoPolicy.AUTO
         val TRAILER_QUALITIES = com.nuvio.tv.core.player.TrailerVideoPolicy.QUALITIES
-        val POSTER_OPEN_DELAYS = listOf(0, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000)
+        val POSTER_OPEN_DELAYS = listOf(-1, 0, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)
 
         /** Seek preview data limits offered, in MB; 0 is no limit. */
         val SEEK_PREVIEW_BUDGETS = listOf(200, 400, 800, 1600, 3200, 0)
@@ -204,10 +195,13 @@ data class BetaPerformanceSettings(
 
 @Singleton
 class BetaPerformanceSettingsDataStore @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    private val factory: ProfileDataStoreFactory,
+    private val profileManager: ProfileManager
 ) {
-    private val dataStore = context.betaPerformanceSettingsDataStore
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private fun store(profileId: Int = profileManager.activeProfileId.value) =
+        factory.get(profileId, FEATURE)
 
     private val prefetchOnOpenKey = booleanPreferencesKey("prefetch_on_open")
     private val prefetchOnFocusKey = booleanPreferencesKey("prefetch_on_focus")
@@ -261,9 +255,10 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     private val snoozedHighlightsKey = stringSetPreferencesKey("smart_highlights_snoozed")
     private val highlightExclusionsKey = stringSetPreferencesKey("smart_highlights_excluded")
 
-    val settings: Flow<BetaPerformanceSettings> = dataStore.data.map { prefs ->
-        val defaults = BetaPerformanceSettings()
-        BetaPerformanceSettings(
+    val settings: Flow<BetaPerformanceSettings> = profileManager.activeProfileId.flatMapLatest { profileId ->
+        store(profileId).data.map { prefs ->
+            val defaults = BetaPerformanceSettings()
+            BetaPerformanceSettings(
             prefetchOnOpen = prefs[prefetchOnOpenKey] ?: defaults.prefetchOnOpen,
             prefetchOnFocus = prefs[prefetchOnFocusKey] ?: defaults.prefetchOnFocus,
             fetchOnExpansion = prefs[fetchOnExpansionKey] ?: defaults.fetchOnExpansion,
@@ -323,7 +318,8 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
             blockedHighlights = prefs[blockedHighlightsKey] ?: defaults.blockedHighlights,
             snoozedHighlights = prefs[snoozedHighlightsKey] ?: defaults.snoozedHighlights,
             highlightExclusions = prefs[highlightExclusionsKey] ?: defaults.highlightExclusions
-        )
+            )
+        }
     }
 
     /**
@@ -353,13 +349,13 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     suspend fun setAutoQualityHotSwap(enabled: Boolean) = set(autoQualityHotSwapKey, enabled)
 
     suspend fun setAutoQualityConfirm(seconds: Int) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             prefs[autoQualityConfirmKey] = seconds.coerceIn(0, BetaPerformanceSettings.AUTO_QUALITY_CONFIRM_MAX)
         }
     }
 
     suspend fun setSourceSwitchTimeout(seconds: Int) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             prefs[sourceSwitchTimeoutKey] = seconds.coerceIn(
                 BetaPerformanceSettings.SOURCE_SWITCH_TIMEOUT_MIN,
                 BetaPerformanceSettings.SOURCE_SWITCH_TIMEOUT_MAX
@@ -373,7 +369,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     suspend fun setQuietFocus(enabled: Boolean) = set(quietFocusKey, enabled)
     suspend fun setTrailerQuality(height: Int) {
         if (height !in BetaPerformanceSettings.TRAILER_QUALITIES) return
-        dataStore.edit { prefs -> prefs[trailerQualityKey] = height }
+        store().edit { prefs -> prefs[trailerQualityKey] = height }
     }
     suspend fun setTrailerVideoLayer(enabled: Boolean) = set(trailerVideoLayerKey, enabled)
     suspend fun setMinimalPlayer(enabled: Boolean) = set(minimalPlayerKey, enabled)
@@ -381,83 +377,83 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     suspend fun setSeekThumbnails(enabled: Boolean) = set(seekThumbnailsKey, enabled)
     suspend fun setSeekPreviewBudget(mb: Int) {
         if (mb !in BetaPerformanceSettings.SEEK_PREVIEW_BUDGETS) return
-        dataStore.edit { prefs -> prefs[seekPreviewBudgetKey] = mb }
+        store().edit { prefs -> prefs[seekPreviewBudgetKey] = mb }
     }
     suspend fun setSeekPreviewFilmstrip(enabled: Boolean) = set(seekPreviewFilmstripKey, enabled)
     suspend fun setSeekPreviewQuality(height: Int) {
         if (height !in BetaPerformanceSettings.SEEK_PREVIEW_QUALITIES) return
-        dataStore.edit { prefs -> prefs[seekPreviewQualityKey] = height }
+        store().edit { prefs -> prefs[seekPreviewQualityKey] = height }
     }
     suspend fun setIntroLength(seconds: Int) {
         if (seconds !in BetaPerformanceSettings.INTRO_LENGTHS) return
-        dataStore.edit { prefs -> prefs[introLengthKey] = seconds }
+        store().edit { prefs -> prefs[introLengthKey] = seconds }
     }
     suspend fun setAudioLanguageMenu(enabled: Boolean) = set(audioLanguageMenuKey, enabled)
     suspend fun setShowUnknownAudio(enabled: Boolean) = set(showUnknownAudioKey, enabled)
     suspend fun setAudioMenuLanguage(key: String, shown: Boolean) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             val current = prefs[audioMenuLanguagesKey] ?: AudioLanguage.defaultMenuKeys
             prefs[audioMenuLanguagesKey] = if (shown) current + key else current - key
         }
     }
     suspend fun setOmdbApiKey(key: String) {
-        dataStore.edit { prefs -> prefs[omdbApiKeyKey] = key.trim() }
+        store().edit { prefs -> prefs[omdbApiKeyKey] = key.trim() }
     }
 
     suspend fun setPosterOpenDelay(ms: Int) {
         if (ms !in BetaPerformanceSettings.POSTER_OPEN_DELAYS) return
-        dataStore.edit { prefs -> prefs[posterOpenDelayKey] = ms }
+        store().edit { prefs -> prefs[posterOpenDelayKey] = ms }
     }
     suspend fun setHideMenuUntilSelected(enabled: Boolean) = set(hideMenuKey, enabled)
     suspend fun setMenuOnTop(enabled: Boolean) = set(menuOnTopKey, enabled)
     suspend fun setMenuGlass(level: Int) {
         if (level !in BetaPerformanceSettings.MENU_GLASS_LEVELS) return
-        dataStore.edit { prefs -> prefs[menuGlassKey] = level }
+        store().edit { prefs -> prefs[menuGlassKey] = level }
     }
     suspend fun setNotificationStyle(style: NotificationStyle) {
-        dataStore.edit { prefs -> prefs[notificationStyleKey] = style.key }
+        store().edit { prefs -> prefs[notificationStyleKey] = style.key }
     }
     suspend fun setViewedThresholdUnit(unit: ViewedThresholdUnit) {
-        dataStore.edit { prefs -> prefs[viewedUnitKey] = unit.key }
+        store().edit { prefs -> prefs[viewedUnitKey] = unit.key }
     }
     suspend fun setViewedThresholdMinutes(minutes: Int) {
-        dataStore.edit { prefs -> prefs[viewedMinutesKey] = minutes.coerceIn(1, 120) }
+        store().edit { prefs -> prefs[viewedMinutesKey] = minutes.coerceIn(1, 120) }
     }
     suspend fun setViewedThresholdPercent(percent: Int) {
-        dataStore.edit { prefs -> prefs[viewedPercentKey] = percent.coerceIn(5, 100) }
+        store().edit { prefs -> prefs[viewedPercentKey] = percent.coerceIn(5, 100) }
     }
     suspend fun setRowHighlighted(rowKey: String, highlighted: Boolean) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             val current = prefs[highlightedRowsKey] ?: emptySet()
             prefs[highlightedRowsKey] = if (highlighted) current + rowKey else current - rowKey
         }
     }
     /** [key]: a catalog row key, or a built-in row's own key. */
     suspend fun setRowGrand(key: String, grand: Boolean) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             val current = prefs[grandRowsKey] ?: emptySet()
             prefs[grandRowsKey] = if (grand) current + key else current - key
         }
     }
     suspend fun setBuiltInRowShown(rowKey: String, shown: Boolean) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             val current = prefs[hiddenBuiltInRowsKey] ?: emptySet()
             prefs[hiddenBuiltInRowsKey] = if (shown) current - rowKey else current + rowKey
         }
     }
 
     suspend fun setBuiltInRowHighlighted(rowKey: String, highlighted: Boolean) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             val current = prefs[plainBuiltInRowsKey] ?: emptySet()
             prefs[plainBuiltInRowsKey] = if (highlighted) current - rowKey else current + rowKey
         }
     }
     suspend fun setHomeRowOrder(order: List<String>) {
-        dataStore.edit { prefs -> prefs[homeRowOrderKey] = com.nuvio.tv.core.home.HomeRowOrder.encode(order) }
+        store().edit { prefs -> prefs[homeRowOrderKey] = com.nuvio.tv.core.home.HomeRowOrder.encode(order) }
     }
 
     suspend fun setEnrichment(level: Int) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             prefs[enrichmentKey] = level.coerceIn(BetaPerformanceSettings.ENRICHMENT_OFF, BetaPerformanceSettings.ENRICHMENT_HEAVY)
         }
     }
@@ -470,7 +466,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
 
     /** Hide a Smart Highlight until [untilEpochDay]; an older snooze of the same theme is replaced. */
     suspend fun snoozeHighlight(themeId: String, untilEpochDay: Long) {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             val kept = (prefs[snoozedHighlightsKey] ?: emptySet()).filterNot { it.substringBefore('@') == themeId }
             prefs[snoozedHighlightsKey] = kept.toSet() + "$themeId@$untilEpochDay"
         }
@@ -481,7 +477,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
 
     /** Bring back every blocked, hidden or trimmed Smart Highlight. */
     suspend fun resetBlockedHighlights() {
-        dataStore.edit { prefs ->
+        store().edit { prefs ->
             prefs.remove(blockedHighlightsKey)
             prefs.remove(snoozedHighlightsKey)
             prefs.remove(highlightExclusionsKey)
@@ -489,10 +485,14 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     }
 
     private suspend fun addTo(key: Preferences.Key<Set<String>>, entry: String) {
-        dataStore.edit { prefs -> prefs[key] = (prefs[key] ?: emptySet()) + entry }
+        store().edit { prefs -> prefs[key] = (prefs[key] ?: emptySet()) + entry }
     }
 
     private suspend fun set(key: Preferences.Key<Boolean>, enabled: Boolean) {
-        dataStore.edit { prefs -> prefs[key] = enabled }
+        store().edit { prefs -> prefs[key] = enabled }
+    }
+
+    private companion object {
+        const val FEATURE = "beta_performance_settings"
     }
 }

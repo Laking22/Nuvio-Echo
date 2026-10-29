@@ -62,7 +62,7 @@ class NewLookScrollTest {
     }
 
     @Test
-    fun `only posters follow the poster width and every card takes the corner radius`() {
+    fun `posters and highlights scale with poster width while grand dimensions stay separate`() {
         val standard = NewLookDimens.of()
         assertEquals(317.dp, standard.cwWidth)
         assertEquals(132.dp, standard.posterWidth)
@@ -74,10 +74,12 @@ class NewLookScrollTest {
             assertEquals(1.5f, d.posterHeight.value / d.posterWidth.value, 0.01f)
             assertEquals(16f / 9f, d.posterOpenWidth.value / d.posterHeight.value, 0.01f)
             assertTrue(d.posterOpenWidth > d.posterWidth)
-            // Every other card stays the standard size.
+            // Wide and grand cards stay independent of the poster width.
             assertEquals(standard.cwWidth, d.cwWidth)
-            assertEquals(standard.highlightWidth, d.highlightWidth)
-            assertEquals(standard.highlightHeight, d.highlightHeight)
+            assertEquals(396f * width / 126f, d.highlightWidth.value, 0.01f)
+            assertEquals(234f * width / 126f, d.highlightHeight.value, 0.01f)
+            assertEquals(standard.grandWidth, d.grandWidth)
+            assertEquals(standard.grandHeight, d.grandHeight)
             assertEquals(standard.gap, d.gap)
             assertEquals(4.dp, d.cardRadius)
         }

@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +48,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -104,6 +109,7 @@ internal fun HeroWindow(
     onTrailerEnded: () -> Unit,
     onButtonFocused: (Int) -> Unit,
     onWatchNow: () -> Unit,
+    onWatchNowLongClick: () -> Unit = {},
     onMoreInfo: () -> Unit,
     modifier: Modifier = Modifier,
     /**
@@ -314,7 +320,8 @@ internal fun HeroWindow(
                         focused = focusedButton == 0,
                         focusRequester = watchFocus.takeIf { interactive },
                         onFocused = { onButtonFocused(0) },
-                        onClick = onWatchNow
+                        onClick = onWatchNow,
+                        onLongClick = onWatchNowLongClick
                     )
                     HeroButton(
                         label = stringResource(R.string.home_more_info),
@@ -455,11 +462,13 @@ private fun HeroButton(
     focused: Boolean,
     focusRequester: FocusRequester?,
     onFocused: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
     val scale by animateFloatAsState(if (focused) 1.04f else 1f, tween(120), label = "heroButtonScale")
     val content = if (focused) Color.White else Color.White.copy(alpha = 0.9f)
     val shape = RoundedCornerShape(if (compact) 14.dp else 16.dp)
+    var heldSelectConsumed by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .graphicsLayer {
@@ -472,10 +481,31 @@ private fun HeroButton(
                 if (focusRequester == null) Modifier else Modifier
                     .focusRequester(focusRequester)
                     .onFocusChanged { if (it.isFocused) onFocused() }
-                    .clickable(
+                    .then(
+                        if (onLongClick == null) Modifier else Modifier.onPreviewKeyEvent { event ->
+                            val native = event.nativeKeyEvent
+                            val selectKey = native.keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER ||
+                                native.keyCode == android.view.KeyEvent.KEYCODE_ENTER ||
+                                native.keyCode == android.view.KeyEvent.KEYCODE_NUMPAD_ENTER
+                            when {
+                                selectKey && event.type == KeyEventType.KeyDown && native.repeatCount > 0 -> {
+                                    if (!heldSelectConsumed) onLongClick()
+                                    heldSelectConsumed = true
+                                    true
+                                }
+                                selectKey && event.type == KeyEventType.KeyUp && heldSelectConsumed -> {
+                                    heldSelectConsumed = false
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                    )
+                    .combinedClickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onClick
+                        onClick = onClick,
+                        onLongClick = onLongClick
                     )
             )
             .padding(horizontal = if (compact) 14.dp else 16.dp),

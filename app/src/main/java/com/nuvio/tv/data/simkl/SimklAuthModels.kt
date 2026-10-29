@@ -81,6 +81,8 @@ internal fun simklSettingsRefreshAction(
 
 @Serializable
 internal data class SimklPinResponse(
+    val error: String? = null,
+    @SerialName("error_description") val errorDescription: String? = null,
     val result: String? = null,
     val message: String? = null,
     @SerialName("device_code") val deviceCode: String? = null,
@@ -90,6 +92,8 @@ internal data class SimklPinResponse(
     @SerialName("expires_in") val expiresIn: Long? = null,
     val interval: Int? = null,
     @SerialName("access_token") val accessToken: String? = null
+    ,@SerialName("refresh_token") val refreshToken: String? = null
+    ,val scope: String? = null
 )
 
 @Serializable

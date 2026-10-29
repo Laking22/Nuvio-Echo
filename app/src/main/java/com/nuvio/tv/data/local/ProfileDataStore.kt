@@ -16,7 +16,13 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,7 +37,8 @@ private val Context.profileDataStore: DataStore<Preferences> by preferencesDataS
 @Singleton
 class ProfileDataStore @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val moshi: Moshi
+    private val moshi: Moshi,
+    private val profileDataStoreFactory: ProfileDataStoreFactory
 ) {
     private val dataStore = context.profileDataStore
 
@@ -41,6 +48,8 @@ class ProfileDataStore @Inject constructor(
     private val rememberLastProfileEnabledKey = booleanPreferencesKey("remember_last_profile_enabled")
     private val confirmExitEnabledKey = booleanPreferencesKey("confirm_exit_enabled")
     private val startupSplashEnabledKey = booleanPreferencesKey("startup_splash_enabled")
+    private val generalSettingsMigratedKey = booleanPreferencesKey("general_profile_settings_migrated")
+    private val generalSettingsMigrationMutex = Mutex()
 
     private val profileListType = Types.newParameterizedType(List::class.java, ProfileJson::class.java)
 
@@ -65,12 +74,22 @@ class ProfileDataStore @Inject constructor(
         prefs[rememberLastProfileEnabledKey] ?: false
     }
 
-    val confirmExitEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[confirmExitEnabledKey] ?: false
+    val confirmExitEnabled: Flow<Boolean> = activeProfileId.flatMapLatest { profileId ->
+        flow {
+            migrateGeneralSettings()
+            emitAll(profileDataStoreFactory.get(profileId, GENERAL_SETTINGS_FEATURE).data.map { prefs ->
+                prefs[confirmExitEnabledKey] ?: false
+            })
+        }
     }
 
-    val startupSplashEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
-        prefs[startupSplashEnabledKey] ?: true
+    val startupSplashEnabled: Flow<Boolean> = activeProfileId.flatMapLatest { profileId ->
+        flow {
+            migrateGeneralSettings()
+            emitAll(profileDataStoreFactory.get(profileId, GENERAL_SETTINGS_FEATURE).data.map { prefs ->
+                prefs[startupSplashEnabledKey] ?: true
+            })
+        }
     }
 
     suspend fun setActiveProfile(id: Int) {
@@ -87,14 +106,34 @@ class ProfileDataStore @Inject constructor(
     }
 
     suspend fun setConfirmExitEnabled(enabled: Boolean) {
-        dataStore.edit { prefs ->
+        migrateGeneralSettings()
+        profileDataStoreFactory.get(activeProfileId.first(), GENERAL_SETTINGS_FEATURE).edit { prefs ->
             prefs[confirmExitEnabledKey] = enabled
         }
     }
 
     suspend fun setStartupSplashEnabled(enabled: Boolean) {
-        dataStore.edit { prefs ->
+        migrateGeneralSettings()
+        profileDataStoreFactory.get(activeProfileId.first(), GENERAL_SETTINGS_FEATURE).edit { prefs ->
             prefs[startupSplashEnabledKey] = enabled
+        }
+    }
+
+    private suspend fun migrateGeneralSettings() = generalSettingsMigrationMutex.withLock {
+        val global = dataStore.data.first()
+        if (global[generalSettingsMigratedKey] == true) return@withLock
+        profileDataStoreFactory.get(1, GENERAL_SETTINGS_FEATURE).edit { profilePrefs ->
+            global[confirmExitEnabledKey]?.let { value ->
+                if (profilePrefs[confirmExitEnabledKey] == null) profilePrefs[confirmExitEnabledKey] = value
+            }
+            global[startupSplashEnabledKey]?.let { value ->
+                if (profilePrefs[startupSplashEnabledKey] == null) profilePrefs[startupSplashEnabledKey] = value
+            }
+        }
+        dataStore.edit { prefs ->
+            prefs.remove(confirmExitEnabledKey)
+            prefs.remove(startupSplashEnabledKey)
+            prefs[generalSettingsMigratedKey] = true
         }
     }
 
@@ -166,6 +205,10 @@ class ProfileDataStore @Inject constructor(
     private fun serializeProfiles(profiles: List<UserProfile>): String {
         val adapter = moshi.adapter<List<ProfileJson>>(profileListType)
         return adapter.toJson(profiles.map { ProfileJson.fromDomain(it) })
+    }
+
+    private companion object {
+        const val GENERAL_SETTINGS_FEATURE = "general_settings"
     }
 }
 

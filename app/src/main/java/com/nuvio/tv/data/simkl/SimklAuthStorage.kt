@@ -9,7 +9,8 @@ data class SimklAuthScope(
 
 data class SimklAuthorization(
     val scope: SimklAuthScope,
-    val accessToken: String
+    val accessToken: String,
+    val refreshToken: String? = null
 )
 
 interface SimklAuthStorage {
@@ -20,11 +21,15 @@ interface SimklAuthStorage {
     fun authorization(): SimklAuthorization?
     fun accessToken(): String? = authorization()?.accessToken
     fun savePinSession(session: SimklPinSession, scope: SimklAuthScope = currentScope()): Boolean
+    fun saveDeviceCode(code: String, scope: SimklAuthScope = currentScope()): Boolean = false
+    fun deviceCode(scope: SimklAuthScope = currentScope()): String? = null
     fun clearPinSession(
         error: SimklAuthError? = null,
         scope: SimklAuthScope = currentScope()
     ): Boolean
     fun completePinAuthorization(token: String, scope: SimklAuthScope): Boolean
+    fun completeV2Authorization(token: String, refreshToken: String, scope: SimklAuthScope): Boolean = completePinAuthorization(token, scope)
+    fun saveRefreshedTokens(token: String, refreshToken: String, scope: SimklAuthScope, expectedToken: String): Boolean = false
     fun saveIdentity(
         username: String?,
         accountId: Long?,

@@ -20,9 +20,11 @@ fun buildSimklApiUrl(
     query.filterKeys { it !in SIMKL_REQUIRED_QUERY_KEYS }.forEach { (key, value) ->
         builder.addQueryParameter(key, value)
     }
-    builder.addQueryParameter("client_id", configuration.clientId)
-    builder.addQueryParameter("app-name", configuration.appName)
-    builder.addQueryParameter("app-version", configuration.appVersion)
+    if (!normalizedPath.startsWith("/oauth2/")) {
+        builder.addQueryParameter("client_id", configuration.clientId)
+        builder.addQueryParameter("app-name", configuration.appName)
+        builder.addQueryParameter("app-version", configuration.appVersion)
+    }
     return builder.build().toString()
 }
 

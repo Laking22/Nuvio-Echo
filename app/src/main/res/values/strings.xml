@@ -285,8 +285,11 @@
 
     <string name="appearance_title">Appearance</string>
     <string name="appearance_subtitle">Choose your color theme, font and language</string>
-    <string name="appearance_color_theme">Color Theme</string>
-    <string name="appearance_color_theme_subtitle">Pick the accent color used across the app</string>
+    <string name="appearance_color_theme">Home Color Theme</string>
+    <string name="appearance_color_theme_subtitle">Dynamic follows the hero artwork. Hold Watch Now to save its colors for Home.</string>
+    <string name="home_theme_dynamic">Dynamic</string>
+    <string name="home_theme_dynamic_description">Follow the current hero artwork</string>
+    <string name="home_theme_saved">Saved Home theme: %1$s</string>
     <string name="theme_color_gold">Gold</string>
     <string name="theme_color_jade">Jade</string>
     <string name="theme_color_rose_gold">Rose Gold</string>
@@ -355,7 +358,7 @@
 
     <string name="about_title">About</string>
     <string name="about_subtitle">App information, updates, and legal links</string>
-    <string name="about_made_with_love">Made with ❤️ by Tapframe and friends</string>
+    <string name="about_made_with_love">Made by Laking22 and friends 😉</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_update_banner_title">Automatic update banner</string>
     <string name="about_update_banner_subtitle">Show a banner when a new version is available</string>
@@ -636,6 +639,7 @@
     <string name="supporter_membership_connected_description">No active Nuvio tier was found on this Patreon account. View the available options or refresh after changing your Patreon membership.</string>
     <string name="supporter_membership_scan_support">Scan to view membership</string>
     <string name="supporter_membership_scan_support_description">Open the Supporter Membership page on your phone.</string>
+    <string name="supporter_membership_upstream_notice">Purchase of this membership only offers benefits on upstream Nuvio.</string>
     <string name="supporter_membership_scan_manage">Scan to manage membership</string>
     <string name="supporter_membership_scan_manage_description">Open Patreon membership settings on your phone.</string>
     <string name="cd_membership_qr">Membership page QR code</string>
@@ -1479,6 +1483,16 @@
     <string name="profile_title">Profiles</string>
     <string name="profile_subtitle">Manage user profiles for this account</string>
     <string name="profile_manage_button">Manage Profiles</string>
+    <string name="profile_avatars">Avatars</string>
+    <string name="profile_avatars_subtitle">Browse available avatars and add your own image URL.</string>
+    <string name="profile_avatars_available">Available avatars</string>
+    <string name="profile_avatars_add_url">Add avatar URL</string>
+    <string name="profile_avatars_url_title">Add an avatar</string>
+    <string name="profile_avatars_url_subtitle">Paste a direct HTTPS image link.</string>
+    <string name="profile_avatars_url_placeholder">https://example.com/avatar.webp</string>
+    <string name="profile_avatars_invalid_url">Enter a valid HTTPS image URL.</string>
+    <string name="profile_avatars_duplicate_url">That avatar has already been saved.</string>
+    <string name="profile_avatars_empty">No avatars are available right now.</string>
     <string name="profile_manage_title">Manage Profiles</string>
     <string name="profile_manage_subtitle">Select a profile to edit, switch, or create a new one</string>
     <string name="profile_manage_hint">Select a profile to manage</string>

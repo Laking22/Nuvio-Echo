@@ -6,8 +6,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Every size on the new look's Home comes from this one set, so rows, scroll positions and
- * the hero spacing all follow it. Cards are the standard size except
- * posters, whose width is Layout's poster card width, and every card's corners follow Layout's corner radius.
+ * the hero spacing all follow it. Posters and highlighted cards scale from Layout's poster card width; grand cards
+ * remain tied to the hero window. Every card's corners follow Layout's corner radius.
  */
 @Immutable
 data class NewLookDimens(
@@ -43,6 +43,8 @@ data class NewLookDimens(
     /** Ranked rows put a big number behind each card: the card sits this far in from the item's left. */
     val rankPad: Dp get() = highlightHeight * 0.62f
     val rankFontSize: Float get() = highlightHeight.value * 1.18f
+    /** Scale factor shared by regular posters and highlighted cards. */
+    val posterScale: Float get() = posterWidth / Medium.posterWidth
 
     companion object {
         private val Medium = NewLookDimens(
@@ -60,8 +62,9 @@ data class NewLookDimens(
         const val DEFAULT_POSTER_WIDTH_DP = 126
 
         /**
-         * Home's sizes for Layout's poster card [posterWidthDp] and corner [cornerRadiusDp]. Only posters change
-         * size: they keep 2:3 and open out to 16:9 at the same height; every other card stays the standard size.
+         * Home's sizes for Layout's poster card [posterWidthDp] and corner [cornerRadiusDp]. Posters keep 2:3
+         * and open out to 16:9 at the same height. Highlighted cards keep their existing size ratio to posters;
+         * grand cards stay tied to the hero window.
          */
         fun of(posterWidthDp: Int = DEFAULT_POSTER_WIDTH_DP, cornerRadiusDp: Int = 12): NewLookDimens {
             val s = posterWidthDp / DEFAULT_POSTER_WIDTH_DP.toFloat()
@@ -70,6 +73,9 @@ data class NewLookDimens(
                 posterWidth = Medium.posterWidth * s,
                 posterHeight = posterHeight,
                 posterOpenWidth = posterHeight * (16f / 9f),
+                highlightWidth = Medium.highlightWidth * s,
+                highlightHeight = Medium.highlightHeight * s,
+                highlightMeta = Medium.highlightMeta * s,
                 cardRadius = cornerRadiusDp.coerceAtLeast(0).dp
             )
         }

@@ -434,6 +434,7 @@ private fun FolderRow(
     LaunchedEffect(focusedIndex) {
         openIndex = null
         val index = focusedIndex ?: return@LaunchedEffect
+        if (openDelayMs < 0) return@LaunchedEffect
         if (openDelayMs > 0) delay(openDelayMs)
         openIndex = index
     }

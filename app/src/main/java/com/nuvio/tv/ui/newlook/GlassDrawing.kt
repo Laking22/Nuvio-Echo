@@ -117,6 +117,12 @@ const val MENU_GLASS_HIGH = 2
  */
 internal object AmbientWashState {
     var image by androidx.compose.runtime.mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+    /** Last wash kept for the scaffold gutter, so a sidebar never exposes a black strip beside an inset screen. */
+    var lastImage by androidx.compose.runtime.mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+    /** Static Home palettes use this when there is no raster wash to extend under the sidebar. */
+    var lastPalette by androidx.compose.runtime.mutableStateOf<List<Int>>(emptyList())
+    /** True only while Home is composing a saved static palette; other pages must not inherit that Home theme. */
+    var staticHomePaletteActive by androidx.compose.runtime.mutableStateOf(false)
     /** The artwork the ambient colour last showed; kept after leaving, so Settings and Who's watching can wear it. */
     @Volatile
     var lastUrl: String? = null

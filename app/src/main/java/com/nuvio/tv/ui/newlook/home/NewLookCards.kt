@@ -445,12 +445,16 @@ internal fun HighlightCard(
         Box(modifier = Modifier.fillMaxSize().background(
             Brush.verticalGradient(0f to Color.Transparent, 0.45f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.62f))
         ))
-        CardLogo(logo, title, 0.5f, 0.34f, dims.highlightWidth, dims.highlightHeight, 16.dp, 22f)
+        CardLogo(
+            logo, title, 0.5f, 0.34f, dims.highlightWidth, dims.highlightHeight,
+            16.dp * dims.posterScale, 22f * dims.posterScale
+        )
         if (chipLabel != null) {
             SoundChip(
                 text = chipLabel,
                 icon = Icons.Filled.PlayArrow,
-                modifier = Modifier.align(Alignment.TopEnd).padding(10.dp)
+                modifier = Modifier.align(Alignment.TopEnd).padding(10.dp * dims.posterScale),
+                height = 22.dp * dims.posterScale
             )
         }
     }
@@ -458,17 +462,18 @@ internal fun HighlightCard(
 
 @Composable
 internal fun SoundChip(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, height: Dp = 22.dp) {
+    val scale = height / 22.dp
     Row(
         modifier = modifier
             .height(height)
             .clip(RoundedCornerShape(height / 2))
             .background(Color(0x99121212))
-            .padding(horizontal = 9.dp),
+            .padding(horizontal = 9.dp * scale),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
+        horizontalArrangement = Arrangement.spacedBy(5.dp * scale)
     ) {
-        Icon(icon, contentDescription = null, tint = Color(0xFFDDDDDD), modifier = Modifier.size(12.dp))
-        Text(text = text, color = Color(0xFFDDDDDD), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Icon(icon, contentDescription = null, tint = Color(0xFFDDDDDD), modifier = Modifier.size(12.dp * scale))
+        Text(text = text, color = Color(0xFFDDDDDD), fontSize = 10.5.sp * scale, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
@@ -633,7 +638,8 @@ internal fun CollectionTile(
     onClick: () -> Unit,
     onFocusChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    highlighted: Boolean = false
+    highlighted: Boolean = false,
+    posterScale: Float = 1f
 ) {
     val folder = item.payload as? com.nuvio.tv.ui.screens.home.ModernPayload.CollectionFolder
     val gif = folder?.takeIf { it.focusGifEnabled }?.focusGifUrl?.takeIf { it.isNotBlank() }
@@ -675,7 +681,10 @@ internal fun CollectionTile(
                 Brush.verticalGradient(0f to Color.Transparent, 0.5f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.6f))
             ))
             if (highlighted) {
-                CardLogo(folder?.titleLogoUrl, item.title, 0.5f, 0.34f, width, height, 16.dp, 22f)
+                CardLogo(
+                    folder?.titleLogoUrl, item.title, 0.5f, 0.34f, width, height,
+                    16.dp * posterScale, 22f * posterScale
+                )
             } else if (item.title.isNotBlank()) {
                 Text(
                     text = item.title,

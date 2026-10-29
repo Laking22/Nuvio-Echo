@@ -241,7 +241,8 @@ object NetworkModule {
                 scope = authorization.scope,
                 expectedAccessToken = authorization.accessToken
             )
-        }
+        },
+        onTokensRefreshed = { old, access, refresh -> storage.saveRefreshedTokens(access, refresh, old.scope, old.accessToken) }
     )
 
     @Provides

@@ -20,7 +20,7 @@ class OkHttpSimklEngine(private val client: OkHttpClient) : SimklHttpEngine {
     ): SimklRawHttpResponse = withContext(Dispatchers.IO) {
         val builder = Request.Builder().url(url)
         headers.forEach(builder::header)
-        val requestBody = body.toRequestBody(JSON_MEDIA_TYPE)
+        val requestBody = body.toRequestBody((headers["Content-Type"] ?: "application/json").toMediaType())
         when (method) {
             SimklHttpMethod.GET.name -> builder.get()
             SimklHttpMethod.POST.name -> builder.post(requestBody)

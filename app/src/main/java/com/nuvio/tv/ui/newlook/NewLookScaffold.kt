@@ -44,6 +44,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -66,6 +68,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -260,6 +263,49 @@ internal fun NewLookScaffold(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .drawBehind {
+                if (showMenu && !menuOnTop && sidebarInset > 0.dp) {
+                    val gutterWidth = sidebarInset.toPx()
+                    clipRect(right = gutterWidth) {
+                        val palette = if (AmbientWashState.staticHomePaletteActive) {
+                            AmbientWashState.lastPalette
+                        } else {
+                            emptyList()
+                        }
+                        val wash = AmbientWashState.lastImage
+                        if (palette.size >= 3) {
+                            val colors = palette.take(3).map { Color(0xFF000000L or it.toLong()) }
+                            drawRect(
+                                brush = Brush.linearGradient(
+                                    colors = colors,
+                                    start = androidx.compose.ui.geometry.Offset.Zero,
+                                    end = androidx.compose.ui.geometry.Offset(size.width, size.height * 0.55f)
+                                )
+                            )
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    0f to Color.Black.copy(alpha = 0.12f),
+                                    0.42f to Color.Black.copy(alpha = 0.32f),
+                                    1f to Color.Black.copy(alpha = 0.82f)
+                                ),
+                                size = androidx.compose.ui.geometry.Size(gutterWidth, size.height)
+                            )
+                        } else if (wash != null) {
+                            drawImage(
+                                image = wash,
+                                dstOffset = IntOffset.Zero,
+                                dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                                filterQuality = androidx.compose.ui.graphics.FilterQuality.Low
+                            )
+                        } else {
+                            drawRect(
+                                color = Color(0xFF28272B),
+                                size = androidx.compose.ui.geometry.Size(gutterWidth, size.height)
+                            )
+                        }
+                    }
+                }
+            }
             .onPreviewKeyEvent { event ->
                 if (longPressBackHeld.value && event.key == Key.Back) {
                     if (event.type == KeyEventType.KeyUp) longPressBackHeld.value = false

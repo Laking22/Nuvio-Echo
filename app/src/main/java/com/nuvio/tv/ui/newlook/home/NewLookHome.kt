@@ -121,6 +121,7 @@ interface NewLookHomeEntryPoint {
     fun streamPrefetcher(): dagger.Lazy<StreamPrefetcher>
     fun smartHighlights(): com.nuvio.tv.core.home.smart.SmartHighlightsRepository
     fun betaSettingsStore(): com.nuvio.tv.data.local.BetaPerformanceSettingsDataStore
+    fun themeDataStore(): com.nuvio.tv.data.local.ThemeDataStore
 }
 
 /** What the user chose for a Smart Highlight from its long-press options. */
@@ -295,6 +296,11 @@ internal fun NewLookHome(
             entryPoint.smartHighlights(), entryPoint.betaSettingsStore()
         )
     }
+    val themeDataStore = remember(entryPoint) { entryPoint.themeDataStore() }
+    val homeColorThemeSettings by themeDataStore.homeColorThemeSettings.collectAsState(
+        initial = com.nuvio.tv.data.local.HomeColorThemeSettings()
+    )
+    val themeSaveScope = rememberCoroutineScope()
     val settings by rememberBetaPerformanceSettings()
     NewLookHomeContent(
         source = source,
@@ -310,7 +316,19 @@ internal fun NewLookHome(
         onNavigateToFolderDetail = onNavigateToFolderDetail,
         isCatalogItemWatched = isCatalogItemWatched,
         onCatalogItemLongPress = onCatalogItemLongPress,
-        onSettled = onSettled
+        onSettled = onSettled,
+        homeColorThemeSettings = homeColorThemeSettings,
+        onSaveHomeTheme = { title, backdropUrl ->
+            themeSaveScope.launch {
+                val palette = sampleArtworkPalette(context, backdropUrl).orEmpty()
+                val saved = themeDataStore.saveStaticHomeTheme(title, backdropUrl, palette) ?: return@launch
+                android.widget.Toast.makeText(
+                    context,
+                    context.getString(R.string.home_theme_saved, saved.title),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     )
 }
 
@@ -334,7 +352,10 @@ internal fun NewLookHomeContent(
      * a moment (or [SETTLE_CAP_MS] has passed). The app keeps its splash up until then, so Home never opens on rows
      * that then shuffle as the rest arrives.
      */
-    onSettled: () -> Unit = {}
+    onSettled: () -> Unit = {},
+    homeColorThemeSettings: com.nuvio.tv.data.local.HomeColorThemeSettings =
+        com.nuvio.tv.data.local.HomeColorThemeSettings(),
+    onSaveHomeTheme: (String, String) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val chrome = LocalNewLookChrome.current
@@ -343,7 +364,8 @@ internal fun NewLookHomeContent(
     val contentStart = if (!menuOnTop && !hideMenu) NewLookLayout.ContentStartWithSidebar else NewLookLayout.ContentStartFullWidth
     // Grand cards are as wide as the hero window, which runs from contentStart to near the screen's right edge.
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    // Layout's poster card width sizes the posters only; its corner radius rounds every row's cards.
+    // Layout's poster width sizes posters and highlights together; grand cards remain tied to the hero window.
+    // Its corner radius rounds every row's cards.
     val dims = remember(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp, screenWidth, contentStart) {
         NewLookDimens.of(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp).withGrandWidth(screenWidth, contentStart)
     }
@@ -514,6 +536,7 @@ internal fun NewLookHomeContent(
         val card = focusedCard ?: return@LaunchedEffect
         val row = rows.firstOrNull { it.key == card.first } ?: return@LaunchedEffect
         if (row.kind != RowKind.POSTER || row.isPlaceholder) return@LaunchedEffect
+        if (settings.posterOpenDelayMs < 0) return@LaunchedEffect
         if (settings.posterOpenDelayMs > 0) delay(settings.posterOpenDelayMs.toLong())
         openPoster = card
     }
@@ -768,7 +791,11 @@ internal fun NewLookHomeContent(
         source.prefetchOnExpansion(target, dwellMs = 0L)
     }
     val heroItem = featured.getOrNull(slide)
-    val trailerTarget: Triple<String, String, Pair<String?, String>>? = when {
+    // Off is the global preview switch as well as the poster expansion stop: highlighted and grand rows share the
+    // same trailer target, so gate it here before any surface can request or play a trailer.
+    val trailerTarget: Triple<String, String, Pair<String?, String>>? = if (settings.posterOpenDelayMs < 0) {
+        null
+    } else when {
         heroHasFocus && heroItem != null -> Triple(heroItem.id, heroItem.name, heroItem.releaseInfo to heroItem.apiType)
         else -> (highlightTrailerItem ?: posterTrailerItem)?.let { item ->
             (item.payload as? ModernPayload.Catalog)?.let {
@@ -952,7 +979,16 @@ internal fun NewLookHomeContent(
         val screenWidth = maxWidth
         if (settings.homeAmbientBackground) {
             // The carousel's current title, blurred to its colours, behind the whole page (Appearance → Ambient colour).
-            AmbientPageWash(url = slides.getOrNull(slide)?.backdrop, modifier = Modifier.fillMaxSize())
+            val dynamicBackdrop = slides.getOrNull(slide)?.backdrop
+            val staticBackdrop = homeColorThemeSettings.savedThemes
+                .firstOrNull { it.id == homeColorThemeSettings.selectedStaticThemeId }
+            if (homeColorThemeSettings.dynamic || staticBackdrop == null) {
+                AmbientPageWash(url = dynamicBackdrop, modifier = Modifier.fillMaxSize())
+            } else if (staticBackdrop.palette.size >= 3) {
+                StaticHomePaletteWash(staticBackdrop.palette, modifier = Modifier.fillMaxSize())
+            } else {
+                AmbientPageWash(url = staticBackdrop.backdropUrl, modifier = Modifier.fillMaxSize())
+            }
         }
         CompositionLocalProvider(LocalBringIntoViewSpec provides NoBringIntoView, LocalNewLookCardRadius provides dims.cardRadius) {
             LazyColumn(
@@ -986,6 +1022,12 @@ internal fun NewLookHomeContent(
                             }
                         },
                         onWatchNow = { heroItem?.let { onWatchNow(it.id, it.apiType, "") } },
+                        onWatchNowLongClick = {
+                            heroItem?.let { item ->
+                                val backdrop = item.backdropUrl ?: slides.getOrNull(slide)?.backdrop
+                                if (!backdrop.isNullOrBlank()) onSaveHomeTheme(item.name, backdrop)
+                            }
+                        },
                         onMoreInfo = { heroItem?.let { onNavigateToDetail(it.id, it.apiType, "") } },
                         topBar = if (menuOnTop && chrome != null) {
                             { modifier -> chrome.TopBar(onDown = { focusHero(heroButton) }, modifier = modifier) }
@@ -1240,6 +1282,7 @@ private fun HeroBlock(
     onTrailerEnded: () -> Unit,
     onHeroFocus: (Boolean, Int) -> Unit,
     onWatchNow: () -> Unit,
+    onWatchNowLongClick: () -> Unit,
     onMoreInfo: () -> Unit,
     topBar: (@Composable (Modifier) -> Unit)?,
     topBarVisible: Boolean,
@@ -1286,6 +1329,7 @@ private fun HeroBlock(
                 onTrailerEnded = onTrailerEnded,
                 onButtonFocused = { onHeroFocus(true, it) },
                 onWatchNow = onWatchNow,
+                onWatchNowLongClick = onWatchNowLongClick,
                 onMoreInfo = onMoreInfo,
                 modifier = if (edgeToEdge) {
                     // The whole screen from the top, past this block's bottom: the first row draws over its fade. While
@@ -1611,7 +1655,8 @@ private fun RowCard(
             onClick = onClick,
             onFocusChanged = onFocusChanged,
             modifier = modifier,
-            highlighted = true
+            highlighted = true,
+            posterScale = dims.posterScale
         )
         row.ranked -> Box(modifier = modifier.size(dims.rankPad + dims.highlightWidth, dims.highlightHeight)) {
             RankNumber(
@@ -1681,7 +1726,7 @@ private fun RowMeta(row: NewLookRow, item: ModernCarouselItem, details: NewLookD
     val genres = preview.genres.list.ifEmpty { details?.genres.orEmpty() }
     val rating = preview.imdbText ?: details?.rating?.takeIf { it > 0 }?.let { String.format(java.util.Locale.US, "%.1f", it) }
     val ratingIsImdb = preview.imdbText != null && (meta?.id?.startsWith("tt") == true || meta?.imdbId != null)
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp * dims.posterScale)) {
         DetailsLine(
             type = stringResource(if (isSeries) R.string.home_type_show else R.string.home_type_movie),
             genres = genres,
@@ -1696,8 +1741,8 @@ private fun RowMeta(row: NewLookRow, item: ModernCarouselItem, details: NewLookD
                 Text(
                     text = synopsis,
                     color = Color(0xFFB8B8B8),
-                    fontSize = 13.5.sp,
-                    lineHeight = 18.sp,
+                    fontSize = 13.5.sp * dims.posterScale,
+                    lineHeight = 18.sp * dims.posterScale,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.width(dims.highlightWidth)
