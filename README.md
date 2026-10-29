@@ -24,7 +24,7 @@
 | Your device | File |
 | --- | --- |
 | Most Android TV and Google TV boxes (32-bit) | [NuvioEcho-armeabi-v7a.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/beta/NuvioEcho-armeabi-v7a.apk) |
-| 64-bit devices (NVIDIA Shield, newer Google TV devices) | [NuvioEcho-arm64-v8a.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/beta/NuvioEcho-arm64-v8a.apk) |
+| 64-bit devices (NVIDIA Shield, newer Google TV devices) | (https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-arm64-v8a-beta.apk) |
 | Not sure | [NuvioEcho-universal.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/beta/NuvioEcho-universal.apk) (works on any device, bigger download) |
 
 To install, open the APK on your TV with a file manager or the Downloader app and allow installs from that app when asked. A newer APK installs over the old one and keeps your settings.
