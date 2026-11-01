@@ -2,10 +2,8 @@ package com.nuvio.tv.data.local
 
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.data.remote.supabase.AvatarCatalogItem
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -28,32 +26,31 @@ private data class StoredCustomAvatarList(val items: List<StoredCustomAvatar> = 
 
 enum class AddCustomAvatarResult { ADDED, DUPLICATE, INVALID }
 
-/** Profile-local URLs added to the avatar catalog. */
+/** Image URLs the primary profile added to the avatar catalog; every profile's picker offers them. */
 @Singleton
 class CustomAvatarDataStore @Inject constructor(
-    private val factory: ProfileDataStoreFactory,
-    private val profileManager: ProfileManager
+    private val factory: ProfileDataStoreFactory
 ) {
     companion object {
         private const val FEATURE = "custom_avatars"
+        private const val PRIMARY_PROFILE_ID = 1
         private val AVATARS_KEY = stringPreferencesKey("avatars")
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     }
 
-    private fun store(profileId: Int = profileManager.activeProfileId.value) = factory.get(profileId, FEATURE)
+    // Only the primary profile can open the Avatars page, so its list is the one every profile picks from.
+    private fun store() = factory.get(PRIMARY_PROFILE_ID, FEATURE)
 
-    val avatars: Flow<List<AvatarCatalogItem>> = profileManager.activeProfileId.flatMapLatest { profileId ->
-        factory.get(profileId, FEATURE).data.map { prefs ->
-            decode(prefs[AVATARS_KEY]).mapIndexed { index, avatar ->
-                AvatarCatalogItem(
-                    id = avatar.id,
-                    displayName = avatar.displayName,
-                    imageUrl = avatar.imageUrl,
-                    category = "Custom",
-                    sortOrder = 10_000 + index,
-                    memberOnly = false
-                )
-            }
+    val avatars: Flow<List<AvatarCatalogItem>> = store().data.map { prefs ->
+        decode(prefs[AVATARS_KEY]).mapIndexed { index, avatar ->
+            AvatarCatalogItem(
+                id = avatar.id,
+                displayName = avatar.displayName,
+                imageUrl = avatar.imageUrl,
+                category = "Custom",
+                sortOrder = 10_000 + index,
+                memberOnly = false
+            )
         }
     }
 
@@ -84,6 +81,14 @@ class CustomAvatarDataStore @Inject constructor(
             }
         }
         return result
+    }
+
+    suspend fun remove(id: String) {
+        store().edit { prefs ->
+            val entries = decode(prefs[AVATARS_KEY])
+            val kept = entries.filterNot { it.id == id }
+            if (kept.size != entries.size) prefs[AVATARS_KEY] = json.encodeToString(StoredCustomAvatarList(kept))
+        }
     }
 
     private fun decode(raw: String?): List<StoredCustomAvatar> = raw?.let {

@@ -41,14 +41,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.tv.material3.Button
-import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.tv.material3.Border
+import coil3.compose.AsyncImage
+import com.nuvio.tv.data.remote.supabase.AvatarCatalogItem
+import kotlinx.coroutines.launch
 import com.nuvio.tv.R
 import com.nuvio.tv.data.local.AddCustomAvatarResult
 import com.nuvio.tv.ui.components.AvatarPickerGrid
@@ -64,17 +75,25 @@ internal fun AvatarSettingsContent(
 ) {
     val state by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
-    var selectedAvatarId by remember { mutableStateOf<String?>(null) }
+    var pendingRemoval by remember { mutableStateOf<AvatarCatalogItem?>(null) }
     val addFocus = remember { FocusRequester() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    BackHandler { onBack() }
-    LaunchedEffect(Unit) {
-        repeat(2) { withFrameNanos { } }
-        runCatching { addFocus.requestFocus() }
+    fun focusAdd() {
+        scope.launch {
+            repeat(2) { withFrameNanos { } }
+            runCatching { addFocus.requestFocus() }
+        }
     }
 
+    BackHandler { onBack() }
+    LaunchedEffect(Unit) { focusAdd() }
+
+    // Scrolls as one page, so the catalog gets its full height below Your avatars instead of a sliver.
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md)
     ) {
         SettingsDetailHeader(
@@ -82,35 +101,52 @@ internal fun AvatarSettingsContent(
             subtitle = stringResource(R.string.profile_avatars_subtitle)
         )
         SettingsGroupCard(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth(),
+            title = stringResource(R.string.profile_avatars_yours),
+            subtitle = stringResource(R.string.profile_avatars_yours_hint)
+        ) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = NuvioTheme.spacing.xs, vertical = NuvioTheme.spacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item(key = "add") {
+                    AvatarTile(
+                        label = stringResource(R.string.profile_avatars_add),
+                        imageUrl = null,
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier.focusRequester(addFocus)
+                    )
+                }
+                items(state.custom, key = AvatarCatalogItem::id) { avatar ->
+                    AvatarTile(
+                        label = avatar.displayName,
+                        imageUrl = avatar.imageUrl,
+                        onClick = { pendingRemoval = avatar }
+                    )
+                }
+            }
+        }
+        SettingsGroupCard(
+            modifier = Modifier.fillMaxWidth(),
             title = stringResource(R.string.profile_avatars_available)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                AddAvatarButton(
-                    focusRequester = addFocus,
-                    onClick = { showAddDialog = true }
-                )
-            }
-            if (state.loading && state.avatars.isEmpty()) {
-                Text(
+            when {
+                state.loading && state.catalog.isEmpty() -> Text(
                     text = stringResource(R.string.supporters_loading),
                     color = NuvioTheme.colors.TextSecondary,
                     style = MaterialTheme.typography.bodyMedium
                 )
-            } else if (state.avatars.isEmpty()) {
-                Text(
+                state.catalog.isEmpty() -> Text(
                     text = stringResource(R.string.profile_avatars_empty),
                     color = NuvioTheme.colors.TextSecondary,
                     style = MaterialTheme.typography.bodyMedium
                 )
-            } else {
-                AvatarPickerGrid(
-                    avatars = state.avatars,
-                    selectedAvatarId = selectedAvatarId,
-                    onAvatarSelected = { avatar -> selectedAvatarId = avatar.id },
+                // Browse only: a profile picks its avatar when it's edited, from this catalog plus the ones above.
+                else -> AvatarPickerGrid(
+                    avatars = state.catalog,
+                    selectedAvatarId = null,
+                    onAvatarSelected = { },
                     modifier = Modifier.fillMaxWidth().heightIn(max = 430.dp)
                 )
             }
@@ -124,50 +160,97 @@ internal fun AvatarSettingsContent(
             onAdded = { showAddDialog = false }
         )
     }
+
+    pendingRemoval?.let { avatar ->
+        NuvioDialog(
+            onDismiss = { pendingRemoval = null },
+            title = stringResource(R.string.profile_avatars_remove_title),
+            subtitle = stringResource(R.string.profile_avatars_remove_subtitle, avatar.displayName)
+        ) {
+            SettingsDialogActionRow {
+                SettingsDialogActionButton(
+                    text = stringResource(R.string.action_cancel),
+                    onClick = { pendingRemoval = null }
+                )
+                SettingsDialogActionButton(
+                    text = stringResource(R.string.action_remove),
+                    primary = true,
+                    onClick = {
+                        viewModel.removeAvatar(avatar.id)
+                        pendingRemoval = null
+                        // The removed tile had focus; Add is always there to land on.
+                        focusAdd()
+                    }
+                )
+            }
+        }
+    }
 }
 
+/** A round avatar (or the Add tile, when [imageUrl] is null) with its name, on Settings' glass. */
 @Composable
-private fun AddAvatarButton(
-    focusRequester: FocusRequester,
-    onClick: () -> Unit
+private fun AvatarTile(
+    label: String,
+    imageUrl: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     Card(
         onClick = onClick,
-        modifier = Modifier
-            .focusRequester(focusRequester)
-            .onFocusChanged { focused = it.isFocused },
+        modifier = modifier
+            .width(112.dp)
+            .onFocusChanged { focused = it.isFocused }
+            .settingsFocusGlass(focused, shape),
         colors = CardDefaults.colors(
-            containerColor = if (focused) NuvioTheme.colors.FocusBackground else NuvioTheme.colors.BackgroundCard,
-            focusedContainerColor = NuvioTheme.colors.FocusBackground
+            containerColor = Color.Transparent,
+            focusedContainerColor = Color.Transparent
         ),
+        border = CardDefaults.border(border = Border.None, focusedBorder = Border.None),
         shape = CardDefaults.shape(shape),
-        scale = CardDefaults.scale(focusedScale = 1.04f)
+        scale = CardDefaults.scale(focusedScale = 1f, pressedScale = 1f)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(72.dp)
                     .clip(CircleShape)
-                    .background(if (focused) NuvioTheme.colors.Primary else Color(0xFF36363A)),
+                    .background(SettingsGlassFill)
+                    .border(
+                        BorderStroke(1.dp, Color.White.copy(alpha = if (focused) 0.55f else 0.14f)),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (imageUrl == null) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                } else {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = label,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             Text(
-                text = stringResource(R.string.profile_avatars_add_url),
-                color = NuvioTheme.colors.TextPrimary,
-                style = MaterialTheme.typography.labelLarge
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (focused) NuvioTheme.colors.TextPrimary else NuvioTheme.colors.TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -203,8 +286,12 @@ private fun AddAvatarUrlDialog(
                 .fillMaxWidth()
                 .onFocusChanged { inputFocused = it.isFocused || it.hasFocus },
             colors = CardDefaults.colors(
-                containerColor = NuvioTheme.colors.BackgroundCard,
-                focusedContainerColor = NuvioTheme.colors.BackgroundCard
+                containerColor = SettingsGlassFill,
+                focusedContainerColor = SettingsGlassFill
+            ),
+            border = CardDefaults.border(
+                border = Border(BorderStroke(1.dp, Color.White.copy(alpha = if (inputFocused) 0.5f else 0.12f)), shape = RoundedCornerShape(12.dp)),
+                focusedBorder = Border(BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)), shape = RoundedCornerShape(12.dp))
             ),
             shape = CardDefaults.shape(RoundedCornerShape(12.dp)),
             scale = CardDefaults.scale(focusedScale = 1f)
@@ -224,7 +311,7 @@ private fun AddAvatarUrlDialog(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(color = NuvioTheme.colors.TextPrimary),
-                    cursorBrush = SolidColor(if (inputFocused) NuvioTheme.colors.Primary else Color.Transparent),
+                    cursorBrush = SolidColor(if (inputFocused) Color.White else Color.Transparent),
                     decorationBox = { innerTextField ->
                         if (value.isBlank()) {
                             Text(
@@ -251,29 +338,21 @@ private fun AddAvatarUrlDialog(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.colors(
-                    containerColor = NuvioTheme.colors.BackgroundCard,
-                    contentColor = NuvioTheme.colors.TextPrimary
-                )
-            ) { Text(stringResource(R.string.action_cancel)) }
-            Button(
+        SettingsDialogActionRow {
+            SettingsDialogActionButton(
+                text = stringResource(R.string.action_cancel),
+                onClick = onDismiss
+            )
+            SettingsDialogActionButton(
+                text = stringResource(R.string.action_save),
+                primary = true,
                 onClick = {
                     keyboardController?.hide()
                     onSave(value) { result ->
                         if (result == AddCustomAvatarResult.ADDED) onAdded() else error = result
                     }
-                },
-                colors = ButtonDefaults.colors(
-                    containerColor = NuvioTheme.colors.Primary,
-                    contentColor = Color.White
-                )
-            ) { Text(stringResource(R.string.action_save)) }
+                }
+            )
         }
     }
 }

@@ -15,7 +15,7 @@
 
   <p></p>
 
-  <a href="https://github.com/Laking22/Nuvio-Echo/releases/tag/beta"><b>Download the latest beta</b></a>
+  <a href="https://github.com/Laking22/Nuvio-Echo/releases"><b>Download the latest beta</b></a>
 
 </div>
 
@@ -23,11 +23,11 @@
 
 | Your device | File |
 | --- | --- |
-| Most Android TV and Google TV boxes (32-bit) | [https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-armeabi-v7a-beta.apk) |
-| 64-bit devices (NVIDIA Shield, newer Google TV devices) | (https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-arm64-v8a-beta.apk) |
-| Not sure | [https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-universal-beta.apk) (works on any device, bigger download) |
+| Most Android TV and Google TV boxes (32-bit) | [app-full-armeabi-v7a-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-armeabi-v7a-beta.apk) |
+| 64-bit devices (NVIDIA Shield, newer Google TV devices) | [app-full-arm64-v8a-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-arm64-v8a-beta.apk) |
+| Not sure | [app-full-universal-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-universal-beta.apk) (works on any device, bigger download) |
 
-To install, open the APK on your TV with a file manager or the Downloader app and allow installs from that app when asked. A newer APK installs over the old one and keeps your settings.
+To install, open the APK on your TV with a file manager or the Downloader app and allow installs from that app when asked. A newer APK installs over the old one and keeps your settings, and once Echo is installed it can update itself (**Settings → About → Check for updates**).
 
 Everything that uses TMDB works out of the box. You can use your own TMDB key instead, and add a Gemini key for smarter recommendations, in **Settings → Integrations → API keys**.
 
@@ -79,6 +79,9 @@ A collection folder opens as rows or as tabs, whichever the collection is set to
 
 Settings that take some explaining have a small **i** button beside them that explains how they work (pre-fetching, seek preview quality, hot swap and others).
 
+### Home themes, avatars and sign-ins
+Home's colours follow the hero artwork by default. Hold **Watch Now** on a title in the hero to keep its colours as a saved Home theme, then switch between saved themes (or back to Dynamic) in **Settings → Appearance**, where holding a saved theme removes it. The primary profile can add avatars from an image link in **Settings → Profiles → Avatars**, and every profile can pick them. Trakt, Simkl and MDBList all sign in with a code on your phone, and stay signed in.
+
 ### And more
 A Calendar of upcoming episodes with reminders, a details page with reviews, ratings and the cast's filmographies, release reminders for titles that aren't out yet, anime mode with Kitsu, a detailed parental guide, and a speed test.
 
@@ -92,11 +95,10 @@ These were removed in the redesign and no longer work:
 - **Interface size**, replaced by the card size slider.
 - **The old Library** with its list, genre and year filters, replaced by Bins.
 - **The old details page options:** the episode options overlay style, episode ratings on the details page, the full release date, and the random episode button.
-- **The old focus and trailer options:** expand-on-focus and its delay, where trailers play, and the "Trailer" chips. Focused cards now always open out, and trailers play inside them and on the hero, with a single Trailer sound setting.
+- **The old focus and trailer options:** the expand-on-focus switch, where trailers play, and the "Trailer" chips. Focused cards open out after the **Poster expand delay** (Settings → Layout), or never when it's set to Off, and trailers play inside them and on the hero, with a single Trailer sound setting.
 - **Blurring the next episode in Continue Watching,** and **choosing which player buttons sit on the main row.**
 - **Automatic subtitle sync,** which was tried and taken out.
 - **The "follow Home's layout" collection mode,** now the same as Rows.
-- **In-app updates.** Echo doesn't update itself; new versions are on the releases page.
 
 ## Build from source
 

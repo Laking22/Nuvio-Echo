@@ -2,6 +2,7 @@
 
 package com.nuvio.tv.ui.screens.calendar
 
+import com.nuvio.tv.ui.newlook.underSidebar
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -184,7 +185,7 @@ fun CalendarScreen(
             .focusRestorer()
             .focusGroup()
     ) {
-        AmbientPageWash(url = washUrl, modifier = Modifier.fillMaxSize())
+        AmbientPageWash(url = washUrl, modifier = Modifier.fillMaxSize().underSidebar())
         Row(
             modifier = Modifier
                 .fillMaxSize()

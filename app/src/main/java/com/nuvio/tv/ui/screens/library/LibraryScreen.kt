@@ -1,5 +1,6 @@
 package com.nuvio.tv.ui.screens.library
 
+import com.nuvio.tv.ui.newlook.underSidebar
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
@@ -201,7 +202,7 @@ fun LibraryScreen(
             .fillMaxSize()
             .onGloballyPositioned { rootOffset = it.positionInRoot() }
     ) {
-        Canvas(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize().underSidebar()) {
             drawRect(
                 Brush.linearGradient(
                     colors = listOf(Color(0xFF403A40), Color(0xFF29272D), Color(0xFF343137)),

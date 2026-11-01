@@ -50,6 +50,7 @@ sealed class ThemeSettingsEvent {
     data class SelectSettingsUiStyle(val style: SettingsUiStyle) : ThemeSettingsEvent()
     data object SelectDynamicHomeTheme : ThemeSettingsEvent()
     data class SelectStaticHomeTheme(val id: String) : ThemeSettingsEvent()
+    data class RemoveStaticHomeTheme(val id: String) : ThemeSettingsEvent()
     data object DismissAppIconFailure : ThemeSettingsEvent()
 }
 
@@ -161,6 +162,9 @@ class ThemeSettingsViewModel @Inject constructor(
             }
             is ThemeSettingsEvent.SelectStaticHomeTheme -> viewModelScope.launch {
                 themeDataStore.selectStaticHomeTheme(event.id)
+            }
+            is ThemeSettingsEvent.RemoveStaticHomeTheme -> viewModelScope.launch {
+                themeDataStore.removeStaticHomeTheme(event.id)
             }
             ThemeSettingsEvent.DismissAppIconFailure -> appIconManager.clearFailure()
         }

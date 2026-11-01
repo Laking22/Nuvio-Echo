@@ -2,6 +2,7 @@
 
 package com.nuvio.tv.ui.screens.genres
 
+import com.nuvio.tv.ui.newlook.underSidebar
 import com.nuvio.tv.ui.newlook.LocalNewLookChrome
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.activity.compose.BackHandler
@@ -226,7 +227,7 @@ fun GenresScreen(
         // The page takes on the colours of what's showing, as Home does: the poster in focus, else the first result.
         AmbientPageWash(
             url = if (zone == GenresZone.GRID) focusedArt else state.items.firstOrNull()?.backdropUrl,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().underSidebar()
         )
         // Column 1: genres.
         Column(

@@ -2,6 +2,7 @@
 
 package com.nuvio.tv.ui.screens.settings
 
+import com.nuvio.tv.ui.newlook.underSidebar
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Spacer
@@ -410,9 +411,9 @@ fun SettingsScreen(
         com.nuvio.tv.ui.newlook.home.AmbientPageWash(
             url = com.nuvio.tv.ui.newlook.home.rememberLastAmbientUrl()
                 ?: com.nuvio.tv.ui.screens.home.HeroBackdropState.lastDisplayedUrl,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().underSidebar()
         )
-        Box(modifier = Modifier.fillMaxSize().background(SettingsBackdropDim))
+        Box(modifier = Modifier.fillMaxSize().underSidebar().background(SettingsBackdropDim))
         Box(
             modifier = Modifier
                 .fillMaxSize()

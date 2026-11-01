@@ -12,6 +12,7 @@ class ProfileSettingsCredentialPolicyTest {
         assertTrue(shouldExcludePreferenceFromProfileSettingsSync("debrid_settings", "real_debrid_api_key"))
         assertTrue(shouldExcludePreferenceFromProfileSettingsSync("mdblist_settings", "mdblist_api_key"))
         assertTrue(shouldExcludePreferenceFromProfileSettingsSync("animeskip_settings", "animeskip_client_id"))
+        assertTrue(shouldExcludePreferenceFromProfileSettingsSync("beta_performance_settings", "omdb_api_key"))
     }
 
     @Test

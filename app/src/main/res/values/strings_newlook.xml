@@ -3,7 +3,7 @@
     <!-- Settings -->
     <string name="beta_settings_group_new_look">New look</string>
     <string name="beta_poster_delay_title">Poster expand delay</string>
-    <string name="beta_poster_delay_subtitle">Wait before a poster opens.</string>
+    <string name="beta_poster_delay_subtitle">How long a focused poster waits before opening out. Off keeps posters closed and stops trailers on Home.</string>
     <string name="beta_poster_delay_off">Off</string>
     <string name="beta_poster_delay_instant">Instant</string>
     <string name="beta_poster_delay_value">%.2g s</string>

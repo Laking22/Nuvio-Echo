@@ -198,9 +198,9 @@ private fun CategoryTab(
 
     val bgColor by animateColorAsState(
         targetValue = when {
-            isSelected && isFocused -> NuvioTheme.colors.FocusBackground
-            isSelected -> NuvioTheme.colors.Secondary.copy(alpha = 0.22f)
-            isFocused -> NuvioTheme.colors.FocusBackground
+            // Neutral glass, like the rest of the app: the theme's accent no longer picks these colours.
+            isFocused -> Color.White.copy(alpha = 0.2f)
+            isSelected -> Color.White.copy(alpha = 0.12f)
             else -> Color.White.copy(alpha = 0.06f)
         },
         animationSpec = tween(150),
@@ -208,10 +208,9 @@ private fun CategoryTab(
     )
     val borderColor by animateColorAsState(
         targetValue = when {
-            isSelected && isFocused -> NuvioTheme.colors.FocusRing
-            isFocused -> NuvioTheme.colors.FocusRing
-            isSelected -> NuvioTheme.colors.Secondary
-            else -> NuvioTheme.colors.Border
+            isFocused -> Color.White.copy(alpha = 0.85f)
+            isSelected -> Color.White.copy(alpha = 0.45f)
+            else -> Color.White.copy(alpha = 0.1f)
         },
         animationSpec = tween(150),
         label = "categoryBorder"
@@ -245,11 +244,7 @@ private fun CategoryTab(
             .clip(RoundedCornerShape(20.dp))
             .background(bgColor)
             .border(
-                border = if (isFocused) {
-                    NuvioTheme.focusRing.border(borderWidth)
-                } else {
-                    BorderStroke(borderWidth, borderColor)
-                },
+                border = BorderStroke(borderWidth, borderColor),
                 shape = RoundedCornerShape(20.dp)
             )
             .onFocusChanged { isFocused = it.isFocused }
@@ -318,7 +313,7 @@ private fun AvatarGridItem(
             .clip(CircleShape)
             .border(
                 border = if (isSelected || isFocused) {
-                    NuvioTheme.focusRing.border(borderWidth)
+                    BorderStroke(borderWidth, Color.White.copy(alpha = if (isFocused) 0.9f else 0.6f))
                 } else {
                     BorderStroke(borderWidth, Color.Transparent)
                 },

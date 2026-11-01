@@ -67,16 +67,10 @@ internal fun AmbientPageWash(url: String?, modifier: Modifier = Modifier) {
     val fade = remember { Animatable(1f) }
     // The menu's frosted glass takes its colours from what's on screen; leaving, this wash is no longer there.
     androidx.compose.runtime.DisposableEffect(Unit) {
-        com.nuvio.tv.ui.newlook.AmbientWashState.staticHomePaletteActive = false
-        com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = emptyList()
-        shown?.let {
-            com.nuvio.tv.ui.newlook.AmbientWashState.image = it
-            com.nuvio.tv.ui.newlook.AmbientWashState.lastImage = it
-        }
+        shown?.let { com.nuvio.tv.ui.newlook.AmbientWashState.image = it }
         onDispose { if (com.nuvio.tv.ui.newlook.AmbientWashState.image === shown) com.nuvio.tv.ui.newlook.AmbientWashState.image = null }
     }
     LaunchedEffect(url) {
-        com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = emptyList()
         if (url.isNullOrBlank()) return@LaunchedEffect
         val next = synchronized(washCache) { washCache[url] } ?: withContext(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)
@@ -91,7 +85,6 @@ internal fun AmbientPageWash(url: String?, modifier: Modifier = Modifier) {
         previous = shown
         shown = next
         com.nuvio.tv.ui.newlook.AmbientWashState.image = next
-        com.nuvio.tv.ui.newlook.AmbientWashState.lastImage = next
         if (com.nuvio.tv.ui.newlook.AmbientWashState.lastUrl != url) {
             com.nuvio.tv.ui.newlook.AmbientWashState.lastUrl = url
             context.getSharedPreferences(AMBIENT_PREFS, android.content.Context.MODE_PRIVATE).edit()
@@ -124,13 +117,8 @@ internal fun StaticHomePaletteWash(palette: List<Int>, modifier: Modifier = Modi
             .ifEmpty { listOf(Color(0xFF33343A), Color(0xFF25262B), Color(0xFF17181C)) }
     }
     androidx.compose.runtime.DisposableEffect(colors) {
-        com.nuvio.tv.ui.newlook.AmbientWashState.staticHomePaletteActive = true
-        com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = palette.take(3)
         com.nuvio.tv.ui.newlook.AmbientWashState.image = null
-        onDispose {
-            com.nuvio.tv.ui.newlook.AmbientWashState.staticHomePaletteActive = false
-            com.nuvio.tv.ui.newlook.AmbientWashState.lastPalette = emptyList()
-        }
+        onDispose { }
     }
     Box(
         modifier = modifier.drawBehind {

@@ -174,6 +174,20 @@ class ThemeDataStore @Inject constructor(
         }
     }
 
+    /** Forgets a saved Home theme; if it was the one in use, Home goes back to Dynamic. */
+    suspend fun removeStaticHomeTheme(id: String) {
+        store().edit { prefs ->
+            val saved = prefs[savedHomeThemesKey]?.let { raw ->
+                runCatching { homeThemeJson.decodeFromString<List<SavedHomeColorTheme>>(raw) }.getOrNull()
+            }.orEmpty()
+            prefs[savedHomeThemesKey] = homeThemeJson.encodeToString(saved.filterNot { it.id == id })
+            if (prefs[selectedHomeThemeKey] == id) {
+                prefs.remove(selectedHomeThemeKey)
+                prefs[homeThemeDynamicKey] = true
+            }
+        }
+    }
+
     suspend fun saveStaticHomeTheme(
         title: String,
         backdropUrl: String,

@@ -286,10 +286,12 @@
     <string name="appearance_title">Appearance</string>
     <string name="appearance_subtitle">Choose your color theme, font and language</string>
     <string name="appearance_color_theme">Home Color Theme</string>
-    <string name="appearance_color_theme_subtitle">Dynamic follows the hero artwork. Hold Watch Now to save its colors for Home.</string>
+    <string name="appearance_color_theme_subtitle">Dynamic follows the hero artwork. Hold Watch Now on Home to save a title\'s colors; hold a saved theme here to remove it.</string>
     <string name="home_theme_dynamic">Dynamic</string>
     <string name="home_theme_dynamic_description">Follow the current hero artwork</string>
     <string name="home_theme_saved">Saved Home theme: %1$s</string>
+    <string name="home_theme_remove_title">Remove saved theme?</string>
+    <string name="home_theme_remove_subtitle">%1$s will be removed from your Home themes. If Home is using it, Home goes back to Dynamic.</string>
     <string name="theme_color_gold">Gold</string>
     <string name="theme_color_jade">Jade</string>
     <string name="theme_color_rose_gold">Rose Gold</string>
@@ -602,6 +604,7 @@
     <string name="cd_decrease">Decrease</string>
     <string name="cd_increase">Increase</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_remove">Remove</string>
     <string name="action_switch">Switch</string>
     <string name="action_apply">Apply</string>
     <string name="sub_opacity">Opacity</string>
@@ -1493,6 +1496,11 @@
     <string name="profile_avatars_invalid_url">Enter a valid HTTPS image URL.</string>
     <string name="profile_avatars_duplicate_url">That avatar has already been saved.</string>
     <string name="profile_avatars_empty">No avatars are available right now.</string>
+    <string name="profile_avatars_yours">Your avatars</string>
+    <string name="profile_avatars_yours_hint">Avatars you add appear in every profile\'s avatar picker. Select one to remove it.</string>
+    <string name="profile_avatars_add">Add</string>
+    <string name="profile_avatars_remove_title">Remove avatar?</string>
+    <string name="profile_avatars_remove_subtitle">%1$s will no longer be offered in the avatar picker. Profiles already using it keep it.</string>
     <string name="profile_manage_title">Manage Profiles</string>
     <string name="profile_manage_subtitle">Select a profile to edit, switch, or create a new one</string>
     <string name="profile_manage_hint">Select a profile to manage</string>

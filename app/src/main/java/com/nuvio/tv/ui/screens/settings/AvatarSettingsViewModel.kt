@@ -22,8 +22,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class AvatarSettingsUiState(
-    val avatars: List<AvatarCatalogItem> = emptyList(),
-    val savedCustomAvatarIds: Set<String> = emptySet(),
+    val catalog: List<AvatarCatalogItem> = emptyList(),
+    val custom: List<AvatarCatalogItem> = emptyList(),
     val loading: Boolean = true
 )
 
@@ -38,11 +38,7 @@ class AvatarSettingsViewModel @Inject constructor(
     private val loading = MutableStateFlow(true)
 
     val uiState = combine(catalog, customAvatars, loading) { defaults, custom, isLoading ->
-        AvatarSettingsUiState(
-            avatars = defaults + custom,
-            savedCustomAvatarIds = custom.mapTo(mutableSetOf()) { it.id },
-            loading = isLoading
-        )
+        AvatarSettingsUiState(catalog = defaults, custom = custom, loading = isLoading)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AvatarSettingsUiState())
 
     init {
@@ -63,6 +59,10 @@ class AvatarSettingsViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    fun removeAvatar(id: String) {
+        viewModelScope.launch { customAvatarDataStore.remove(id) }
     }
 
     fun addAvatar(url: String, onResult: (AddCustomAvatarResult) -> Unit) {

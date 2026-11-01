@@ -71,6 +71,7 @@ import com.nuvio.tv.domain.model.AppTheme
 import com.nuvio.tv.domain.model.CustomThemeColors
 import com.nuvio.tv.domain.model.SettingsUiStyle
 import com.nuvio.tv.ui.components.NuvioDialog
+import kotlinx.coroutines.launch
 import com.nuvio.tv.ui.screens.detail.requestFocusAfterFrames
 import com.nuvio.tv.ui.theme.ThemeColors
 import com.nuvio.tv.ui.newlook.home.rememberArtworkTint
@@ -107,6 +108,8 @@ fun ThemeSettingsContent(
     var showAppIconDialog by remember { mutableStateOf(false) }
     var showCustomThemeDialog by remember(uiState.customThemeGradientEnabled) { mutableStateOf(false) }
     var restoreCustomThemeFocus by remember { mutableStateOf(false) }
+    var themePendingRemoval by remember { mutableStateOf<SavedHomeColorTheme?>(null) }
+    val focusScope = androidx.compose.runtime.rememberCoroutineScope()
     var appIconConfirmation by remember { mutableStateOf<AppIconOption?>(null) }
     var pendingLanguageRestart by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -232,6 +235,7 @@ fun ThemeSettingsContent(
                                 isSelected = !uiState.homeColorThemeSettings.dynamic &&
                                     theme.id == uiState.homeColorThemeSettings.selectedStaticThemeId,
                                 onClick = { viewModel.onEvent(ThemeSettingsEvent.SelectStaticHomeTheme(theme.id)) },
+                                onLongClick = { themePendingRemoval = theme },
                                 modifier = if (
                                     !uiState.homeColorThemeSettings.dynamic &&
                                     theme.id == uiState.homeColorThemeSettings.selectedStaticThemeId &&
@@ -332,6 +336,31 @@ fun ThemeSettingsContent(
             LookAndFeelSettingsGroup()
         }
         SettingsVerticalScrollIndicators(state = themeScrollState)
+    }
+
+    themePendingRemoval?.let { theme ->
+        NuvioDialog(
+            onDismiss = { themePendingRemoval = null },
+            title = stringResource(R.string.home_theme_remove_title),
+            subtitle = stringResource(R.string.home_theme_remove_subtitle, theme.title)
+        ) {
+            SettingsDialogActionRow {
+                SettingsDialogActionButton(
+                    text = stringResource(R.string.action_cancel),
+                    onClick = { themePendingRemoval = null }
+                )
+                SettingsDialogActionButton(
+                    text = stringResource(R.string.action_remove),
+                    primary = true,
+                    onClick = {
+                        viewModel.onEvent(ThemeSettingsEvent.RemoveStaticHomeTheme(theme.id))
+                        themePendingRemoval = null
+                        // The removed chip had focus; land on Dynamic rather than losing it.
+                        focusScope.launch { firstThemeFocusRequester.requestFocusAfterFrames() }
+                    }
+                )
+            }
+        }
     }
 
     if (showCustomThemeDialog && AppTheme.CUSTOM in uiState.availableThemes) {
@@ -499,6 +528,7 @@ private fun HomeThemeChip(
     isDynamic: Boolean,
     isSelected: Boolean,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -520,6 +550,7 @@ private fun HomeThemeChip(
 
     Card(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier
             .width(116.dp)
             .onFocusChanged { focused = it.isFocused }
