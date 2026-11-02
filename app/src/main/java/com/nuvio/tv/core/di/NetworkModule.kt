@@ -169,6 +169,16 @@ object NetworkModule {
             .cache(Cache(File(context.cacheDir, "addon_http_cache"), 50L * 1024 * 1024))
             .sslSocketFactory(sslContext.socketFactory, trustAllManager)
             .hostnameVerifier { _, _ -> true }
+            // Home asks one addon for many catalogs at once (and meta for what's focused): at OkHttp's
+            // default of 5 per host they queued behind each other.
+            .dispatcher(Dispatcher().apply {
+                maxRequests = 64
+                maxRequestsPerHost = 16
+            })
+            .connectionPool(ConnectionPool(16, 5, TimeUnit.MINUTES))
+            // A whole request's limit: the read timeout restarts with every byte, so a server trickling
+            // its answer could otherwise hold a catalog, a manifest or a subtitle open indefinitely.
+            .callTimeout(20, TimeUnit.SECONDS)
             .build()
     }
 
@@ -364,6 +374,8 @@ object NetworkModule {
         })
         .connectionPool(ConnectionPool(32, 5, TimeUnit.MINUTES))
         .connectTimeout(10, TimeUnit.SECONDS)
+        // Longer than the catalogs' 20 s: scrapers can take a while, and the search shows each addon as it answers.
+        .callTimeout(30, TimeUnit.SECONDS)
         .build()
 
     /**
@@ -386,6 +398,37 @@ object NetworkModule {
     @Named("addonStreams")
     fun provideAddonStreamsApi(
         @Named("addonStreams") okHttpClient: OkHttpClient,
+        moshi: Moshi
+    ): AddonApi =
+        Retrofit.Builder()
+            .baseUrl("https://placeholder.nuvio.tv/")
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(AddonApi::class.java)
+
+    /**
+     * The stream client at normal priority, for searches the viewer is waiting on (Play pressed, a source list
+     * open); [provideAddonStreamsOkHttpClient]'s background threads stay with prefetches. Shares its connections,
+     * so a server a prefetch reached is reached again without a new handshake.
+     */
+    @Provides
+    @Singleton
+    @Named("addonStreamsForeground")
+    fun provideAddonStreamsForegroundOkHttpClient(
+        @Named("addonStreams") okHttpClient: OkHttpClient
+    ): OkHttpClient = okHttpClient.newBuilder()
+        .dispatcher(Dispatcher().apply {
+            maxRequests = 64
+            maxRequestsPerHost = 16
+        })
+        .build()
+
+    @Provides
+    @Singleton
+    @Named("addonStreamsForeground")
+    fun provideAddonStreamsForegroundApi(
+        @Named("addonStreamsForeground") okHttpClient: OkHttpClient,
         moshi: Moshi
     ): AddonApi =
         Retrofit.Builder()

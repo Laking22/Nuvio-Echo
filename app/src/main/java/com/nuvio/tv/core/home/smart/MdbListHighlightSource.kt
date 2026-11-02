@@ -130,7 +130,9 @@ class MdbListHighlightSource @Inject constructor(
             releaseInfo = released?.take(4),
             released = released,
             imdbRating = voteAverage?.takeIf { it > 0 }?.toFloat(),
-            genres = genres.orEmpty().map { it.name }
+            genres = genres.orEmpty().map { com.nuvio.tv.core.home.EnrichmentExclusion.tmdbGenreName(it.id) ?: it.name },
+            language = originalLanguage,
+            country = originCountry?.firstOrNull()
         )
     }
 

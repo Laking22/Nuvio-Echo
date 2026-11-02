@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resources CloudStream extensions look up by id from Echo's own: the resource shrinker can't see those uses. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@id/design_bottom_sheet,@style/Theme.AppCompat*,@style/Theme.MaterialComponents*,@style/Theme.Material3*" />

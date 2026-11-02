@@ -2,6 +2,7 @@ package com.nuvio.tv.ui.screens.player
 
 import android.os.SystemClock
 import android.util.Log
+import com.nuvio.tv.core.player.AutoPlayRace
 import com.nuvio.tv.core.player.BetaFeatures
 import com.nuvio.tv.core.streams.AudioLanguage
 import com.nuvio.tv.core.streams.AudioLanguageMenu
@@ -207,6 +208,29 @@ internal fun PlayerRuntimeController.switchSourceForAudio(option: AudioMenuOptio
         scheduleHideControls()
         return
     }
+    // Race matching sources: the sources with this audio in the best tier the menu would pick from (this episode,
+    // the language tagged, the quality closest to what's playing) race, so the race keeps to the language and quality.
+    val raceField = if (BetaFeatures.settings(context).raceAutoPlaySources) {
+        val original = originalAudioLanguage()
+        val currentQuality = currentPlaybackQuality()
+        val titles = audioParsingTitles()
+        fun tier(stream: Stream) = AudioLanguageMenu.rankTier(stream, original, currentQuality, titles, currentSeason, currentEpisode)
+        val bestTier = tier(target)
+        val inLanguage = AudioLanguageMenu.rankForLanguage(
+            streams = _uiState.value.sourceAllStreams,
+            language = language,
+            original = original,
+            preferredAddon = currentAddonName ?: _uiState.value.currentStreamAddonName,
+            currentQuality = currentQuality,
+            isCurrentStream = { isCurrentPlaybackStream(it) },
+            titles = titles,
+            season = currentSeason,
+            episode = currentEpisode
+        )
+        AutoPlayRace.switchField(inLanguage.filter { tier(it) == bestTier })
+    } else {
+        emptyList()
+    }
     val (original, resumeAt, duration) = sourceSwitchOrigin()
     val languageName = language?.let { audioLanguageDisplayName(it) }
         ?: context.getString(com.nuvio.tv.R.string.audio_menu_unknown)
@@ -233,7 +257,8 @@ internal fun PlayerRuntimeController.switchSourceForAudio(option: AudioMenuOptio
                 )
             },
             // Playing in the picked language: quality changes keep to it from now on.
-            onPlaying = { language?.let { stickyAudioLanguage = it } }
+            onPlaying = { language?.let { stickyAudioLanguage = it } },
+            raceField = raceField
         ),
         target
     )

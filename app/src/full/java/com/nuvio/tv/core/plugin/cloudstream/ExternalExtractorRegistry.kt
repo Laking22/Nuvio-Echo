@@ -23,8 +23,9 @@ class ExternalExtractorRegistry @Inject constructor() {
     private var installed = false
 
     fun registerExtractor(extractor: ExtractorApi) {
-        // Avoid duplicates by mainUrl
-        if (extractorApis.any { it.mainUrl == extractor.mainUrl }) return
+        // The same extractor class only once (an extension reloaded); other extractors for the same site are
+        // added as CloudStream adds them.
+        if (extractorApis.any { it.javaClass.name == extractor.javaClass.name && it.mainUrl == extractor.mainUrl }) return
         extractorApis.add(extractor)
         Log.d(TAG, "Registered extractor: ${extractor.name} (${extractor.mainUrl})")
     }

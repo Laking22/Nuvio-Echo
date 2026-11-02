@@ -134,37 +134,6 @@ private fun NdTitleCard(item: MetaPreview, onClick: () -> Unit, onLongClick: () 
     }
 }
 
-/** Reviews of the movie or the whole show; OK opens the full review, Left/Right in it moves through them. */
-@Composable
-internal fun NdReviewsRow(
-    subtitle: String?,
-    reviews: ReviewsState,
-    onOpen: (List<TraktCommentReview>, Int) -> Unit
-) {
-    Column(Modifier.fillMaxWidth().padding(bottom = 28.dp)) {
-        NdRowHeader(stringResource(R.string.nd_row_reviews), subtitle)
-        when {
-            reviews.items.isNotEmpty() -> LazyRow(
-                contentPadding = PaddingValues(horizontal = 48.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                itemsIndexed(reviews.items, key = { i, r -> "${r.id}|$i" }) { index, review ->
-                    NdReviewCard(review = review, width = 300.dp, maxLines = 4, onClick = { onOpen(reviews.items, index) })
-                }
-            }
-            else -> Text(
-                text = stringResource(if (reviews.loading || !reviews.loaded) R.string.nd_reviews_loading else R.string.nd_reviews_empty),
-                color = NdText2,
-                fontSize = 13.sp,
-                modifier = Modifier
-                    .padding(horizontal = 48.dp, vertical = 8.dp)
-                    // Focusable, so Down from the rows above lands somewhere and the page can scroll to the end.
-                    .ndClickable(onClick = {})
-            )
-        }
-    }
-}
-
 @Composable
 internal fun NdReviewCard(
     review: TraktCommentReview,

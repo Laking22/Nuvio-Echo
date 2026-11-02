@@ -46,6 +46,8 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Info
@@ -179,6 +181,8 @@ fun SettingsScreen(
     onNavigateToTracking: () -> Unit = {},
     onNavigateToAddons: () -> Unit = {},
     onNavigateToPlugins: () -> Unit = {},
+    onNavigateToCatalogOrder: () -> Unit = {},
+    onNavigateToCollections: () -> Unit = {},
     onNavigateToAuthQrSignIn: () -> Unit = {},
     onNavigateToManageProfiles: () -> Unit = {},
     onNavigateToSupportersContributors: () -> Unit = {},
@@ -647,6 +651,8 @@ fun SettingsScreen(
                                     onNavigateToManageProfiles = onNavigateToManageProfiles,
                                     onNavigateToAddons = onNavigateToAddons,
                                     onNavigateToPlugins = onNavigateToPlugins,
+                                    onNavigateToCatalogOrder = onNavigateToCatalogOrder,
+                                    onNavigateToCollections = onNavigateToCollections,
                                     onNavigateToAuthQrSignIn = onNavigateToAuthQrSignIn,
                                     onNavigateToSupportersContributors = onNavigateToSupportersContributors,
                                     onNavigateToLicensesAttributions = onNavigateToLicensesAttributions
@@ -786,6 +792,8 @@ fun SettingsScreen(
                             onNavigateToManageProfiles = onNavigateToManageProfiles,
                             onNavigateToAddons = onNavigateToAddons,
                             onNavigateToPlugins = onNavigateToPlugins,
+                            onNavigateToCatalogOrder = onNavigateToCatalogOrder,
+                            onNavigateToCollections = onNavigateToCollections,
                             onNavigateToAuthQrSignIn = onNavigateToAuthQrSignIn,
                             onNavigateToSupportersContributors = onNavigateToSupportersContributors,
                             onNavigateToLicensesAttributions = onNavigateToLicensesAttributions
@@ -815,6 +823,8 @@ private fun SettingsDetailPane(
     onNavigateToManageProfiles: () -> Unit,
     onNavigateToAddons: () -> Unit,
     onNavigateToPlugins: () -> Unit,
+    onNavigateToCatalogOrder: () -> Unit,
+    onNavigateToCollections: () -> Unit,
     onNavigateToAuthQrSignIn: () -> Unit,
     onNavigateToSupportersContributors: () -> Unit,
     onNavigateToLicensesAttributions: () -> Unit
@@ -914,7 +924,10 @@ private fun SettingsDetailPane(
         SettingsCategory.CONTENT_DISCOVERY -> ContentDiscoverySettingsContent(
             onNavigateToAddons = onNavigateToAddons,
             onNavigateToPlugins = onNavigateToPlugins,
+            onNavigateToCatalogOrder = onNavigateToCatalogOrder,
+            onNavigateToCollections = onNavigateToCollections,
             showPlugins = AppFeaturePolicy.pluginsEnabled && !isEssentialMode,
+            showHomeLayout = !isEssentialMode,
             initialFocusRequester = if (allowDetailAutofocus) {
                 contentFocusRequesters[SettingsCategory.CONTENT_DISCOVERY]
             } else {
@@ -946,7 +959,10 @@ private fun SettingsDetailPane(
 private fun ContentDiscoverySettingsContent(
     onNavigateToAddons: () -> Unit,
     onNavigateToPlugins: () -> Unit,
+    onNavigateToCatalogOrder: () -> Unit,
+    onNavigateToCollections: () -> Unit,
     showPlugins: Boolean,
+    showHomeLayout: Boolean,
     initialFocusRequester: FocusRequester?
 ) {
     Column(
@@ -981,6 +997,23 @@ private fun ContentDiscoverySettingsContent(
             }
         }
         HighlightSettingsGroup()
+        if (showHomeLayout) {
+            // Where Home's rows go, and the collections that can be among them: each its own page.
+            SettingsGroupCard(modifier = Modifier.fillMaxWidth()) {
+                SettingsActionRow(
+                    title = stringResource(R.string.addon_reorder_title),
+                    subtitle = stringResource(R.string.settings_reorder_home_subtitle),
+                    onClick = onNavigateToCatalogOrder,
+                    leadingIcon = Icons.Default.SwapVert
+                )
+                SettingsActionRow(
+                    title = stringResource(R.string.collections_card_title),
+                    subtitle = stringResource(R.string.settings_collections_subtitle),
+                    onClick = onNavigateToCollections,
+                    leadingIcon = Icons.Default.Folder
+                )
+            }
+        }
         HighlightedRowsSettingsGroup()
         Spacer(modifier = Modifier.height(NuvioTheme.spacing.xxl))
     }

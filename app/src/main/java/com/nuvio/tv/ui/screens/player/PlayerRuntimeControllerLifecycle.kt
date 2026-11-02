@@ -48,7 +48,6 @@ internal fun PlayerRuntimeController.releasePlayer(flushPlaybackState: Boolean) 
     hidePlayerEngineSwitchInfoJob?.cancel()
     hideSubtitleDelayOverlayJob?.cancel()
     subtitleAutoSyncLoadJob?.cancel()
-    cancelAutomaticSubtitleSync() // AutoSync hook
     stopSidecarAddonSubtitle(clearView = true)
     subtitleTimingRefreshJob?.cancel()
     subtitleTimingRefreshJob = null
@@ -77,8 +76,11 @@ internal fun PlayerRuntimeController.releasePlayer(flushPlaybackState: Boolean) 
         runCatching { player.pause() }
         runCatching { player.stop() }
         runCatching { player.clearMediaItems() }
-        runCatching { player.clearVideoSurface() }
+        // No separate clearVideoSurface(): release() detaches the surface itself, and clearing it first
+        // waited up to 2 s more for the playback thread on top of release's own wait. Run from a key
+        // press, the two together reached Android's 5 s limit and the app was reported not responding.
         runCatching { player.release() }
+        markExoReleased()
     }
     _exoPlayer = null
     _loadControl = null

@@ -5,12 +5,14 @@ import android.util.Log
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.SeekParameters
 import com.nuvio.tv.R
+import com.nuvio.tv.core.player.AutoPlayRace
 import com.nuvio.tv.core.player.BetaFeatures
 import com.nuvio.tv.domain.model.ProxyHeaders
 import com.nuvio.tv.domain.model.Stream
 import com.nuvio.tv.domain.model.StreamBehaviorHints
 import com.nuvio.tv.ui.newlook.NewLookNotifications
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -51,9 +53,16 @@ internal class SourceSwitchSession(
     /** A pick (not the way back) is playing. */
     val onPlaying: () -> Unit = {},
     /** A pick that starts without sound (no audio track, or none the device can play) counts as failed. */
-    val requireAudio: Boolean = false
+    val requireAudio: Boolean = false,
+    /**
+     * Race matching sources: the sources to race for the first pick (the menu's own choice, see
+     * AutoPlayRace.switchField); the first to send video from the resume spot plays. Empty: [next] decides alone.
+     */
+    val raceField: List<Stream> = emptyList()
 ) {
     val tried = mutableSetOf<String>()
+    /** Sources that failed the race: later picks pass them over while others are left. */
+    var raceLost: Set<String> = emptySet()
     var attempts = 0
     var returning = false
     /** Playing (not paused by the viewer) when the switch began: Back before the first attempt resumes it. */
@@ -73,6 +82,8 @@ private const val SILENT_GRACE_MS = 2_000L
 /** How long the held frame may take to come from the thumbnail decoder before the backdrop is used. */
 private const val FRAME_GRAB_TIMEOUT_MS = 1_200L
 
+/** A pick given extra time (see watchSourceSwitch) fails once no data has come in for this long. */
+private const val SWITCH_LOAD_STALL_MS = 3_000L
 /** However the attempts go, the loading screen never outlasts this (beyond the attempts' own timeouts). */
 private const val SWITCH_GUARD_SLACK_MS = 20_000L
 
@@ -148,6 +159,14 @@ internal fun PlayerRuntimeController.beginSourceSwitch(session: SourceSwitchSess
     }
     sourceSwitchJob = scope.launch {
         yield()
+        // The race runs while the frame is taken, so it adds little to the wait.
+        val field = session.raceField.filter { it.switchKey() !in session.tried }
+        val race = if (field.size > 1) {
+            val fraction = session.resumeAtMs?.takeIf { session.durationMs > 0L }?.let { it.toDouble() / session.durationMs }
+            async { AutoPlayRace.pickForSwitch(field, fraction) }
+        } else {
+            null
+        }
         // The frame it left, from the stream itself, while the paused old player still shows it.
         if (previous == null && _switchFrame.value == null) {
             val at = session.resumeAtMs
@@ -165,7 +184,11 @@ internal fun PlayerRuntimeController.beginSourceSwitch(session: SourceSwitchSess
                 }
             }
         }
-        if (sourceSwitch === session) attemptSourceSwitch(session, first)
+        val pick = race?.await()?.let { result ->
+            session.raceLost = result.failed.mapTo(mutableSetOf()) { it.switchKey() }
+            result.winner
+        } ?: first
+        if (sourceSwitch === session) attemptSourceSwitch(session, pick)
     }
     guardSourceSwitch(session)
 }
@@ -178,7 +201,8 @@ private fun PlayerRuntimeController.guardSourceSwitch(session: SourceSwitchSessi
     sourceSwitchGuardJob?.cancel()
     val perAttemptMs = BetaFeatures.settings(context).sourceSwitchTimeoutSeconds * 1_000L
     sourceSwitchGuardJob = scope.launch {
-        delay(perAttemptMs * (MAX_SWITCH_ATTEMPTS + 1) + FRAME_GRAB_TIMEOUT_MS + SWITCH_GUARD_SLACK_MS)
+        // Each attempt may take twice its timeout while data keeps arriving (see watchSourceSwitch).
+        delay(perAttemptMs * 2 * (MAX_SWITCH_ATTEMPTS + 1) + FRAME_GRAB_TIMEOUT_MS + SWITCH_GUARD_SLACK_MS)
         if (sourceSwitch === session) {
             Log.w(PlayerRuntimeController.TAG, "SOURCE_SWITCH: guard ended a switch that ran too long")
             sourceSwitchJob?.cancel()
@@ -219,30 +243,56 @@ private fun PlayerRuntimeController.attemptSourceSwitch(session: SourceSwitchSes
     watchSourceSwitch(session)
 }
 
-/** Waits for the attempt to play; past the timeout it counts as failed. */
+/**
+ * Waits for the attempt to play; past the timeout it counts as failed. One still downloading then (a big file opened
+ * mid-film on a slow server) gets as long again, for as long as data keeps arriving.
+ */
 private fun PlayerRuntimeController.watchSourceSwitch(session: SourceSwitchSession) {
     sourceSwitchWatchJob?.cancel()
     sourceSwitchWatchJob = scope.launch {
         val timeoutMs = BetaFeatures.settings(context).sourceSwitchTimeoutSeconds * 1_000L
-        // True: playing. False: playing without sound. Null: not playing within the timeout.
-        val outcome: Boolean? = withTimeoutOrNull(timeoutMs) {
-            var silentSince: Long? = null
+        var silentSince: Long? = null
+        // True: playing. False: playing without sound. Null: not yet.
+        fun check(): Boolean? {
+            if (sourceSwitchAttemptPlaying(session)) {
+                if (!session.requireAudio || session.returning || hasPlayableAudio()) return true
+                val now = SystemClock.elapsedRealtime()
+                val since = silentSince ?: now.also { silentSince = it }
+                if (now - since >= SILENT_GRACE_MS) return false
+            } else {
+                silentSince = null
+            }
+            return null
+        }
+        var outcome: Boolean? = withTimeoutOrNull(timeoutMs) {
             var result: Boolean? = null
             while (result == null) {
-                if (sourceSwitchAttemptPlaying(session)) {
-                    if (!session.requireAudio || session.returning || hasPlayableAudio()) {
-                        result = true
-                    } else {
-                        val now = SystemClock.elapsedRealtime()
-                        val since = silentSince ?: now.also { silentSince = it }
-                        if (now - since >= SILENT_GRACE_MS) result = false
-                    }
-                } else {
-                    silentSince = null
-                }
+                result = check()
                 if (result == null) delay(100)
             }
             result
+        }
+        if (outcome == null && !session.returning && sourceSwitch === session && switchPickLoading(session)) {
+            Log.i(PlayerRuntimeController.TAG, "SOURCE_SWITCH: still loading after ${timeoutMs / 1000}s; waiting while data arrives")
+            outcome = withTimeoutOrNull(timeoutMs) {
+                var mark = switchPickLoadMark()
+                var movedAt = SystemClock.elapsedRealtime()
+                var result: Boolean? = null
+                while (result == null) {
+                    result = check()
+                    if (result != null) break
+                    val now = SystemClock.elapsedRealtime()
+                    val current = switchPickLoadMark()
+                    if (current != mark) {
+                        mark = current
+                        movedAt = now
+                    } else if (now - movedAt >= SWITCH_LOAD_STALL_MS) {
+                        break
+                    }
+                    delay(100)
+                }
+                result
+            }
         }
         if (sourceSwitch !== session) return@launch
         if (outcome == false) {
@@ -257,7 +307,7 @@ private fun PlayerRuntimeController.watchSourceSwitch(session: SourceSwitchSessi
             if (!session.returning) session.onPlaying()
             endSourceSwitch(resumeControlsTimer = true)
         } else {
-            Log.w(PlayerRuntimeController.TAG, "SOURCE_SWITCH: no playback after ${timeoutMs / 1000}s")
+            Log.w(PlayerRuntimeController.TAG, "SOURCE_SWITCH: no playback in time")
             if (session.returning) {
                 // Still loading the original: let it carry on as a normal load.
                 endSourceSwitch(resumeControlsTimer = false)
@@ -267,6 +317,16 @@ private fun PlayerRuntimeController.watchSourceSwitch(session: SourceSwitchSessi
         }
     }
 }
+
+/** The attempt's player is downloading (ExoPlayer; mpv doesn't say). */
+private fun PlayerRuntimeController.switchPickLoading(session: SourceSwitchSession): Boolean {
+    if (isUsingMpvEngine() || currentStreamUrl == session.attemptFromUrl || _uiState.value.error != null) return false
+    return _exoPlayer?.isLoading == true
+}
+
+/** Changes while the attempt's player takes in data: how far it has buffered, and its state. */
+private fun PlayerRuntimeController.switchPickLoadMark(): Pair<Long, Int>? =
+    _exoPlayer?.let { it.bufferedPosition to it.playbackState }
 
 /**
  * The new source is ready at the old spot (within the margins), with any audio check passed. Ready, not
@@ -292,7 +352,11 @@ internal fun PlayerRuntimeController.hasPlayableAudio(): Boolean {
 
 /** The next pick with the same quality or audio; once none is left, back to the original. */
 private fun PlayerRuntimeController.moveOnFromSourceSwitch(session: SourceSwitchSession) {
-    val next = if (session.attempts < MAX_SWITCH_ATTEMPTS) session.next(session.tried) else null
+    val next = if (session.attempts < MAX_SWITCH_ATTEMPTS) {
+        session.next(session.tried + session.raceLost) ?: session.next(session.tried)
+    } else {
+        null
+    }
     if (next != null) {
         attemptSourceSwitch(session, next)
         return
@@ -342,6 +406,21 @@ internal fun PlayerRuntimeController.handleSourceSwitchFailure(detailedError: St
         if (sourceSwitch === session) moveOnFromSourceSwitch(session)
     }
     return true
+}
+
+/**
+ * At a pick's first ready: one that can't seek would play from the start, not where the switch resumes, and only
+ * fail once the switch timed out. True when it's passed over now and the next pick starts.
+ */
+internal fun PlayerRuntimeController.rejectUnseekableSwitchPick(seekable: Boolean): Boolean {
+    val session = sourceSwitch ?: return false
+    if (seekable || session.returning || currentStreamUrl == session.attemptFromUrl) return false
+    val position = _uiState.value.pendingSeekPosition ?: return false
+    // Near the start, playing from 0:00 is within the margins anyway.
+    if (position <= SWITCH_EARLY_MARGIN_MS) return false
+    Log.w(PlayerRuntimeController.TAG, "SOURCE_SWITCH: can't seek, so can't resume at ${position / 1000}s; next")
+    _uiState.update { it.copy(pendingSeekPosition = null) }
+    return rejectSourceSwitchAttempt()
 }
 
 /** A pick that turned out to be the wrong video (see [verifyAudioSwitchDuration]): on to the next. */

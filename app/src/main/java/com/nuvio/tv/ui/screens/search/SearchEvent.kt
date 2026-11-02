@@ -14,10 +14,5 @@ sealed interface SearchEvent {
         val type: String
     ) : SearchEvent
 
-    data class SelectDiscoverType(val type: String) : SearchEvent
-    data class SelectDiscoverCatalog(val catalogKey: String) : SearchEvent
-    data class SelectDiscoverGenre(val genre: String?) : SearchEvent
-    data object LoadNextDiscoverResults : SearchEvent
-
     data object Retry : SearchEvent
 }

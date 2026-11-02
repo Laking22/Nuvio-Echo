@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nuvio.tv.data.remote.supabase.AvatarCatalogItem
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -24,7 +25,42 @@ private data class StoredCustomAvatar(
 @Serializable
 private data class StoredCustomAvatarList(val items: List<StoredCustomAvatar> = emptyList())
 
-enum class AddCustomAvatarResult { ADDED, DUPLICATE, INVALID }
+/** What adding avatar links did: how many were added, already saved, or not usable image links. */
+data class AddAvatarsReport(val added: Int, val duplicate: Int, val invalid: Int)
+
+@Serializable
+private data class AvatarPack(val name: String? = null, val avatars: List<AvatarPackItem> = emptyList())
+
+@Serializable
+private data class AvatarPackItem(val name: String? = null, val url: String? = null, val imageUrl: String? = null)
+
+private val packJson = Json { ignoreUnknownKeys = true; encodeDefaults = false; prettyPrint = true }
+
+/** Links in pasted text: separated by commas, spaces or new lines. */
+internal fun splitAvatarLinks(raw: String): List<Pair<String?, String>> =
+    raw.split(',', '\n', ' ', '\t', ';').map(String::trim).filter(String::isNotEmpty).map { null to it }
+
+/**
+ * A pack's avatars as (name, link): Echo's own JSON ({"avatars": [{"name", "url"}]}), a JSON list of links or of
+ * objects with "url"/"imageUrl", or plain text with links separated by commas, spaces or new lines.
+ */
+internal fun parseAvatarPack(text: String): List<Pair<String?, String>> {
+    val trimmed = text.trim()
+    if (trimmed.startsWith("{")) {
+        runCatching { packJson.decodeFromString<AvatarPack>(trimmed) }.getOrNull()?.let { pack ->
+            return pack.avatars.mapNotNull { item -> (item.url ?: item.imageUrl)?.let { item.name to it } }
+        }
+    }
+    if (trimmed.startsWith("[")) {
+        runCatching { packJson.decodeFromString<List<String>>(trimmed) }.getOrNull()?.let { list ->
+            return list.map { null to it }
+        }
+        runCatching { packJson.decodeFromString<List<AvatarPackItem>>(trimmed) }.getOrNull()?.let { list ->
+            return list.mapNotNull { item -> (item.url ?: item.imageUrl)?.let { item.name to it } }
+        }
+    }
+    return splitAvatarLinks(trimmed)
+}
 
 /** Image URLs the primary profile added to the avatar catalog; every profile's picker offers them. */
 @Singleton
@@ -36,6 +72,7 @@ class CustomAvatarDataStore @Inject constructor(
         private const val PRIMARY_PROFILE_ID = 1
         private val AVATARS_KEY = stringPreferencesKey("avatars")
         private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        private const val MAX_AVATARS = 100
     }
 
     // Only the primary profile can open the Avatars page, so its list is the one every profile picks from.
@@ -54,34 +91,55 @@ class CustomAvatarDataStore @Inject constructor(
         }
     }
 
-    suspend fun add(rawUrl: String): AddCustomAvatarResult {
-        val normalizedUrl = normalizeAvatarImageUrl(rawUrl) ?: return AddCustomAvatarResult.INVALID
-        val stored = store()
-        var result = AddCustomAvatarResult.ADDED
-        stored.edit { prefs ->
+    /**
+     * Adds every image link in [raw] (one, or several separated by commas, spaces or new lines), skipping links already
+     * saved and ones that aren't direct HTTPS images.
+     */
+    suspend fun addAll(raw: String): AddAvatarsReport = addLinks(splitAvatarLinks(raw))
+
+    suspend fun addLinks(links: List<Pair<String?, String>>): AddAvatarsReport {
+        var added = 0
+        var duplicate = 0
+        var invalid = 0
+        store().edit { prefs ->
             val entries = decode(prefs[AVATARS_KEY]).toMutableList()
-            if (entries.any { it.imageUrl.equals(normalizedUrl, ignoreCase = true) }) {
-                result = AddCustomAvatarResult.DUPLICATE
-            } else {
-                val uri = URI(normalizedUrl)
-                val fileName = uri.path.substringAfterLast('/').substringBeforeLast('.')
-                val displayName = fileName
-                    .removeSuffix("-profile-avatar")
-                    .replace(Regex("[-_]+"), " ")
-                    .split(' ')
-                    .filter(String::isNotBlank)
-                    .joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
-                    .ifBlank { "Custom avatar" }
-                entries += StoredCustomAvatar(
-                    id = "custom-${sha256(normalizedUrl)}",
-                    displayName = displayName,
-                    imageUrl = normalizedUrl
-                )
-                prefs[AVATARS_KEY] = json.encodeToString(StoredCustomAvatarList(entries.takeLast(50)))
+            for ((name, rawUrl) in links) {
+                val url = normalizeAvatarImageUrl(rawUrl)
+                when {
+                    url == null -> invalid++
+                    entries.any { it.imageUrl.equals(url, ignoreCase = true) } -> duplicate++
+                    else -> {
+                        entries += StoredCustomAvatar(
+                            id = "custom-${sha256(url)}",
+                            displayName = name?.trim()?.takeIf(String::isNotBlank)?.take(60) ?: nameFromUrl(url),
+                            imageUrl = url
+                        )
+                        added++
+                    }
+                }
             }
+            if (added > 0) prefs[AVATARS_KEY] = json.encodeToString(StoredCustomAvatarList(entries.takeLast(MAX_AVATARS)))
         }
-        return result
+        return AddAvatarsReport(added, duplicate, invalid)
     }
+
+    /** The saved avatars as a pack (JSON) another device or person can import ([parseAvatarPack]). */
+    suspend fun exportPack(): String {
+        val entries = decode(store().data.first()[AVATARS_KEY])
+        return packJson.encodeToString(
+            AvatarPack(name = "Nuvio Echo avatars", avatars = entries.map { AvatarPackItem(it.displayName, it.imageUrl) })
+        )
+    }
+
+    suspend fun links(): List<String> = decode(store().data.first()[AVATARS_KEY]).map { it.imageUrl }
+
+    private fun nameFromUrl(url: String): String = URI(url).path.substringAfterLast('/').substringBeforeLast('.')
+        .removeSuffix("-profile-avatar")
+        .replace(Regex("[-_]+"), " ")
+        .split(' ')
+        .filter(String::isNotBlank)
+        .joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
+        .ifBlank { "Custom avatar" }
 
     suspend fun remove(id: String) {
         store().edit { prefs ->

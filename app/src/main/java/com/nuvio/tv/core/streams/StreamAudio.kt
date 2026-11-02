@@ -586,14 +586,31 @@ object AudioLanguageMenu {
                     StreamEpisodeNames.matches(stream, season, episode) != false
             }
             .sortedBy { (index, stream) ->
-                val namesEpisode = if (StreamEpisodeNames.matches(stream, season, episode) == true) 0 else 1
                 val sameAddon = if (preferredAddon != null && stream.addonName == preferredAddon) 0 else 1
-                val assumed = if (StreamAudioParser.audio(stream, original, titles).assumedOriginal) 1 else 0
-                val quality = StreamFallbackSelector.qualityDistance(StreamQualityParser.parse(stream), currentQuality)
-                // Each part outweighs everything after it: quality distance runs up to 100 (unknown), so 100 * 10_000.
-                namesEpisode * 1_000_000_000L + sameAddon * 100_000_000L + assumed * 10_000_000L + quality * 10_000L + index
+                rankTier(stream, original, currentQuality, titles, season, episode) + sameAddon * 100_000_000L + index
             }
             .map { it.value }
+    }
+
+    /**
+     * How well [stream] fits an audio switch, before addon and addon order: naming this episode, then a tagged
+     * language over one only assumed to be the original, then the quality closest to [currentQuality]. Lower is
+     * better; sources with the same tier are equally loyal to the picked language and the playing quality.
+     */
+    fun rankTier(
+        stream: Stream,
+        original: AudioLanguage?,
+        currentQuality: StreamQuality?,
+        titles: List<String?> = emptyList(),
+        season: Int? = null,
+        episode: Int? = null
+    ): Long {
+        val namesEpisode = if (StreamEpisodeNames.matches(stream, season, episode) == true) 0 else 1
+        val assumed = if (StreamAudioParser.audio(stream, original, titles).assumedOriginal) 1 else 0
+        val quality = StreamFallbackSelector.qualityDistance(StreamQualityParser.parse(stream), currentQuality)
+        // Each part outweighs everything after it (the addon comes between the episode and the tagging): quality
+        // distance runs up to 100 (unknown), so 100 * 10_000.
+        return namesEpisode * 1_000_000_000L + assumed * 10_000_000L + quality * 10_000L
     }
 
     fun pickForLanguage(

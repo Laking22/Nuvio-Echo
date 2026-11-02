@@ -17,16 +17,20 @@ object HomeRowOrder {
      * [catalogKeys] in order with [builtIns] (row keys) placed among them, and Continue Watching
      * ([CONTINUE_WATCHING_KEY]) too when [continueWatching]: it moves like a built-in row and starts at the top.
      * [typeOf] gives a catalog's type ("movie", "series"...) for the default places of the Top 20 rows.
+     * [slots] are custom enrichment's highlight spots ([EnrichmentSlots]): saved ones go back where they were, the rest
+     * spread evenly through the catalogs.
      */
     fun merge(
         catalogKeys: List<String>,
         builtIns: List<BuiltInRow>,
         saved: List<String>,
         continueWatching: Boolean = false,
+        slots: List<String> = emptyList(),
         typeOf: (String) -> String?
     ): List<String> {
         val result = catalogKeys.toMutableList()
-        val builtInKeys = builtIns.map { it.rowKey }.toSet() + if (continueWatching) setOf(CONTINUE_WATCHING_KEY) else emptySet()
+        val builtInKeys = builtIns.map { it.rowKey }.toSet() + slots +
+            if (continueWatching) setOf(CONTINUE_WATCHING_KEY) else emptySet()
 
         // Saved built-ins, in saved order: after the nearest earlier saved key that's already placed.
         val savedPositions = saved.withIndex().filter { it.value in builtInKeys }
@@ -68,6 +72,24 @@ object HomeRowOrder {
                 }
             }
             placed += row.rowKey
+        }
+
+        // Spots never moved, spread evenly: the k-th of m after about k/(m+1) of the way through the catalogs.
+        val unplaced = slots.filter { it !in placed }
+        val catalogCount = result.count { !isBuiltIn(it) }
+        unplaced.forEachIndexed { k, key ->
+            val ordinal = if (catalogCount == 0) 0 else ((k + 1) * catalogCount / (unplaced.size + 1)).coerceAtLeast(1)
+            var seen = 0
+            var at = result.size
+            if (ordinal > 0) {
+                for (i in result.indices) {
+                    if (!isBuiltIn(result[i]) && ++seen == ordinal) {
+                        at = i + 1
+                        break
+                    }
+                }
+            }
+            result.add(at, key)
         }
         return result
     }

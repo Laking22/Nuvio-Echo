@@ -95,7 +95,10 @@ internal fun PlayerRuntimeController.initializeMpvPlayer(
     allowEngineFailover: Boolean = true
 ) {
     mpvMediaLoadPrepared = true
-    _exoPlayer?.release()
+    _exoPlayer?.let { player ->
+        player.release()
+        markExoReleased()
+    }
     _exoPlayer = null
     trackSelector = null
     try {

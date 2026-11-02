@@ -19,7 +19,6 @@ import com.nuvio.tv.data.local.TrailerSettingsDataStore
 import com.nuvio.tv.domain.model.CardDepthStyle
 import com.nuvio.tv.domain.model.CardDepthSurface
 import com.nuvio.tv.domain.model.ContinueWatchingSortMode
-import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.domain.model.HomeImdbRatingsVisibility
 import com.nuvio.tv.domain.model.enabledAddons
 import com.nuvio.tv.domain.repository.AddonRepository
@@ -39,8 +38,6 @@ data class LayoutSettingsUiState(
     val heroCatalogKeys: List<String> = emptyList(),
     val modernLandscapePostersEnabled: Boolean = false,
     val heroSectionEnabled: Boolean = true,
-    val discoverLocation: DiscoverLocation = DiscoverLocation.IN_SEARCH,
-    val lastNonOffDiscoverLocation: DiscoverLocation = DiscoverLocation.IN_SEARCH,
     val posterLabelsEnabled: Boolean = true,
     val catalogAddonNameEnabled: Boolean = true,
     val catalogTypeSuffixEnabled: Boolean = true,
@@ -78,7 +75,6 @@ sealed class LayoutSettingsEvent {
     data class ToggleHeroCatalog(val catalogKey: String) : LayoutSettingsEvent()
     data class SetModernLandscapePostersEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetHeroSectionEnabled(val enabled: Boolean) : LayoutSettingsEvent()
-    data class SetDiscoverLocation(val location: DiscoverLocation) : LayoutSettingsEvent()
     data class SetPosterLabelsEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetCatalogAddonNameEnabled(val enabled: Boolean) : LayoutSettingsEvent()
     data class SetCatalogTypeSuffixEnabled(val enabled: Boolean) : LayoutSettingsEvent()
@@ -165,16 +161,6 @@ class LayoutSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             layoutPreferenceDataStore.heroSectionEnabled.distinctUntilChanged().collectLatest { enabled ->
                 updateUiStateIfChanged { it.copy(heroSectionEnabled = enabled) }
-            }
-        }
-        viewModelScope.launch {
-            layoutPreferenceDataStore.discoverLocation.distinctUntilChanged().collectLatest { location ->
-                updateUiStateIfChanged { it.copy(discoverLocation = location) }
-            }
-        }
-        viewModelScope.launch {
-            layoutPreferenceDataStore.lastNonOffDiscoverLocation.distinctUntilChanged().collectLatest { location ->
-                updateUiStateIfChanged { it.copy(lastNonOffDiscoverLocation = location) }
             }
         }
         viewModelScope.launch {
@@ -307,7 +293,6 @@ class LayoutSettingsViewModel @Inject constructor(
             is LayoutSettingsEvent.ToggleHeroCatalog -> toggleHeroCatalog(event.catalogKey)
             is LayoutSettingsEvent.SetModernLandscapePostersEnabled -> setModernLandscapePostersEnabled(event.enabled)
             is LayoutSettingsEvent.SetHeroSectionEnabled -> setHeroSectionEnabled(event.enabled)
-            is LayoutSettingsEvent.SetDiscoverLocation -> setDiscoverLocation(event.location)
             is LayoutSettingsEvent.SetPosterLabelsEnabled -> setPosterLabelsEnabled(event.enabled)
             is LayoutSettingsEvent.SetCatalogAddonNameEnabled -> setCatalogAddonNameEnabled(event.enabled)
             is LayoutSettingsEvent.SetCatalogTypeSuffixEnabled -> setCatalogTypeSuffixEnabled(event.enabled)
@@ -433,13 +418,6 @@ class LayoutSettingsViewModel @Inject constructor(
         if (_uiState.value.heroSectionEnabled == enabled) return
         viewModelScope.launch {
             layoutPreferenceDataStore.setHeroSectionEnabled(enabled)
-        }
-    }
-
-    private fun setDiscoverLocation(location: DiscoverLocation) {
-        if (_uiState.value.discoverLocation == location) return
-        viewModelScope.launch {
-            layoutPreferenceDataStore.setDiscoverLocation(location)
         }
     }
 

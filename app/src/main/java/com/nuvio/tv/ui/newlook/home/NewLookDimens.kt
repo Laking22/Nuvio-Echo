@@ -3,11 +3,13 @@ package com.nuvio.tv.ui.newlook.home
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 /**
  * Every size on the new look's Home comes from this one set, so rows, scroll positions and
- * the hero spacing all follow it. Posters and highlighted cards scale from Layout's poster card width; grand cards
- * remain tied to the hero window. Every card's corners follow Layout's corner radius.
+ * the hero spacing all follow it. Posters and highlighted cards scale from Layout's poster card width (unless
+ * highlighted cards have a size of their own); grand cards remain tied to the hero window. Every card's corners
+ * follow Layout's corner radius.
  */
 @Immutable
 data class NewLookDimens(
@@ -63,22 +65,32 @@ data class NewLookDimens(
 
         /**
          * Home's sizes for Layout's poster card [posterWidthDp] and corner [cornerRadiusDp]. Posters keep 2:3
-         * and open out to 16:9 at the same height. Highlighted cards keep their existing size ratio to posters;
-         * grand cards stay tied to the hero window.
+         * and open out to 16:9 at the same height. Highlighted cards keep their existing size ratio to posters
+         * (Dynamic), or with [highlightPercent] take that percent of the standard highlighted card (Custom); grand
+         * cards stay tied to the hero window.
          */
-        fun of(posterWidthDp: Int = DEFAULT_POSTER_WIDTH_DP, cornerRadiusDp: Int = 12): NewLookDimens {
+        fun of(
+            posterWidthDp: Int = DEFAULT_POSTER_WIDTH_DP,
+            cornerRadiusDp: Int = 12,
+            highlightPercent: Int? = null
+        ): NewLookDimens {
             val s = posterWidthDp / DEFAULT_POSTER_WIDTH_DP.toFloat()
+            val h = highlightPercent?.let { it / 100f } ?: s
             val posterHeight = Medium.posterHeight * s
             return Medium.copy(
                 posterWidth = Medium.posterWidth * s,
                 posterHeight = posterHeight,
                 posterOpenWidth = posterHeight * (16f / 9f),
-                highlightWidth = Medium.highlightWidth * s,
-                highlightHeight = Medium.highlightHeight * s,
-                highlightMeta = Medium.highlightMeta * s,
+                highlightWidth = Medium.highlightWidth * h,
+                highlightHeight = Medium.highlightHeight * h,
+                highlightMeta = Medium.highlightMeta * h,
                 cardRadius = cornerRadiusDp.coerceAtLeast(0).dp
             )
         }
+
+        /** The percent of the standard highlighted card Dynamic gives at poster width [posterWidthDp]. */
+        fun dynamicHighlightPercent(posterWidthDp: Int): Int =
+            (posterWidthDp * 100f / DEFAULT_POSTER_WIDTH_DP).roundToInt()
     }
 }
 

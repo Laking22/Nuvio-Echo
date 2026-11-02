@@ -3,6 +3,7 @@ package com.nuvio.tv.ui.screens.player
 import android.util.Log
 import androidx.media3.common.PlaybackException
 import com.nuvio.tv.R
+import com.nuvio.tv.core.player.AutoPlayRace
 import com.nuvio.tv.core.player.BetaFeatures
 import com.nuvio.tv.core.streams.StreamFallbackSelector
 import com.nuvio.tv.core.streams.StreamQuality
@@ -76,6 +77,20 @@ internal fun PlayerRuntimeController.selectStreamQuality(quality: StreamQuality)
         language
     ).firstOrNull { it.switchKey() !in tried }
     val target = ranked(emptySet()) ?: return
+    // Race matching sources: the sources with this quality race, only those in the language being listened to
+    // when it has any (as [ranked] keeps to it), so the race keeps to both.
+    val raceField = if (BetaFeatures.settings(context).raceAutoPlaySources) {
+        val withQuality = StreamQualityMenu.rankForQuality(
+            streams = _uiState.value.sourceAllStreams,
+            quality = quality,
+            preferredAddon = preferredAddon,
+            isCurrentStream = { isCurrentPlaybackStream(it) }
+        )
+        val inLanguage = withQuality.filter { keepsLanguage(it, language) }
+        AutoPlayRace.switchField(inLanguage.ifEmpty { withQuality })
+    } else {
+        emptyList()
+    }
     Log.i(PlayerRuntimeController.TAG, "QUALITY_SWITCH: to=${quality.label} addon=${target.addonName} audio=${language?.code}")
     val (original, resumeAt, duration) = sourceSwitchOrigin()
     beginSourceSwitch(
@@ -86,7 +101,8 @@ internal fun PlayerRuntimeController.selectStreamQuality(quality: StreamQuality)
             resumeAtMs = resumeAt,
             durationMs = duration,
             next = ::ranked,
-            onAttempt = { keepLanguageOnNextSource(language) }
+            onAttempt = { keepLanguageOnNextSource(language) },
+            raceField = raceField
         ),
         target
     )
@@ -95,14 +111,16 @@ internal fun PlayerRuntimeController.selectStreamQuality(quality: StreamQuality)
 /**
  * Switches source and resumes at the exact position. A plain switch resumes from saved watch
  * progress, which only exists past the first 2% of a title, so an early switch restarted at 0:00.
- * The pending seek is applied once the new source is ready, after any saved progress.
+ * The pending seek is applied once the new source is ready. Saved progress isn't read back then:
+ * during a switch it could be the last periodic save, up to a minute and a half behind, and a
+ * source resumed that far back counted as failing.
  */
 internal fun PlayerRuntimeController.switchKeepingPosition(
     target: Stream,
     resumeAt: Long? = currentSwitchPositionMs(),
     startIntro: Boolean = true
 ) {
-    switchToSourceStream(target, startIntro = startIntro)
+    switchToSourceStream(target, startIntro = startIntro, loadSavedProgress = resumeAt == null)
     if (resumeAt != null) {
         _uiState.update { it.copy(pendingSeekPosition = resumeAt) }
     }

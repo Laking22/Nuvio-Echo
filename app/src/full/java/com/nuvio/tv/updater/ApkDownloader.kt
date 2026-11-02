@@ -1,5 +1,6 @@
 package com.nuvio.tv.updater
 
+import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -21,8 +22,11 @@ class ApkDownloader @Inject constructor(
             destinationFile.parentFile?.mkdirs()
             if (destinationFile.exists()) destinationFile.delete()
 
+            // Kept out of the shared 50 MB HTTP cache: an APK is bigger than it, and writing it there would push
+            // out everything else cached.
             val request = Request.Builder()
                 .url(url)
+                .cacheControl(CacheControl.Builder().noStore().build())
                 .build()
 
             okHttpClient.newCall(request).execute().use { response ->

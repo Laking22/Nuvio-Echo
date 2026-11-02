@@ -1078,7 +1078,6 @@ internal fun PlayerRuntimeController.applyPersistedTrackPreference(
                             subtitleAddonRestoredByPersistedPreference = true
                             pendingRestoredAddonSubtitle = addonFallback
                             selectAddonSubtitle(addonFallback)
-                            maybeRunAutomaticSubtitleSync(addonFallback) // AutoSync hook
                             updatedAddonSubtitle = addonFallback
                             updatedPending = updatedPending.copy(subtitle = null)
                         } else {
@@ -1116,7 +1115,6 @@ internal fun PlayerRuntimeController.applyPersistedTrackPreference(
                 subtitleAddonRestoredByPersistedPreference = true
                 pendingRestoredAddonSubtitle = addonMatch
                 selectAddonSubtitle(addonMatch)
-                maybeRunAutomaticSubtitleSync(addonMatch) // AutoSync hook
                 updatedAddonSubtitle = addonMatch
                 val shouldKeepPendingUntilMpvConfirmsSelection =
                     usingSwitchPending && isUsingMpvEngine()
@@ -1704,7 +1702,6 @@ internal fun PlayerRuntimeController.tryAutoSelectPreferredSubtitleFromAvailable
                     "AUTO_SUB pick addon (primary) over internal (secondary): addon lang=${primaryAddonMatch.lang} vs internal variant=$trackVariant"
                 )
                 selectAddonSubtitle(primaryAddonMatch)
-                maybeRunAutomaticSubtitleSync(primaryAddonMatch) // AutoSync hook
                 return
             }
         }
@@ -1768,7 +1765,6 @@ internal fun PlayerRuntimeController.tryAutoSelectPreferredSubtitleFromAvailable
         )
         if (selectedMatchesPrimary) {
             autoSubtitleSelected = true
-            maybeRunAutomaticSubtitleSync(matchingSelectedAddon) // AutoSync hook
             Log.d(PlayerRuntimeController.TAG, "AUTO_SUB stop: matching addon already selected (primary match)")
             return
         }
@@ -1816,7 +1812,6 @@ internal fun PlayerRuntimeController.tryAutoSelectPreferredSubtitleFromAvailable
         autoSubtitleSelected = true
         Log.d(PlayerRuntimeController.TAG, "AUTO_SUB pick addon lang=${addonMatch.lang} id=${addonMatch.id}")
         selectAddonSubtitle(addonMatch)
-        maybeRunAutomaticSubtitleSync(addonMatch) // AutoSync hook
     } else {
         Log.d(PlayerRuntimeController.TAG, "AUTO_SUB no addon match for targets=$targets")
     }

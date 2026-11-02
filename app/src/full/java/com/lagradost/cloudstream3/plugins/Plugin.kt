@@ -20,8 +20,15 @@ open class Plugin {
     val registeredMainAPIs: List<MainAPI> get() = _registeredMainAPIs
     val registeredExtractorAPIs: List<ExtractorApi> get() = _registeredExtractorAPIs
 
-    /** Extensions can set this to provide a settings UI callback. No-op in NuvioTV. */
+    /** The extension's settings screen, opened from its row on the Plugins page. */
     var openSettings: ((Context) -> Unit)? = null
+
+    /** The extension's own resources (layouts, strings, drawables for its settings), when it ships any. */
+    var resources: android.content.res.Resources? = null
+
+    /** Called before the extension is unloaded (removed or updated). */
+    @Throws(Throwable::class)
+    open fun beforeUnload() {}
 
     /** Full file path to the plugin (matches BasePlugin's property). */
     var filename: String? = null
@@ -42,21 +49,31 @@ open class Plugin {
         load()
     }
 
+    /**
+     * As CloudStream's BasePlugin: the source goes on CloudStream's global lists too (allProviders, and apis with its
+     * name index), so extensions that combine others find it by name. Only once, though the loader may record a
+     * source its plugin already put there itself.
+     */
     fun registerMainAPI(element: MainAPI) {
         Log.d("CS3Plugin", "registerMainAPI called: ${element.name} (${element.javaClass.name})")
-        _registeredMainAPIs.add(element)
-        // Also register globally for extensions that access APIHolder directly
+        if (_registeredMainAPIs.none { it === element }) _registeredMainAPIs.add(element)
         element.sourcePlugin = this.filename
-        try {
-            com.lagradost.cloudstream3.APIHolder.addPluginMapping(element)
-        } catch (_: Exception) {}
+        val providers = com.lagradost.cloudstream3.APIHolder.allProviders
+        val added = synchronized(providers) {
+            if (providers.none { it === element }) providers.add(element) else false
+        }
+        if (added) {
+            try {
+                com.lagradost.cloudstream3.APIHolder.addPluginMapping(element)
+            } catch (_: Exception) {}
+        }
     }
 
     fun registerExtractorAPI(element: ExtractorApi) {
         Log.d("CS3Plugin", "registerExtractorAPI called: ${element.name} (${element.javaClass.name})")
-        _registeredExtractorAPIs.add(element)
+        if (_registeredExtractorAPIs.none { it === element }) _registeredExtractorAPIs.add(element)
         element.sourcePlugin = this.filename
-        extractorApis.add(element)
+        if (extractorApis.none { it === element }) extractorApis.add(element)
     }
 
     // Some extensions call these overloads

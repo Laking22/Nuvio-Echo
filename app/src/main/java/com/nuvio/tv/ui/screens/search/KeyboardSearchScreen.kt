@@ -578,8 +578,7 @@ private fun QueryLine(query: String, listening: Boolean) {
             .height(32.dp)
             .glassKey(RoundedCornerShape(NuvioTheme.radii.md), focused = false)
             .padding(horizontal = NuvioTheme.spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = if (listening) Icons.Default.Mic else Icons.Default.Search,
@@ -587,6 +586,7 @@ private fun QueryLine(query: String, listening: Boolean) {
             tint = if (listening) Color.White else colors.TextSecondary,
             modifier = Modifier.size(16.dp)
         )
+        Spacer(modifier = Modifier.width(6.dp))
         val text = when {
             listening -> stringResource(R.string.search_kb_listening)
             query.isEmpty() -> stringResource(R.string.search_kb_placeholder)
@@ -601,8 +601,10 @@ private fun QueryLine(query: String, listening: Boolean) {
             modifier = Modifier.weight(1f, fill = false)
         )
         if (query.isNotEmpty() && !listening) {
+            // The caret sits right against the last letter, where the next one will appear.
             Box(
                 modifier = Modifier
+                    .padding(start = 1.dp)
                     .width(2.dp)
                     .height(16.dp)
                     .background(Color.White.copy(alpha = 0.85f))

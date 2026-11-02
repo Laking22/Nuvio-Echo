@@ -16,6 +16,18 @@ internal fun Addon.supportsStreamResource(type: String, videoId: String): Boolea
             }
     }
 
+/** Whether this addon serves meta for [type] and [id] (its declared types and ID prefixes). */
+internal fun Addon.supportsMetaResource(type: String, id: String): Boolean =
+    resources.any { resource ->
+        resource.name == "meta" &&
+            (resource.types.isEmpty() || resource.types.any { it.equals(type, ignoreCase = true) }) &&
+            run {
+                val prefixes = resource.idPrefixes?.takeIf { it.isNotEmpty() }
+                    ?: idPrefixes.takeIf { it.isNotEmpty() }
+                prefixes == null || prefixes.any { id.startsWith(it, ignoreCase = true) }
+            }
+    }
+
 internal data class PlaybackAvailability(
     val addons: List<Addon> = emptyList(),
     val scrapers: List<ScraperInfo> = emptyList(),

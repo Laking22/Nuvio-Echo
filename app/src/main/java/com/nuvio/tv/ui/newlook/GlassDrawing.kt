@@ -4,7 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -20,12 +23,18 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.unit.dp
 import com.nuvio.tv.domain.model.AppTheme
 import com.nuvio.tv.ui.theme.NuvioTheme
+import dev.chrisbanes.haze.HazeInputScale
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
 
 /** The focus hairline of the new look: 1 px near-silver, right on the edge. */
 internal val HairlineColor = Color(0xC7E8E8E8)
 
 /** Quiet focus (Appearance → Look & feel): a white edge, a slight lift and a soft shadow instead of a coloured ring. */
 val LocalQuietFocus = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+/** Quiet selection: a focused media card grows and rises a little with no outline at all. */
+val LocalQuietSelection = androidx.compose.runtime.staticCompositionLocalOf { false }
 
 /**
  * The new look's focus ring colour: the colour picked in Settings → Appearance. White, the default, keeps the
@@ -47,7 +56,8 @@ internal val focusRingColor: Color
  * [shadow] off for glass that lies flat on the page with text scrolling inside it (a list panel): the shadow shows
  * through the clear body, and on the TV it redrew as lighter blocks wherever the text inside changed.
  */
-internal fun Modifier.glassSurface(shape: Shape, glints: Boolean = true, shadow: Boolean = true): Modifier = this
+// [body] off for glass that brings its own fill, so the gray tint doesn't dull it.
+internal fun Modifier.glassSurface(shape: Shape, glints: Boolean = true, shadow: Boolean = true, body: Boolean = true): Modifier = this
     .then(
         if (!shadow) Modifier else Modifier.shadow(
             elevation = 14.dp,
@@ -60,7 +70,7 @@ internal fun Modifier.glassSurface(shape: Shape, glints: Boolean = true, shadow:
     .drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)
         // A gray tint from the (near-black) page gradient, so the glass sits in the page.
-        val body = Brush.verticalGradient(
+        val bodyBrush = Brush.verticalGradient(
             0f to Color(48, 48, 48, 82),
             0.5f to Color(30, 30, 30, 66),
             1f to Color(20, 20, 20, 77)
@@ -91,7 +101,7 @@ internal fun Modifier.glassSurface(shape: Shape, glints: Boolean = true, shadow:
             startX = left - size.width * 0.05f, endX = right - size.width * 0.05f
         )
         onDrawBehind {
-            drawOutline(outline, body)
+            if (body) drawOutline(outline, bodyBrush)
             drawOutline(outline, glow, style = Stroke(3.dp.toPx()))
             drawOutline(outline, rim, style = Stroke(stroke))
             if (!glints) return@onDrawBehind
@@ -105,11 +115,44 @@ internal fun Modifier.glassSurface(shape: Shape, glints: Boolean = true, shadow:
         }
     }
 
-/** How opaque the menu's glass is (Layout → Menu & Navigation): [MENU_GLASS_LOW], [MENU_GLASS_MID] or [MENU_GLASS_HIGH]. */
+/**
+ * How opaque the menu's glass is (Layout → Menu & Navigation): [MENU_GLASS_LOW], [MENU_GLASS_MID], [MENU_GLASS_HIGH] or
+ * [MENU_GLASS_BLUR].
+ */
 val LocalMenuGlass = androidx.compose.runtime.staticCompositionLocalOf { MENU_GLASS_LOW }
 const val MENU_GLASS_LOW = 0
 const val MENU_GLASS_MID = 1
 const val MENU_GLASS_HIGH = 2
+/** The screens behind the sidebar blurred live ([MenuBlur]); where there's nothing to blur, High's frost. */
+const val MENU_GLASS_BLUR = 3
+
+/** What the sidebar's glass blurs at [MENU_GLASS_BLUR]: the screens, when the scaffold records them. Null otherwise. */
+internal val LocalMenuHaze = androidx.compose.runtime.staticCompositionLocalOf<HazeState?> { null }
+
+/** The tint over the blur, as upstream Nuvio's mobile bar and the source list's panel have it. */
+private val MenuBlurTint = Color(0xFF1C1C1E)
+
+/**
+ * The menu's glass at Blur: the screens right behind it blurred live, under a dark tint, as upstream Nuvio's mobile
+ * navigation bar is. A layer of its own, clipped to [shape], so the glass's contents (the lens) can still bulge past
+ * it. Draws nothing at the other levels or with nothing to blur ([LocalMenuHaze]); [menuFrost] covers those.
+ */
+@Composable
+internal fun MenuBlur(shape: Shape, modifier: Modifier = Modifier) {
+    if (LocalMenuGlass.current != MENU_GLASS_BLUR) return
+    val state = LocalMenuHaze.current ?: return
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .hazeEffect(state = state) {
+                blurRadius = 24.dp
+                noiseFactor = 0.04f
+                // A smaller copy is blurred, as the source list's panel does, to go easy on a TV's GPU.
+                inputScale = HazeInputScale.Fixed(0.66f)
+            }
+            .background(MenuBlurTint.copy(alpha = 0.55f))
+    )
+}
 
 /**
  * The blurred artwork Home's ambient colour is showing (see [com.nuvio.tv.ui.newlook.home.AmbientPageWash]), for the
@@ -132,9 +175,11 @@ internal object AmbientWashState {
 internal fun Modifier.menuFrost(shape: Shape): Modifier {
     val level = LocalMenuGlass.current
     if (level == MENU_GLASS_LOW) return this
+    // Blur is drawn by MenuBlur, behind the glass's contents.
+    if (level == MENU_GLASS_BLUR && LocalMenuHaze.current != null) return this
     val root = androidx.compose.ui.platform.LocalView.current.rootView
     var origin by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(Offset.Zero) }
-    val strength = if (level == MENU_GLASS_HIGH) 0.92f else 0.5f
+    val strength = if (level >= MENU_GLASS_HIGH) 0.92f else 0.5f
     return this
         .onGloballyPositioned { origin = it.positionInWindow() }
         .drawWithCache {

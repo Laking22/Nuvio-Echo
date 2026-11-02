@@ -408,6 +408,13 @@ class PlayerRuntimeController(
     internal var progressJob: Job? = null
     internal var vodTelemetryJob: Job? = null
     internal var firstFrameWatchdogJob: Job? = null
+    /** Race matching sources: the slow-start check of a remembered link, and the link it's for (see armAutoPlayHedge). */
+    internal var autoPlayHedgeJob: Job? = null
+    internal var autoPlayHedgeUrl: String? = null
+    /** When this screen last let go of an ExoPlayer (elapsed realtime), 0 if it never has; see markExoReleased. */
+    internal var exoReleasedAtMs: Long = 0L
+    /** The player settings read ahead while a link is prepared, and the link they're for (see takeStartupSettings). */
+    internal var startupSettingsRead: Pair<String, kotlinx.coroutines.Deferred<com.nuvio.tv.data.local.PlayerSettings?>>? = null
     internal var stallWatchdogJob: Job? = null
     internal var seekSourceLogJob: Job? = null
     internal var hideControlsJob: Job? = null
@@ -421,11 +428,10 @@ class PlayerRuntimeController(
     internal var hidePlayerEngineSwitchInfoJob: Job? = null
     internal var hideSubtitleDelayOverlayJob: Job? = null
     internal var subtitleAutoSyncLoadJob: Job? = null
-    internal var automaticSubtitleSyncJob: Job? = null // AutoSync hook
     /** ExoPlayer sidecar path: external addon cues without setMediaSource (preserves buffer). */
     internal var sidecarSubtitleJob: Job? = null
-    internal var sidecarGenerationCounter: Long = 0L // AutoSync hook
-    internal var activeSidecarGeneration: Long = 0L // AutoSync hook
+    internal var sidecarGenerationCounter: Long = 0L
+    internal var activeSidecarGeneration: Long = 0L
     internal var activeSidecarSubtitleKey: String? = null
     internal var sidecarTimedCues: List<androidx.media3.extractor.text.CuesWithTiming> = emptyList()
     internal var lastSidecarCueSignature: Long? = null
@@ -520,6 +526,9 @@ class PlayerRuntimeController(
     internal var preparedNextEpisode: PreparedNextEpisode? = null
     /** The next episode's card was due while its source was still being found: it shows once found. */
     internal var nextEpisodeCardWaiting: Boolean = false
+    /** Fetches the next episode's sources early in this one ([fetchNextEpisodeStreamsEarly]). */
+    internal var nextEpisodeStreamsJob: Job? = null
+    internal var nextEpisodeStreams: NextEpisodeStreams? = null
     internal var userPausedManually = false
 
     internal var isInBackground: Boolean = false
@@ -577,7 +586,7 @@ class PlayerRuntimeController(
     internal var streamAutoPlayNextEpisodeEnabledSetting: Boolean = false
     internal var streamAutoPlayPreferBingeGroupForNextEpisodeSetting: Boolean = false
     internal var streamAutoPlayTimeoutSecondsSetting: Int = 10
-    internal var preloadNextEpisodeSourcesSetting: Boolean = false
+    internal var preloadNextEpisodeSourcesSetting: Boolean = true
     internal var nextEpisodeThresholdModeSetting: NextEpisodeThresholdMode = NextEpisodeThresholdMode.PERCENTAGE
     internal var nextEpisodeThresholdPercentSetting: Float = 98f
     internal var nextEpisodeThresholdMinutesBeforeEndSetting: Float = 2f
@@ -843,6 +852,8 @@ class PlayerRuntimeController(
 
     fun onCleared() {
         releasePlayer()
+        // Kept through source switches and player rebuilds (releasePlayer); let go with the player screen.
+        clearNextEpisodeStreams()
         stopTorrentStream()
         torrentService.shutdown()
         startupLoadingReportJob?.cancel()

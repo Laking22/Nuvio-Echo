@@ -129,6 +129,35 @@ object NewLookNotifications {
     internal fun done(id: Long) {
         _queue.update { list -> list.filterNot { it.id == id } }
         _cancelled.update { it - id }
+        shown.remove(id)
+    }
+
+    /**
+     * The player closed: its notices ("Source failed to play", Auto quality's) are about it alone, so the ones still
+     * showing or waiting go rather than spill onto the page underneath or the next playback.
+     */
+    fun dropPlayerNotices() {
+        val gone = _queue.value.filter { it.kind.forPlayer }.map { it.id }.toSet()
+        if (gone.isEmpty()) return
+        _queue.update { list -> list.filterNot { it.id in gone } }
+        _cancelled.update { it - gone }
+        gone.forEach(shown::remove)
+    }
+
+    /**
+     * How long each notice cut short has been open (the host showing it went: the page under it changed host, or the
+     * player opened), and when it was cut. The host that takes it over carries on from there instead of playing it
+     * again from the start.
+     */
+    internal class Shown(val openMs: Long, val cutAtMs: Long)
+
+    private val shown = java.util.concurrent.ConcurrentHashMap<Long, Shown>()
+
+    internal fun shownSoFar(id: Long): Shown? = shown[id]
+
+    internal fun cutShort(id: Long, openMs: Long) {
+        if (_queue.value.none { it.id == id }) return
+        shown[id] = Shown((shown[id]?.openMs ?: 0L) + openMs, SystemClock.elapsedRealtime())
     }
 }
 
@@ -138,6 +167,10 @@ private val IslandOpenW = 430.dp
 private val IslandOpenH = 58.dp
 /** Open height of a notice with a hint line along its bottom. */
 private val IslandOpenHintH = 74.dp
+/** A notice cut short after this long open counts as read: it isn't shown again. */
+private const val NOTICE_SEEN_MS = 1_500L
+/** A notice cut short less than this long ago (its host swapped) carries on open, without coming in again. */
+private const val NOTICE_CARRY_ON_MS = 1_500L
 
 /** What the profile avatar should do while a style-2 notification grows out of it. */
 internal class AvatarNotifyState {
@@ -175,26 +208,48 @@ internal fun NotificationHost(
     val presence = remember(current.id) { Animatable(0f) }
     val open = spring<Float>(dampingRatio = 0.72f, stiffness = 260f)
 
-    // Up for the usual few seconds, or a countdown notice until its moment; either folds away early if cancelled.
-    suspend fun hold(usualMs: Long) {
-        val ms = current.countdownEndsAtMs?.let { (it - SystemClock.elapsedRealtime()).coerceAtLeast(0L) } ?: usualMs
-        withTimeoutOrNull(ms) { NewLookNotifications.cancelled.first { current.id in it } }
+    // Up for [ms], or a countdown notice until its moment; either folds away early if cancelled.
+    suspend fun hold(ms: Long) {
+        val left = current.countdownEndsAtMs?.let { (it - SystemClock.elapsedRealtime()).coerceAtLeast(0L) } ?: ms
+        withTimeoutOrNull(left.coerceAtLeast(0L)) { NewLookNotifications.cancelled.first { current.id in it } }
     }
 
     LaunchedEffect(current.id, style) {
+        val usualMs = if (style == NotificationStyle.ISLAND) 3_900L else 3_600L
+        // Shown before by a host that went (the player opened over it, or the style changed): it isn't played again
+        // from the start. Read for long enough already, it's done; cut short a moment ago, it carries on open.
+        val before = NewLookNotifications.shownSoFar(current.id)
+        val carryOn = before != null && SystemClock.elapsedRealtime() - before.cutAtMs < NOTICE_CARRY_ON_MS
+        var openedAt = 0L
+        var folding = false
         try {
-            if (current.id in NewLookNotifications.cancelled.value) {
+            if (current.id in NewLookNotifications.cancelled.value ||
+                (before != null && !carryOn && before.openMs >= NOTICE_SEEN_MS) ||
+                (before != null && current.countdownEndsAtMs?.let { it <= SystemClock.elapsedRealtime() } == true)
+            ) {
                 NewLookNotifications.done(current.id)
                 return@LaunchedEffect
             }
+            val holdMs = usualMs - (before?.openMs ?: 0L)
             if (style == NotificationStyle.ISLAND) {
-                // Drops in small, swells open, holds, shrinks back and rises out of sight.
-                presence.snapTo(1f)
-                drop.animateTo(1f, spring(dampingRatio = 0.6f, stiffness = 300f))
-                launch { width.animateTo(1f, open) }
-                height.animateTo(1f, open)
-                contentAlpha.animateTo(1f, tween(220))
-                hold(3_900)
+                if (carryOn) {
+                    drop.snapTo(1f)
+                    width.snapTo(1f)
+                    height.snapTo(1f)
+                    presence.snapTo(1f)
+                    openedAt = SystemClock.elapsedRealtime()
+                    contentAlpha.animateTo(1f, tween(120))
+                } else {
+                    // Drops in small, swells open, holds, shrinks back and rises out of sight.
+                    presence.snapTo(1f)
+                    openedAt = SystemClock.elapsedRealtime()
+                    drop.animateTo(1f, spring(dampingRatio = 0.6f, stiffness = 300f))
+                    launch { width.animateTo(1f, open) }
+                    height.animateTo(1f, open)
+                    contentAlpha.animateTo(1f, tween(220))
+                }
+                hold(holdMs)
+                folding = true
                 contentAlpha.animateTo(0f, tween(160))
                 launch { width.animateTo(0f, tween(380)) }
                 height.animateTo(0f, tween(380))
@@ -202,14 +257,25 @@ internal fun NotificationHost(
             } else {
                 // Grows out of the avatar (which nudges forward as it lets go), holds, folds back in.
                 avatar.visible = true
-                delay(320)
-                presence.snapTo(1f)
-                avatar.lifted = true
-                delay(80)
-                launch { width.animateTo(1f, open) }
-                height.animateTo(1f, open)
-                contentAlpha.animateTo(1f, tween(220))
-                hold(3_600)
+                if (carryOn) {
+                    presence.snapTo(1f)
+                    avatar.lifted = true
+                    width.snapTo(1f)
+                    height.snapTo(1f)
+                    openedAt = SystemClock.elapsedRealtime()
+                    contentAlpha.animateTo(1f, tween(120))
+                } else {
+                    delay(320)
+                    presence.snapTo(1f)
+                    avatar.lifted = true
+                    openedAt = SystemClock.elapsedRealtime()
+                    delay(80)
+                    launch { width.animateTo(1f, open) }
+                    height.animateTo(1f, open)
+                    contentAlpha.animateTo(1f, tween(220))
+                }
+                hold(holdMs)
+                folding = true
                 contentAlpha.animateTo(0f, tween(160))
                 launch { width.animateTo(0f, tween(420)) }
                 height.animateTo(0f, tween(420))
@@ -221,7 +287,13 @@ internal fun NotificationHost(
             delay(250)
             NewLookNotifications.done(current.id)
         } finally {
-            // Cut short (the player opened, or the style changed): never leave the avatar showing over a screen.
+            when {
+                // Cut short while folding away: it was read in full.
+                folding -> NewLookNotifications.done(current.id)
+                // Cut short while open: the next host carries on from here rather than replaying it.
+                openedAt > 0L -> NewLookNotifications.cutShort(current.id, SystemClock.elapsedRealtime() - openedAt)
+            }
+            // Never leave the avatar showing over a screen.
             avatar.lifted = false
             avatar.visible = false
         }

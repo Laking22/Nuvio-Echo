@@ -131,6 +131,9 @@ internal fun PlaybackStreamSelectionSection(
     }
 
     if (settings.streamAutoPlayMode != StreamAutoPlayMode.MANUAL) {
+        // An auto-play option, so it sits with auto-play and goes when auto-play is off.
+        RaceSourcesRow()
+
         SettingsActionRow(
             title = stringResource(R.string.autoplay_scope),
             subtitle = null,

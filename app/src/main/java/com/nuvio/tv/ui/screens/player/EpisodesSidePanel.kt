@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +57,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.tv.material3.Border
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -83,6 +86,13 @@ import androidx.compose.ui.res.stringResource
 import com.nuvio.tv.R
 
 @OptIn(ExperimentalTvMaterial3Api::class)
+/** The panel's look: black, with faint fills that stay put and a white outline (never a fill) on what's focused. */
+private val PanelFill = Color.White.copy(alpha = 0.05f)
+private val PanelSelectedFill = Color.White.copy(alpha = 0.12f)
+private val PanelHairline = Color.White.copy(alpha = 0.10f)
+private val PanelCurrentOutline = Color.White.copy(alpha = 0.28f)
+private val PanelFocusOutline = Color.White
+
 @Composable
 internal fun EpisodesSidePanel(
     uiState: PlayerUiState,
@@ -115,7 +125,11 @@ internal fun EpisodesSidePanel(
             .fillMaxHeight()
             .width(520.dp)
             .clip(RoundedCornerShape(topStart = NuvioTheme.spacing.lg, bottomStart = NuvioTheme.spacing.lg))
-            .background(NuvioTheme.colors.BackgroundElevated)
+            .background(Color.Black)
+            .border(
+                BorderStroke(NuvioTheme.spacing.hairline, PanelHairline),
+                RoundedCornerShape(topStart = NuvioTheme.spacing.lg, bottomStart = NuvioTheme.spacing.lg)
+            )
     ) {
         Column(modifier = Modifier.padding(NuvioTheme.spacing.xl)) {
                 Row(
@@ -129,10 +143,9 @@ internal fun EpisodesSidePanel(
                         color = NuvioTheme.colors.TextPrimary
                     )
 
-                    DialogButton(
+                    EpisodePanelButton(
                         text = stringResource(R.string.episodes_panel_close),
-                        onClick = onClose,
-                        isPrimary = false
+                        onClick = onClose
                     )
                 }
 
@@ -305,10 +318,9 @@ private fun EpisodeStreamsView(
         horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        DialogButton(
+        EpisodePanelButton(
             text = stringResource(R.string.episodes_panel_back),
             onClick = onBackToEpisodes,
-            isPrimary = false,
             modifier = Modifier
                 .focusRequester(backButtonFocusRequester)
                 .onFocusChanged { backButtonHasFocus = it.isFocused }
@@ -475,6 +487,7 @@ private fun EpisodeStreamsView(
                         showAddonLogo = uiState.showAddonLogo,
                         badgePlacement = uiState.streamBadgePlacement,
                         onClick = { onStreamSelected(stream) },
+                        outlineFocus = true,
                         onFocusChanged = { focused ->
                             if (focused) {
                                 focusedStreamKey = streamKeys[index]
@@ -658,16 +671,16 @@ private fun EpisodesSeasonTabs(
                     .onFocusChanged { isFocused = it.isFocused },
                 shape = CardDefaults.shape(shape = RoundedCornerShape(NuvioTheme.spacing.xl)),
                 colors = CardDefaults.colors(
-                    containerColor = if (isSelected) Color(0xFFF5F5F5) else NuvioTheme.colors.BackgroundCard,
-                    focusedContainerColor = if (isSelected) Color.White else NuvioTheme.colors.Secondary
+                    containerColor = if (isSelected) PanelSelectedFill else Color.Transparent,
+                    focusedContainerColor = if (isSelected) PanelSelectedFill else Color.Transparent
                 ),
                 border = CardDefaults.border(
                     border = Border(
-                        border = BorderStroke(NuvioTheme.spacing.hairline, if (isSelected) Color.Transparent else NuvioTheme.colors.Border),
+                        border = BorderStroke(NuvioTheme.spacing.hairline, if (isSelected) Color.Transparent else PanelHairline),
                         shape = RoundedCornerShape(NuvioTheme.spacing.xl)
                     ),
                     focusedBorder = Border(
-                        border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                        border = BorderStroke(NuvioTheme.spacing.xxs, PanelFocusOutline),
                         shape = RoundedCornerShape(NuvioTheme.spacing.xl)
                     )
                 ),
@@ -676,11 +689,7 @@ private fun EpisodesSeasonTabs(
                 Text(
                     text = if (season == 0) stringResource(R.string.episodes_specials) else stringResource(R.string.episodes_season, season),
                     style = MaterialTheme.typography.labelLarge,
-                    color = when {
-                        isSelected -> Color.Black
-                        isFocused -> NuvioTheme.colors.OnSecondary
-                        else -> NuvioTheme.extendedColors.textSecondary
-                    },
+                    color = if (isSelected || isFocused) Color.White else NuvioTheme.extendedColors.textSecondary,
                     modifier = Modifier.padding(vertical = 10.dp, horizontal = 20.dp)
                 )
             }
@@ -763,12 +772,21 @@ private fun EpisodeItem(
                 false
             },
         colors = CardDefaults.colors(
-            containerColor = NuvioTheme.colors.BackgroundCard,
-            focusedContainerColor = NuvioTheme.colors.FocusBackground
+            containerColor = PanelFill,
+            focusedContainerColor = PanelFill
         ),
         border = CardDefaults.border(
+            // The episode playing now keeps a faint outline; focus is a white one.
+            border = if (isCurrent) {
+                Border(
+                    border = BorderStroke(NuvioTheme.spacing.hairline, PanelCurrentOutline),
+                    shape = RoundedCornerShape(NuvioTheme.radii.xl)
+                )
+            } else {
+                Border.None
+            },
             focusedBorder = Border(
-                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                border = BorderStroke(NuvioTheme.spacing.xxs, PanelFocusOutline),
                 shape = RoundedCornerShape(NuvioTheme.radii.xl)
             )
         ),
@@ -893,5 +911,39 @@ private fun EpisodeItem(
                 }
             }
         }
+    }
+}
+
+/** The panel's buttons: quiet text on a faint fill, outlined in white when focused. */
+@Composable
+private fun EpisodePanelButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape = RoundedCornerShape(NuvioTheme.radii.md)
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.colors(
+            containerColor = PanelFill,
+            contentColor = Color.White.copy(alpha = 0.72f),
+            focusedContainerColor = PanelFill,
+            focusedContentColor = Color.White
+        ),
+        border = ButtonDefaults.border(
+            border = Border(border = BorderStroke(NuvioTheme.spacing.hairline, PanelHairline), shape = shape),
+            focusedBorder = Border(border = BorderStroke(NuvioTheme.spacing.xxs, PanelFocusOutline), shape = shape)
+        ),
+        shape = ButtonDefaults.shape(shape),
+        scale = ButtonDefaults.scale(focusedScale = 1f)
+    ) {
+        // The TV Text, so it takes the button's content colour.
+        androidx.tv.material3.Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }

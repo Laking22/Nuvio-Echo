@@ -40,6 +40,7 @@ import com.nuvio.tv.core.player.seekpreview.SeekThumbnailEngine
 import com.nuvio.tv.core.player.seekpreview.SeekThumbnailSource
 import com.nuvio.tv.core.streams.StreamQuality
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -62,6 +63,13 @@ private const val INDEX_PREFETCH_MIN_DELAY_MS = 2_000L
 private const val HEALTHY_BUFFER_MS = 20_000L
 /** How long the index prefetch waits for the title's source search when previews come from another source. */
 private const val SOURCE_SEARCH_WAIT_MS = 15_000L
+
+/**
+ * Paused once the stream has shown a picture, or scrubbing: seek thumbnails get ready without waiting on playback.
+ * [started] matters: before its first frame the player sits paused too, and thumbnails mustn't compete with a start.
+ */
+private fun PlayerUiState.wantsPreviewNow(started: Boolean): Boolean =
+    pendingPreviewSeekPosition != null || (started && !isPlaying && !isBuffering && !playbackEnded)
 /** Frames shown either side of the scrub position in the filmstrip. */
 private const val FILMSTRIP_SIDE = 2
 /** A thumbnail this far from the scrub position is dimmed until the right one arrives. */
@@ -148,8 +156,14 @@ internal fun SeekThumbnailDriver(engine: SeekThumbnailEngine, viewModel: PlayerV
         }
         val alternates = controller.seekPreviewAlternates(previewHeight)
             .filter { before == null || it.linkKey != before.source.linkKey }
+            // The playing link listed again (another copy of its source in the search) isn't another source: kept
+            // as one, the engine stayed on the playing file, the heaviest and on playback's own server.
+            .filter { it.linkKey != playing.linkKey }
         val sources = listOfNotNull(before?.let { it.source.asAlternate(it.quality!!.label) }) + alternates + playing
-        if (lock || controller.seekPreviewSourcesSettled()) settled.set(key to sources)
+        // Locked before the source search finished with nothing but the playing file (the heaviest to take
+        // thumbnails from): left open, so lighter sources it finds later are still taken (scrubbing was slow there
+        // while a smaller source picked by hand ran smoothly).
+        if (controller.seekPreviewSourcesSettled() || (lock && sources.size > 1)) settled.set(key to sources)
         return sources
     }
 
@@ -157,12 +171,17 @@ internal fun SeekThumbnailDriver(engine: SeekThumbnailEngine, viewModel: PlayerV
         warmReady.set(false)
         engine.setSources(currentSources())
         // Playback first: the index is read once the stream is playing with a healthy buffer ahead, or after
-        // [INDEX_PREFETCH_DELAY_MS] at the latest, so thumbnails never compete with the stream starting up.
+        // [INDEX_PREFETCH_DELAY_MS] at the latest, so thumbnails never compete with the stream starting up. Paused,
+        // or scrubbing already, there's nothing to compete with and thumbnails are wanted now: it goes ahead at once
+        // (it used to wait for playing, so pausing just after the start left scrubbing on the playing file alone,
+        // read as it went, with no lighter sources and nothing made ahead).
         delay(INDEX_PREFETCH_MIN_DELAY_MS)
         withTimeoutOrNull(INDEX_PREFETCH_DELAY_MS - INDEX_PREFETCH_MIN_DELAY_MS) {
-            viewModel.playbackTimeline.first { it.bufferedPosition - it.currentPosition >= HEALTHY_BUFFER_MS }
+            combine(viewModel.playbackTimeline, viewModel.uiState) { timeline, state ->
+                timeline.bufferedPosition - timeline.currentPosition >= HEALTHY_BUFFER_MS || state.wantsPreviewNow(controller.hasRenderedFirstFrame)
+            }.first { it }
         }
-        viewModel.uiState.first { it.isPlaying && !it.isBuffering }
+        viewModel.uiState.first { (it.isPlaying && !it.isBuffering) || it.wantsPreviewNow(controller.hasRenderedFirstFrame) }
         if (previewHeight > 0) {
             controller.requestSeekPreviewSources()
             withTimeoutOrNull(SOURCE_SEARCH_WAIT_MS) { viewModel.uiState.first { !it.isLoadingSourceStreams } }
@@ -170,6 +189,12 @@ internal fun SeekThumbnailDriver(engine: SeekThumbnailEngine, viewModel: PlayerV
         engine.setSources(currentSources(lock = true))
         engine.prepare()
         warmReady.set(true)
+        // A search still running at the lock: its other sources are taken once it finishes (a no-op when the list
+        // was settled).
+        if (previewHeight > 0) {
+            viewModel.uiState.first { !it.isLoadingSourceStreams && controller.seekPreviewSourcesSettled() }
+            engine.setSources(currentSources(lock = true))
+        }
     }
     LaunchedEffect(engine) {
         viewModel.uiState.map { it.showControls }.distinctUntilChanged().collect { shown ->

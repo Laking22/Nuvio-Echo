@@ -23,6 +23,7 @@ import com.nuvio.tv.domain.model.ProxyHeaders
 import com.nuvio.tv.domain.model.ScraperInfo
 import com.nuvio.tv.domain.model.Stream
 import com.nuvio.tv.domain.model.StreamBehaviorHints
+import com.nuvio.tv.core.streams.supportsMetaResource
 import com.nuvio.tv.core.streams.supportsStreamResource
 import com.nuvio.tv.domain.model.enabledAddons
 import com.nuvio.tv.domain.repository.AddonRepository
@@ -48,7 +49,10 @@ private const val TAG = "StreamRepositoryImpl"
 
 class StreamRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
+    /** Background-priority client: for prefetches, which mustn't take the CPU from the screen. */
     @Named("addonStreams") private val api: AddonApi,
+    /** The same, at normal priority: for searches the viewer is waiting on. */
+    @Named("addonStreamsForeground") private val foregroundApi: AddonApi,
     private val addonRepository: AddonRepository,
     private val pluginManager: PluginManager,
     private val profileManager: ProfileManager,
@@ -124,6 +128,8 @@ class StreamRepositoryImpl @Inject constructor(
                     videoId = videoId,
                     season = season,
                     episode = episode,
+                    // A search a screen is waiting on parses its answers at normal priority; a prefetch at background.
+                    streamApi = if (speculative) api else foregroundApi,
                     addons = sourceConfiguration.addons,
                     debridSettings = sourceConfiguration.debridSettings,
                     hasCompatiblePlugins = sourceConfiguration.pluginsEnabled &&
@@ -163,6 +169,7 @@ class StreamRepositoryImpl @Inject constructor(
         videoId: String,
         season: Int?,
         episode: Int?,
+        streamApi: AddonApi,
         addons: List<Addon>,
         debridSettings: DebridSettings,
         hasCompatiblePlugins: Boolean
@@ -198,7 +205,7 @@ class StreamRepositoryImpl @Inject constructor(
                             // How long to wait for slow addons is Playback's Stream Selection Timeout; each
                             // addon's results show as they arrive.
                             val startedAtMs = System.currentTimeMillis()
-                            val streamsResult = getStreamsFromAddon(addon, type, videoId)
+                            val streamsResult = fetchAddonStreams(addon, type, videoId, streamApi)
                             Log.i(TAG, "Streams finished addon=${addon.displayName} elapsedMs=${System.currentTimeMillis() - startedAtMs}")
                             when (streamsResult) {
                                 is NetworkResult.Success -> {
@@ -215,10 +222,13 @@ class StreamRepositoryImpl @Inject constructor(
                                         )
                                     } else {
                                         // Stream endpoint returned empty - try inline
-                                        // streams from meta response as fallback.
-                                        val inlineStreams = fetchInlineStreamsFromMeta(
-                                            addon, type, videoId
-                                        )
+                                        // streams from meta response as fallback, from an
+                                        // addon that serves meta for this title at all.
+                                        val inlineStreams = if (addon.supportsMetaResource(type, metaIdFor(videoId))) {
+                                            fetchInlineStreamsFromMeta(addon, type, videoId, streamApi)
+                                        } else {
+                                            emptyList()
+                                        }
                                         if (inlineStreams.isNotEmpty()) {
                                             resultChannel.send(
                                                 AddonStreams(
@@ -580,6 +590,13 @@ class StreamRepositoryImpl @Inject constructor(
         addon: Addon,
         type: String,
         videoId: String
+    ): NetworkResult<List<Stream>> = fetchAddonStreams(addon, type, videoId, foregroundApi)
+
+    private suspend fun fetchAddonStreams(
+        addon: Addon,
+        type: String,
+        videoId: String,
+        streamApi: AddonApi
     ): NetworkResult<List<Stream>> {
         val cleanBaseUrl = addon.baseUrl.trimEnd('/')
         val queryStart = cleanBaseUrl.indexOf('?')
@@ -597,7 +614,7 @@ class StreamRepositoryImpl @Inject constructor(
         val addonName = addon.displayName
         val addonLogo = addon.logo
 
-        return when (val result = safeApiCall(context) { api.getStreams(streamUrl) }) {
+        return when (val result = safeApiCall(context) { streamApi.getStreams(streamUrl) }) {
             is NetworkResult.Success -> {
                 val streams = result.data.streams?.map { 
                     it.toDomain(addonName, addonLogo) 
@@ -624,7 +641,8 @@ class StreamRepositoryImpl @Inject constructor(
     private suspend fun fetchInlineStreamsFromMeta(
         addon: Addon,
         type: String,
-        videoId: String
+        videoId: String,
+        streamApi: AddonApi
     ): List<Stream> {
         // For inline streams the meta is fetched using the content-level ID
         // (everything before the video-specific suffix).  For "other" type
@@ -633,24 +651,7 @@ class StreamRepositoryImpl @Inject constructor(
         //   tt1234567:1:5      → metaId = tt1234567
         //   mal:63375:1:5      → metaId = mal:63375
         //   kitsu:12345:2      → metaId = kitsu:12345
-        // Strategy: drop up to 2 trailing numeric segments (season, episode)
-        // but never reduce below 2 segments for prefixed IDs (mal:X, kitsu:X).
-        val metaId = run {
-            val parts = videoId.split(":")
-            if (parts.size <= 1) return@run videoId
-            // Count trailing numeric segments
-            val trailingNumericCount = parts.reversed().takeWhile { it.toIntOrNull() != null }.size
-            // Keep at least 2 segments for prefixed IDs (e.g. "mal:63375"),
-            // or 1 segment for IMDB-style IDs (e.g. "tt1234567")
-            val firstSegment = parts.first()
-            val minSegments = if (firstSegment.startsWith("tt") || firstSegment.toIntOrNull() != null) 1 else 2
-            val segmentsToDrop = trailingNumericCount.coerceAtMost((parts.size - minSegments).coerceAtLeast(0))
-            if (segmentsToDrop > 0) {
-                parts.dropLast(segmentsToDrop).joinToString(":")
-            } else {
-                videoId
-            }
-        }
+        val metaId = metaIdFor(videoId)
         val cleanBaseUrl = addon.baseUrl.trimEnd('/')
         val queryStart = cleanBaseUrl.indexOf('?')
         val basePath = if (queryStart >= 0) cleanBaseUrl.substring(0, queryStart).trimEnd('/') else cleanBaseUrl
@@ -660,7 +661,7 @@ class StreamRepositoryImpl @Inject constructor(
         val metaUrl = "$basePath/meta/$encodedType/$encodedMetaId.json$baseQuery"
         Log.d(TAG, "Fetching inline streams via meta type=$type metaId=$metaId videoId=$videoId host=${logHost(metaUrl)}")
         return try {
-            when (val result = safeApiCall(context) { api.getMeta(metaUrl) }) {
+            when (val result = safeApiCall(context) { streamApi.getMeta(metaUrl) }) {
                 is NetworkResult.Success -> {
                     val metaDto = result.data.meta ?: return emptyList()
                     val matchingVideo = metaDto.videos?.firstOrNull { it.id == videoId }
@@ -677,6 +678,21 @@ class StreamRepositoryImpl @Inject constructor(
             Log.w(TAG, "Failed to fetch inline streams from meta for ${addon.displayName}: ${e.message}")
             emptyList()
         }
+    }
+
+    // Strategy: drop up to 2 trailing numeric segments (season, episode)
+    // but never reduce below 2 segments for prefixed IDs (mal:X, kitsu:X).
+    private fun metaIdFor(videoId: String): String {
+        val parts = videoId.split(":")
+        if (parts.size <= 1) return videoId
+        // Count trailing numeric segments
+        val trailingNumericCount = parts.reversed().takeWhile { it.toIntOrNull() != null }.size
+        // Keep at least 2 segments for prefixed IDs (e.g. "mal:63375"),
+        // or 1 segment for IMDB-style IDs (e.g. "tt1234567")
+        val firstSegment = parts.first()
+        val minSegments = if (firstSegment.startsWith("tt") || firstSegment.toIntOrNull() != null) 1 else 2
+        val segmentsToDrop = trailingNumericCount.coerceAtMost((parts.size - minSegments).coerceAtLeast(0))
+        return if (segmentsToDrop > 0) parts.dropLast(segmentsToDrop).joinToString(":") else videoId
     }
 
     private fun buildMissingStreamFailure(addon: Addon): StreamAttemptFailure {

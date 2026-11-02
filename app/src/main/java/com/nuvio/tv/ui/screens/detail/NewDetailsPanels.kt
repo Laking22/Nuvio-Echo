@@ -1100,3 +1100,159 @@ internal fun mergeCredits(
     val crew = leads + credits.crew.filter { key(it.name) !in leadNames }
     return cast to crew
 }
+
+/** Where the Similar titles page's details panel and its poster grid start. */
+private val SimilarPanelStart = 40.dp
+private val SimilarGridStart = 296.dp
+
+/**
+ * Similar titles, laid out as Search's results are: the posters in a grid on the right and, on the left, the focused
+ * one's details (logo, year, rating, genres, synopsis, cast). OK opens a title's page; Back closes.
+ */
+@Composable
+internal fun SimilarTitlesPanel(
+    meta: Meta,
+    items: List<com.nuvio.tv.domain.model.MetaPreview>,
+    footer: String?,
+    details: com.nuvio.tv.ui.screens.browse.FocusedDetailsTracker,
+    onOpen: (com.nuvio.tv.domain.model.MetaPreview) -> Unit,
+    onClose: () -> Unit
+) {
+    BackHandler { onClose() }
+    val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
+    val gridFocus = remember { FocusRequester() }
+    val firstItem = remember { FocusRequester() }
+    val restoreItem = remember { FocusRequester() }
+    // Kept across a title opened from here, so Back from its page lands on the same poster.
+    var lastIndex by androidx.compose.runtime.saveable.rememberSaveable(meta.id) {
+        androidx.compose.runtime.mutableIntStateOf(0)
+    }
+    LaunchedEffect(Unit) {
+        repeat(6) {
+            val target = if (lastIndex > 0) restoreItem else firstItem
+            if (runCatching { target.requestFocus() }.getOrDefault(false)) return@LaunchedEffect
+            delay(60)
+        }
+    }
+    androidx.compose.foundation.layout.BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(com.nuvio.tv.ui.theme.NuvioTheme.colors.Background)
+            .trapDpadFocus()
+            .focusGroup()
+    ) {
+        com.nuvio.tv.ui.screens.browse.BrowseInfoPanel(
+            details = details.details,
+            modifier = Modifier
+                .offset { IntOffset(SimilarPanelStart.roundToPx(), 0) }
+                .padding(top = 28.dp, bottom = 28.dp)
+                .fillMaxHeight()
+        )
+        val cardWidth = com.nuvio.tv.ui.screens.browse.browseCardWidthToFit(maxWidth - SimilarGridStart - 32.dp)
+        Column(
+            modifier = Modifier
+                .offset { IntOffset(SimilarGridStart.roundToPx(), 0) }
+                .width(com.nuvio.tv.ui.screens.browse.browseGridWidth(cardWidth) + 8.dp)
+                .fillMaxHeight()
+                .padding(top = 28.dp)
+        ) {
+            com.nuvio.tv.ui.screens.browse.BrowseHeader(
+                title = null,
+                subtitle = stringResource(R.string.nd_row_similar),
+                modifier = Modifier.padding(start = 4.dp)
+            )
+            Text(
+                text = listOfNotNull(stringResource(R.string.nd_panel_similar_like, meta.name), footer).joinToString(" · "),
+                color = NdText3,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 18.dp, top = 2.dp, bottom = 8.dp)
+            )
+            com.nuvio.tv.ui.screens.browse.BrowsePosterGrid(
+                items = items,
+                isLoading = false,
+                isLoadingMore = false,
+                canLoadMore = false,
+                gridState = gridState,
+                focusRequester = gridFocus,
+                firstItemFocusRequester = firstItem,
+                restoreIndex = lastIndex,
+                restoreFocusRequester = restoreItem,
+                onLoadMore = {},
+                onItemClick = onOpen,
+                onItemFocused = { index, item ->
+                    lastIndex = index
+                    details.onFocused(item)
+                },
+                onLeftFromFirstColumn = {},
+                cardWidth = cardWidth,
+                modifier = Modifier.fillMaxHeight()
+            )
+        }
+    }
+}
+
+/** The title's reviews: the logo and a count on the left, the reviews down the right. OK opens one in full. */
+@Composable
+internal fun ReviewsPanel(
+    meta: Meta,
+    reviews: ReviewsState,
+    onOpenReview: (List<TraktCommentReview>, Int) -> Unit,
+    onClose: () -> Unit
+) {
+    BackHandler { onClose() }
+    val first = remember { FocusRequester() }
+    LaunchedEffect(reviews.items.isNotEmpty()) {
+        repeat(6) {
+            if (runCatching { first.requestFocus() }.getOrDefault(false)) return@LaunchedEffect
+            delay(60)
+        }
+    }
+    PanelFrame {
+        Row(Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.width(272.dp).fillMaxHeight().padding(start = 32.dp, top = 36.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                PanelLogo(meta)
+                Spacer(Modifier.height(16.dp))
+                Text(stringResource(R.string.nd_row_reviews), color = NdText2, fontSize = 13.sp)
+                if (reviews.items.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        pluralStringResource(R.plurals.nd_panel_reviews_count, reviews.items.size, reviews.items.size),
+                        color = NdText3, fontSize = 12.sp
+                    )
+                }
+            }
+            Spacer(Modifier.width(32.dp))
+            Column(Modifier.weight(1f).fillMaxHeight().padding(end = 32.dp)) {
+                Row(Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.nd_row_reviews),
+                        color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)
+                    )
+                    if (reviews.items.isNotEmpty()) {
+                        Text(stringResource(R.string.nd_panel_reviews_hint), color = NdText3, fontSize = 12.sp)
+                    }
+                }
+                if (reviews.items.isEmpty()) {
+                    Text(
+                        stringResource(if (reviews.loading || !reviews.loaded) R.string.nd_reviews_loading else R.string.nd_reviews_empty),
+                        color = NdText2, fontSize = 14.sp, lineHeight = 20.sp,
+                        modifier = Modifier.padding(top = 8.dp).focusRequester(first).ndClickable(onClick = {})
+                    )
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 24.dp, top = 2.dp)) {
+                        itemsIndexed(reviews.items, key = { i, r -> "${r.id}|$i" }) { index, review ->
+                            Box(if (index == 0) Modifier.focusRequester(first) else Modifier) {
+                                NdReviewCard(review = review, width = null, maxLines = 4, onClick = { onOpenReview(reviews.items, index) })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

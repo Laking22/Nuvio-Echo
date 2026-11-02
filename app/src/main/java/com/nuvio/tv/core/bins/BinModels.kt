@@ -40,7 +40,13 @@ data class Bin(
     val order: Int = 0,
     val createdAt: Long = 0L,
     val viewedAt: Long = 0L,
-    val entries: List<BinEntry> = emptyList()
+    val entries: List<BinEntry> = emptyList(),
+    /**
+     * Set on a bin that mirrors a list on a connected tracker (the tracker's name, "Trakt"): it's built from that list
+     * each time and never saved, so it can be browsed here but only changed on the tracker.
+     */
+    @kotlinx.serialization.Transient
+    val source: String? = null
 ) {
     fun contains(key: String): Boolean = entries.any { it.key == key }
 }

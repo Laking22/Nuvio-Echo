@@ -134,7 +134,7 @@ class SmartHighlightsRepository @Inject constructor(
             val newSignature = listOf(
                 profileId, language, today, settings.enrichment, settings.smartHighlightAiNames, traktOn, mdbListOn,
                 settings.blockedHighlights.sorted(), settings.snoozedHighlights.sorted(),
-                seeds.joinToString(",") { it.id }, saved.joinToString(",") { it.id }, ratings.signature
+                settings.enrichmentExclusions.sorted(), seeds.joinToString(",") { it.id }, saved.joinToString(",") { it.id }, ratings.signature
             ).joinToString("|")
             if (newSignature == signature) return@withContext
 
@@ -172,7 +172,10 @@ class SmartHighlightsRepository @Inject constructor(
             val recentTitles = history.recentTitles(profileId, today)
             val notWatched = BuiltInRanking.notWatched(progress, watchedItems)
             val notRated = com.nuvio.tv.core.home.Taste.notRated(ratings)
-            val keep: (MetaPreview) -> Boolean = { notWatched(it) && notRated(it) }
+            val excluded = settings.enrichmentExclusions
+            val keep: (MetaPreview) -> Boolean = {
+                notWatched(it) && notRated(it) && !com.nuvio.tv.core.home.EnrichmentExclusion.excludes(it, excluded)
+            }
             val wanted = SmartHighlightPlanner.maxRows(settings.enrichment)
             // A few spare themes, fetched together, in case some come back too thin (Heavy, with no limit, tries all).
             val tried = listOfNotNull(spotlight, ownList) +
@@ -351,7 +354,9 @@ class SmartHighlightsRepository @Inject constructor(
             released = released,
             imdbRating = voteAverage?.takeIf { it > 0 }?.toFloat(),
             voteCount = voteCount,
-            genres = emptyList()
+            // English names and the original language: what Enrichment's exclusions match on (anime, K-dramas, genres).
+            genres = genreIds.orEmpty().mapNotNull(com.nuvio.tv.core.home.EnrichmentExclusion::tmdbGenreName),
+            language = originalLanguage
         )
     }
 

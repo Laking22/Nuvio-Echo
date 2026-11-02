@@ -22,6 +22,8 @@ class UpdateRepository @Inject constructor(
             val releases = when (channel) {
                 UpdateChannel.STABLE -> {
                     val response = gitHubReleaseApi.getLatestRelease(owner = owner, repo = repo)
+                    // No stable release published yet (only pre-releases): GitHub has no "latest" to give.
+                    if (response.code() == 404) throw NoEligibleUpdateException(channel)
                     if (!response.isSuccessful) {
                         error("GitHub API error: ${response.code()}")
                     }

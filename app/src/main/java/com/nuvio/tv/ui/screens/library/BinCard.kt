@@ -191,13 +191,14 @@ internal fun BinCard(
                     if (count > 0) pluralStringResource(R.plurals.bins_title_count, count, count) else stringResource(R.string.bins_empty_label),
                     color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp
                 )
-                if (bin.starred) {
+                val label = bin.source ?: if (bin.starred) stringResource(R.string.bins_default_label) else null
+                if (label != null) {
                     Spacer(Modifier.height(4.dp))
-                    Text(stringResource(R.string.bins_default_label).uppercase(), color = Color.White.copy(alpha = 0.85f), fontSize = 10.sp, letterSpacing = 0.8.sp)
+                    Text(label.uppercase(), color = Color.White.copy(alpha = 0.85f), fontSize = 10.sp, letterSpacing = 0.8.sp)
                 }
                 Spacer(Modifier.weight(1f))
-                // An empty bin has nothing to say here.
-                if (count > 0) {
+                // An empty bin has nothing to say here, nor does a tracker's list (it's never opened from here first).
+                if (count > 0 && bin.source == null) {
                     Text(
                         if (bin.viewedAt > 0L) stringResource(R.string.bins_viewed, relativeTime(bin.viewedAt)) else stringResource(R.string.bins_not_viewed),
                         color = Color.White.copy(alpha = 0.5f), fontSize = 10.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
@@ -208,13 +209,13 @@ internal fun BinCard(
         // Focus and pick rings sit over the card, outside its clip.
         val ring = when {
             picked -> 3.dp to Color.White
-            focused && reordering -> 2.dp to NuvioTheme.colors.FocusRing.copy(alpha = 0.45f)
-            focused -> 2.dp to NuvioTheme.colors.FocusRing
+            focused && reordering -> 2.dp to com.nuvio.tv.ui.newlook.focusRingColor.copy(alpha = 0.45f)
+            focused -> 2.dp to com.nuvio.tv.ui.newlook.focusRingColor
             else -> null
         }
         if (ring != null) Box(Modifier.fillMaxSize().border(ring.first, ring.second, BinShape))
-        // The star: Up from the bin, Down back to it.
-        Box(
+        // The star: Up from the bin, Down back to it. A tracker's list has none.
+        if (bin.source == null) Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .offset(x = (-8).dp, y = 6.dp)

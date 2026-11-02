@@ -106,26 +106,52 @@ internal fun NewLookCard(
     val shape = RoundedCornerShape(radius)
     val ring = focusRingColor
     val quiet = com.nuvio.tv.ui.newlook.LocalQuietFocus.current
+    val quietSelection = com.nuvio.tv.ui.newlook.LocalQuietSelection.current
     // Whether the card's artwork is in (see [Artwork]; every card with depth draws its picture through it).
     val artwork = remember { mutableStateOf(false) }
+    var focused by remember { mutableStateOf(false) }
+    // Quiet selection: about 16 dp of growth whatever the card's size (capped for posters), so a Grand card doesn't
+    // swell over its neighbours while a poster still reads as picked up, and a short rise to go with it.
+    val selectionScale = if (width != null) (1f + 16f / width.value).coerceAtMost(QUIET_SELECTION_MAX_SCALE) else 1.04f
+    val rise by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (quietSelection && focused) QUIET_SELECTION_RISE else 0.dp,
+        animationSpec = androidx.compose.animation.core.tween(180),
+        label = "cardRise"
+    )
+    val focusedBorder = if (quietSelection) Border.None else Border(BorderStroke(1.dp, ring), shape = shape)
     Card(
         onClick = onClick,
         onLongClick = onLongClick,
         modifier = modifier
             .then(if (width != null) Modifier.size(width, height) else Modifier.height(height))
-            .onFocusChanged { onFocusChanged(it.isFocused) },
+            .graphicsLayer { translationY = -rise.toPx() }
+            .onFocusChanged {
+                focused = it.isFocused
+                onFocusChanged(it.isFocused)
+            },
         shape = CardDefaults.shape(shape),
         // Clear, not grey: while a row slides, a card whose artwork is still loading showed as a dark box for a frame
         // or two before its picture came in. Now the artwork just fades in where the card is.
         colors = CardDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = Color.Transparent),
         // Quiet focus lifts the card a little and lays a soft shadow under it, with the white hairline.
-        scale = CardDefaults.scale(focusedScale = if (quiet) QUIET_FOCUS_LIFT else 1f, pressedScale = 0.98f),
+        scale = CardDefaults.scale(
+            focusedScale = when {
+                quietSelection -> selectionScale
+                quiet -> QUIET_FOCUS_LIFT
+                else -> 1f
+            },
+            pressedScale = 0.98f
+        ),
         border = CardDefaults.border(
             border = Border.None,
-            focusedBorder = Border(BorderStroke(1.dp, ring), shape = shape),
-            pressedBorder = Border(BorderStroke(1.dp, ring), shape = shape)
+            focusedBorder = focusedBorder,
+            pressedBorder = focusedBorder
         ),
-        glow = if (quiet) CardDefaults.glow(focusedGlow = QuietFocusShadow, pressedGlow = QuietFocusShadow) else CardDefaults.glow()
+        glow = if (quiet || quietSelection) {
+            CardDefaults.glow(focusedGlow = QuietFocusShadow, pressedGlow = QuietFocusShadow)
+        } else {
+            CardDefaults.glow()
+        }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             androidx.compose.runtime.CompositionLocalProvider(LocalArtworkShown provides artwork) { content() }
@@ -138,6 +164,10 @@ internal fun NewLookCard(
 
 /** How much a focused card grows with Quiet focus: enough to read as lifted, not enough to crowd its row. */
 private const val QUIET_FOCUS_LIFT = 1.035f
+
+/** Quiet selection's largest growth (posters) and how far a selected card rises. */
+private const val QUIET_SELECTION_MAX_SCALE = 1.07f
+private val QUIET_SELECTION_RISE = 4.dp
 
 private val QuietFocusShadow = androidx.tv.material3.Glow(elevationColor = Color.Black.copy(alpha = 0.6f), elevation = 14.dp)
 

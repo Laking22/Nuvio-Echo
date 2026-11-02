@@ -198,15 +198,26 @@ private fun CatalogOrderCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                val slot = item.slotNumber
                 Text(
-                    text = item.builtInLabelRes?.let { stringResource(it) }
-                        ?: "${item.catalogName} - ${item.typeLabel.toDisplayTypeLabel()}",
+                    text = when {
+                        slot != null -> stringResource(
+                            if (item.slotGrand) R.string.enrichment_slot_grand else R.string.enrichment_slot_highlight,
+                            slot
+                        )
+                        else -> item.builtInLabelRes?.let { stringResource(it) }
+                            ?: "${item.catalogName} - ${item.typeLabel.toDisplayTypeLabel()}"
+                    },
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = if (item.isDisabled) NuvioTheme.colors.TextSecondary else NuvioTheme.colors.TextPrimary
                 )
                 Spacer(modifier = Modifier.height(NuvioTheme.spacing.xs))
                 Text(
-                    text = if (item.isBuiltIn) stringResource(R.string.catalog_order_built_in) else item.addonName,
+                    text = when {
+                        slot != null -> stringResource(R.string.enrichment_slot_subtitle)
+                        item.isBuiltIn -> stringResource(R.string.catalog_order_built_in)
+                        else -> item.addonName
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = NuvioTheme.colors.TextSecondary
                 )

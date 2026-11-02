@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.material.icons.filled.Home
@@ -103,7 +102,6 @@ import com.nuvio.tv.domain.model.CustomThemeColors
 import com.nuvio.tv.domain.model.AuthState
 import com.nuvio.tv.domain.model.CardDepthStyle
 import com.nuvio.tv.domain.model.CosmeticEntitlement
-import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.domain.model.ExperienceMode
 import com.nuvio.tv.domain.model.MemberAccess
 import com.nuvio.tv.domain.model.ProfileBackgroundSelection
@@ -169,7 +167,6 @@ private data class MainUiPrefs(
     val experienceMode: ExperienceMode? = null,
     val experienceModeLoaded: Boolean = false,
     val addonSetupSkipped: Boolean = false,
-    val discoverLocation: DiscoverLocation? = null,
     val smoothBringIntoViewEnabled: Boolean = true,
     val fastHorizontalNavigationEnabled: Boolean = false,
     val composeHighlighterEnabled: Boolean = false,
@@ -444,14 +441,8 @@ open class MainActivity : ComponentActivity() {
                         experienceModeLoaded = true,
                     )
                 }
-                val layoutAndFeaturesFlow = combine(
-                    layoutPreferenceDataStore.hasChosenLayout,
-                    layoutPreferenceDataStore.discoverLocation,
-                ) { hasChosenLayout, discoverLocation ->
-                    MainUiPrefs(
-                        hasChosenLayout = hasChosenLayout,
-                        discoverLocation = discoverLocation,
-                    )
+                val layoutAndFeaturesFlow = layoutPreferenceDataStore.hasChosenLayout.map { hasChosenLayout ->
+                    MainUiPrefs(hasChosenLayout = hasChosenLayout)
                 }
                 val extraFeaturesFlow = combine(
                     experienceModeDataStore.addonSetupSkipped,
@@ -482,7 +473,6 @@ open class MainActivity : ComponentActivity() {
                 ) { themePrefs, layoutPrefs, extraPrefs, cardDepthStyle, (landscapePosterMode, alwaysBackdropWithLogo) ->
                     themePrefs.copy(
                         hasChosenLayout = layoutPrefs.hasChosenLayout,
-                        discoverLocation = layoutPrefs.discoverLocation,
                         addonSetupSkipped = extraPrefs.addonSetupSkipped,
                         smoothBringIntoViewEnabled = extraPrefs.smoothBringIntoViewEnabled,
                         fastHorizontalNavigationEnabled = extraPrefs.fastHorizontalNavigationEnabled,
@@ -502,7 +492,6 @@ open class MainActivity : ComponentActivity() {
                     addonRepository.getInstalledAddons()
                 }.collectAsState(initial = null)
             }
-            val discoverLocation = mainUiPrefs.discoverLocation
 
             NuvioTheme(
                 appTheme = mainUiPrefs.theme,
@@ -927,20 +916,8 @@ open class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    LaunchedEffect(discoverLocation, currentRoute) {
-                        if (discoverLocation == null) return@LaunchedEffect
-                        val onDiscoverRoute = currentRoute == Screen.Discover.route ||
-                            currentRoute?.startsWith("${Screen.Discover.route}/") == true
-                        if (discoverLocation == DiscoverLocation.OFF && onDiscoverRoute) {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = false }
-                                launchSingleTop = true
-                            }
-                        }
-                    }
-
                     val betaSettings by com.nuvio.tv.ui.screens.player.rememberBetaPerformanceSettings()
-                    val rootRoutes = remember(discoverLocation) {
+                    val rootRoutes = remember {
                         buildSet {
                             add(Screen.Home.route)
                             add(Screen.Search.route)
@@ -948,14 +925,10 @@ open class MainActivity : ComponentActivity() {
                             add(Screen.Calendar.route)
                             add(Screen.Library.route)
                             add(Screen.Settings.route)
-                            if (discoverLocation == DiscoverLocation.IN_SIDEBAR) {
-                                add(Screen.Discover.route)
-                            }
                         }
                     }
 
                     val strNavHome = stringResource(R.string.nav_home)
-                    val strNavDiscover = stringResource(R.string.nav_discover)
                     val strNavSearch = stringResource(R.string.nav_search)
                     val strNavLibrary = stringResource(R.string.nav_library)
                     val strNavSettings = stringResource(R.string.nav_settings)
@@ -964,13 +937,11 @@ open class MainActivity : ComponentActivity() {
                     val calendarIcon = ImageVector.vectorResource(R.drawable.ic_nav_calendar)
                     val drawerItems = remember(
                         strNavHome,
-                        strNavDiscover,
                         strNavSearch,
                         strNavLibrary,
                         strNavSettings,
                         strNavGenres,
                         strNavCalendar,
-                        discoverLocation,
                         calendarIcon
                     ) {
                         buildList {
@@ -981,15 +952,6 @@ open class MainActivity : ComponentActivity() {
                                     icon = Icons.Default.Home
                                 )
                             )
-                            if (discoverLocation == DiscoverLocation.IN_SIDEBAR) {
-                                add(
-                                    DrawerItem(
-                                        route = Screen.Discover.route,
-                                        label = strNavDiscover,
-                                        icon = Icons.Default.Explore
-                                    )
-                                )
-                            }
                             add(
                                 DrawerItem(
                                     route = Screen.Search.route,
@@ -1095,6 +1057,7 @@ open class MainActivity : ComponentActivity() {
                               com.nuvio.tv.ui.screens.browse.LocalPosterColourMesh provides betaSettings.posterColourMesh,
                               com.nuvio.tv.ui.components.LocalTrailerVideoLayer provides betaSettings.trailerVideoLayer,
                               com.nuvio.tv.ui.newlook.LocalQuietFocus provides betaSettings.quietFocus,
+                              com.nuvio.tv.ui.newlook.LocalQuietSelection provides betaSettings.quietSelection,
                               com.nuvio.tv.ui.newlook.LocalMenuGlass provides betaSettings.menuGlass,
                               com.nuvio.tv.ui.screens.detail.LocalDetailsAmbient provides
                                   (betaSettings.homeAmbientBackground && betaSettings.detailsAmbientBackground)
@@ -1292,7 +1255,7 @@ open class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        PluginRuntimeHooks.onActivityDestroy()
+        PluginRuntimeHooks.onActivityDestroy(this)
     }
 }
 

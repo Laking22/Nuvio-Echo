@@ -16,7 +16,6 @@ import androidx.media3.extractor.text.SubtitleParser
 import androidx.media3.ui.SubtitleView
 import com.nuvio.tv.R
 import com.nuvio.tv.domain.model.Subtitle
-import com.nuvio.tv.ui.screens.player.autosync.AutoSyncSyncedSubtitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -98,7 +97,6 @@ internal fun PlayerRuntimeController.stopSidecarAddonSubtitle(clearView: Boolean
     sidecarSubtitleJob = null
     activeSidecarSubtitleKey = null
     activeSidecarGeneration = 0L
-    AutoSyncSyncedSubtitle.clear() // AutoSync hook
     sidecarTimedCues = emptyList()
     lastSidecarCueSignature = null
     if (clearView) {
@@ -125,7 +123,6 @@ internal fun PlayerRuntimeController.startSidecarAddonSubtitle(
     sidecarSubtitleJob?.cancel()
     val generation = ++sidecarGenerationCounter
     activeSidecarGeneration = generation
-    AutoSyncSyncedSubtitle.clear() // AutoSync hook
     activeSidecarSubtitleKey = subtitleKey
     lastSidecarCueSignature = null
     sidecarTimedCues = emptyList()
@@ -195,54 +192,6 @@ internal fun PlayerRuntimeController.startSidecarAddonSubtitle(
                 view.setCues(emptyList())
             }
             // Intentionally no attachAddonSubtitleViaMediaReload — keeps A/V buffer intact.
-        }
-    }
-    return true
-}
-
-/** Identifies one attachment of [url]; changes whenever the sidecar restarts or stops. */
-internal fun PlayerRuntimeController.currentSidecarGenerationFor(url: String): Long? =
-    activeSidecarGeneration.takeIf { activeSidecarSubtitleKey == url && it != 0L }
-
-/**
- * Replaces the cues of the attached subtitle with already-parsed [cues], switching the
- * attachment to [newUrl], only if [expectedCurrentUrl] (and [expectedGeneration]) is still
- * the active attachment. Keeps the buffer and avoids re-downloading or re-parsing.
- */
-internal fun PlayerRuntimeController.commitPreparedSidecarSubtitle(
-    expectedCurrentUrl: String,
-    newUrl: String,
-    cues: List<CuesWithTiming>,
-    expectedGeneration: Long? = null,
-): Boolean {
-    if (cues.isEmpty() || activeSidecarSubtitleKey != expectedCurrentUrl) return false
-    if (expectedGeneration != null && activeSidecarGeneration != expectedGeneration) return false
-
-    val urlChanged = newUrl != expectedCurrentUrl
-    if (urlChanged) {
-        sidecarSubtitleJob?.cancel()
-        activeSidecarSubtitleKey = newUrl
-        activeSidecarGeneration = ++sidecarGenerationCounter
-    }
-
-    val committedGeneration = activeSidecarGeneration
-    sidecarTimedCues = cues
-    lastSidecarCueSignature = null
-    postToSubtitleView { view ->
-        view.setTag(R.id.player_view_sidecar_generation_tag, newUrl)
-    }
-    renderSidecarCuesAtCurrentPosition()
-
-    if (urlChanged) {
-        sidecarSubtitleJob = scope.launch {
-            while (
-                isActive &&
-                activeSidecarSubtitleKey == newUrl &&
-                activeSidecarGeneration == committedGeneration
-            ) {
-                renderSidecarCuesAtCurrentPosition()
-                delay(SIDECAR_RENDER_INTERVAL_MS)
-            }
         }
     }
     return true

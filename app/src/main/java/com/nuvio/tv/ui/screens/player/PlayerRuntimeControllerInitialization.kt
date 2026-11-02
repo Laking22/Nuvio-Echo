@@ -81,8 +81,11 @@ import com.nuvio.tv.data.repository.PlaybackIssueErrorInput
 import com.nuvio.tv.domain.model.Subtitle
 import io.github.peerless2012.ass.media.kt.buildWithAssSupport
 import io.github.peerless2012.ass.media.type.AssRenderType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -128,6 +131,23 @@ private suspend fun PlayerRuntimeController.resolveCurrentStreamMimeType(
     )
 }
 
+/** The settings preparePlaybackBeforeStart read ahead for [url], if it did; they're taken once. */
+private suspend fun PlayerRuntimeController.takeStartupSettings(url: String): PlayerSettings? {
+    val (readFor, read) = startupSettingsRead ?: return null
+    startupSettingsRead = null
+    if (readFor != url) {
+        read.cancel()
+        return null
+    }
+    return try {
+        read.await()
+    } catch (e: CancellationException) {
+        // The read was called off (a newer link took over); this start reads them itself.
+        currentCoroutineContext().ensureActive()
+        null
+    }
+}
+
 private fun PlayerRuntimeController.disposeExoPlayerBeforeRebuild() {
     notifyAudioSessionUpdate(false)
     try {
@@ -140,11 +160,17 @@ private fun PlayerRuntimeController.disposeExoPlayerBeforeRebuild() {
         runCatching { player.pause() }
         runCatching { player.stop() }
         runCatching { player.clearMediaItems() }
-        runCatching { player.clearVideoSurface() }
+        // No separate clearVideoSurface(): release() detaches it (see releasePlayer).
         runCatching { player.release() }
+        markExoReleased()
     }
     _exoPlayer = null
     playbackSpeedAwareAudioSink = null
+}
+
+/** Notes that an ExoPlayer was just let go of, for the pause before the next one is built. */
+internal fun PlayerRuntimeController.markExoReleased() {
+    exoReleasedAtMs = SystemClock.elapsedRealtime()
 }
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -159,6 +185,7 @@ internal fun PlayerRuntimeController.initializePlayer(
         _uiState.update { it.copy(error = context.getString(R.string.player_error_no_stream_url), showLoadingOverlay = false) }
         return
     }
+    armAutoPlayHedge(url)
     mpvMediaLoadPrepared = false
 
     scope.launch {
@@ -198,7 +225,7 @@ internal fun PlayerRuntimeController.initializePlayer(
             currentBitrateAwareLoadControl = null
             configuredBackBufferMs = 0
 
-            val playerSettings = playerSettingsDataStore.playerSettings.first()
+            val playerSettings = takeStartupSettings(url) ?: playerSettingsDataStore.playerSettings.first()
             currentPlayerSettingsForReport = playerSettings
             rememberAudioDelayPerDeviceEnabled = playerSettings.rememberAudioDelayPerDevice
             // Always watch output-device changes so Bluetooth connect/disconnect can switch
@@ -972,7 +999,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         ),
                         stripDvRpu = stripDvRpuEnabled,
                         stripHdr10PlusSei = stripHdr10PlusSei
-                    ).let { autoSyncExtractorsFactory(it, url, headers) } // AutoSync hook
+                    )
 
             setLoadingStatus(
                 phase = "building_player",
@@ -1003,7 +1030,12 @@ internal fun PlayerRuntimeController.initializePlayer(
             }
 
             disposeExoPlayerBeforeRebuild()
-            delay(PLAYER_REBUILD_SETTLE_DELAY_MS)
+            // A player let go of just before (a rebuild, a retry, an engine switch) gets a moment to free its decoder;
+            // a fresh start has none to wait for.
+            if (exoReleasedAtMs > 0L) {
+                val sinceReleaseMs = SystemClock.elapsedRealtime() - exoReleasedAtMs
+                if (sinceReleaseMs < PLAYER_REBUILD_SETTLE_DELAY_MS) delay(PLAYER_REBUILD_SETTLE_DELAY_MS - sinceReleaseMs)
+            }
 
             _exoPlayer = if (useLibass) {
                 val playerDataSourceFactory = PlayerPlaybackNetworking.createDataSourceFactory(context, headers)
@@ -1043,16 +1075,6 @@ internal fun PlayerRuntimeController.initializePlayer(
 
                 if (playerSettings.skipSilence) skipSilenceEnabled = true
                 setHandleAudioBecomingNoisy(true)
-
-                try {
-                    currentMediaSession?.release()
-                    if (canAdvertiseSession()) {
-                        currentMediaSession = MediaSession.Builder(context, SafeMediaSessionPlayer(this)).build()
-                    }
-                    updateMediaSessionMetadata()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
 
                 applyAudioAmplification(_uiState.value.audioAmplificationDb)
                 applyCenterMixLevel(_uiState.value.centerMixLevelDb)
@@ -1108,6 +1130,17 @@ internal fun PlayerRuntimeController.initializePlayer(
                 // so onRenderedFirstFrame() never fires — TunneledFirstReady starts on READY.
                 playWhenReady = false
                 prepare()
+
+                // The media session (system Now Playing) is set up once the link has started loading, not before.
+                try {
+                    currentMediaSession?.release()
+                    if (canAdvertiseSession()) {
+                        currentMediaSession = MediaSession.Builder(context, SafeMediaSessionPlayer(this)).build()
+                    }
+                    updateMediaSessionMetadata()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
 
                 addListener(object : Player.Listener {
                     override fun onPositionDiscontinuity(
@@ -1303,7 +1336,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 PlayerStartupPlaybackPolicy.ReadyAction.None -> Unit
                             }
                             tryApplyPendingResumeProgress(this@apply)
-                            _uiState.value.pendingSeekPosition?.let { position ->
+                            if (!rejectUnseekableSwitchPick(isCurrentMediaItemSeekable)) _uiState.value.pendingSeekPosition?.let { position ->
                                 // After a quality or audio switch, the nearest keyframe within the
                                 // margins will do: it starts sooner than decoding up to the exact spot.
                                 val tolerant = isSourceSwitching()

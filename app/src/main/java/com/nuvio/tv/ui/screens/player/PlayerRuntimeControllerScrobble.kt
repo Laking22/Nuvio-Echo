@@ -2,6 +2,10 @@ package com.nuvio.tv.ui.screens.player
 
 import android.os.SystemClock
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -44,71 +48,87 @@ internal fun PlayerRuntimeController.preparePlaybackBeforeStart(
     }
 
     playbackPreparationJob = scope.launch {
+        // The player's settings don't depend on this title, so they're read off the main thread while the title's
+        // own reads run, and initializePlayer takes them instead of reading them again.
+        startupSettingsRead?.second?.cancel()
+        startupSettingsRead = playbackUrl to scope.async(Dispatchers.Default) {
+            runCatching { playerSettingsDataStore.playerSettings.first() }.getOrNull()
+        }
         setLoadingStatus(
             phase = "preparing_metadata",
             message = context.getString(com.nuvio.tv.R.string.player_loading_preparing)
         )
         refreshScrobbleItem()
-        if (persistedTrackPreference == null) {
-            contentId?.let { id ->
-                val loaded = trackPreferenceDataStore.load(id)?.toTrackPreference()
-                logSwitchTrace(
-                    stage = "track-pref-load",
-                    message = "contentId=$id loadedAudio=${loaded?.audio?.language}/${loaded?.audio?.name} " +
-                        "loadedSubtitle=${loaded?.subtitle?.javaClass?.simpleName ?: "none"}"
-                )
+        // The title's reads don't depend on each other, so they run side by side; all of them finish before
+        // initializePlayer() below.
+        coroutineScope {
+            if (persistedTrackPreference == null) {
+                contentId?.let { id ->
+                    launch {
+                        val loaded = trackPreferenceDataStore.load(id)?.toTrackPreference()
+                        logSwitchTrace(
+                            stage = "track-pref-load",
+                            message = "contentId=$id loadedAudio=${loaded?.audio?.language}/${loaded?.audio?.name} " +
+                                "loadedSubtitle=${loaded?.subtitle?.javaClass?.simpleName ?: "none"}"
+                        )
+                        Log.d(
+                            PlayerRuntimeController.TAG,
+                            "TRACK_PREF load: contentId=$id S${currentSeason}E${currentEpisode} " +
+                                "result=${if (loaded == null) "null (no saved preference)" else "audio=${loaded.audio?.language}/${loaded.audio?.name} subtitle=${loaded.subtitle?.javaClass?.simpleName}"}"
+                        )
+                        persistedTrackPreference = loaded
+                    }
+                } ?: Log.d(PlayerRuntimeController.TAG, "TRACK_PREF load: skipped (contentId is null)")
+                // Subtitle delay is keyed per-videoId, so it is loaded separately
+                // from the track selection above. This happens before
+                // initializePlayer() because the renderers factory snapshots
+                // subtitleDelayUs from _uiState.value.subtitleDelayMs on build.
+                currentVideoId?.takeIf { it.isNotBlank() }?.let { vid ->
+                    launch {
+                        val savedDelayMs = trackPreferenceDataStore.loadSubtitleDelayMs(vid)
+                        if (savedDelayMs != null && savedDelayMs != 0) {
+                            subtitleDelayUs.set(savedDelayMs.toLong() * 1000L)
+                            _uiState.update { it.copy(subtitleDelayMs = savedDelayMs) }
+                            Log.d(
+                                PlayerRuntimeController.TAG,
+                                "TRACK_PREF load: restored subtitleDelayMs=$savedDelayMs for videoId=$vid"
+                            )
+                        }
+                    }
+                }
+            } else {
                 Log.d(
                     PlayerRuntimeController.TAG,
-                    "TRACK_PREF load: contentId=$id S${currentSeason}E${currentEpisode} " +
-                        "result=${if (loaded == null) "null (no saved preference)" else "audio=${loaded.audio?.language}/${loaded.audio?.name} subtitle=${loaded.subtitle?.javaClass?.simpleName}"}"
+                    "TRACK_PREF load: skipped (persistedTrackPreference already set: " +
+                        "audio=${persistedTrackPreference?.audio?.language}/${persistedTrackPreference?.audio?.name} " +
+                        "subtitle=${persistedTrackPreference?.subtitle?.javaClass?.simpleName})"
                 )
-                persistedTrackPreference = loaded
-            } ?: Log.d(PlayerRuntimeController.TAG, "TRACK_PREF load: skipped (contentId is null)")
-            // Subtitle delay is keyed per-videoId, so it is loaded separately
-            // from the track selection above. This happens before
-            // initializePlayer() because the renderers factory snapshots
-            // subtitleDelayUs from _uiState.value.subtitleDelayMs on build.
-            currentVideoId?.takeIf { it.isNotBlank() }?.let { vid ->
-                val savedDelayMs = trackPreferenceDataStore.loadSubtitleDelayMs(vid)
-                if (savedDelayMs != null && savedDelayMs != 0) {
-                    subtitleDelayUs.set(savedDelayMs.toLong() * 1000L)
-                    _uiState.update { it.copy(subtitleDelayMs = savedDelayMs) }
-                    Log.d(
-                        PlayerRuntimeController.TAG,
-                        "TRACK_PREF load: restored subtitleDelayMs=$savedDelayMs for videoId=$vid"
-                    )
+                logSwitchTrace(
+                    stage = "track-pref-load",
+                    message = "skipped=true reason=persisted-already-set " +
+                        "audio=${persistedTrackPreference?.audio?.language}/${persistedTrackPreference?.audio?.name} " +
+                        "subtitle=${persistedTrackPreference?.subtitle?.javaClass?.simpleName ?: "none"}"
+                )
+            }
+            contentId?.takeIf { it.isNotBlank() }?.let { id ->
+                launch {
+                    trackPreferenceDataStore.loadPlaybackSpeed(id)?.let { speed ->
+                        _uiState.update { it.copy(playbackSpeed = speed) }
+                    }
                 }
             }
-        } else {
-            Log.d(
-                PlayerRuntimeController.TAG,
-                "TRACK_PREF load: skipped (persistedTrackPreference already set: " +
-                    "audio=${persistedTrackPreference?.audio?.language}/${persistedTrackPreference?.audio?.name} " +
-                    "subtitle=${persistedTrackPreference?.subtitle?.javaClass?.simpleName})"
-            )
-            logSwitchTrace(
-                stage = "track-pref-load",
-                message = "skipped=true reason=persisted-already-set " +
-                    "audio=${persistedTrackPreference?.audio?.language}/${persistedTrackPreference?.audio?.name} " +
-                    "subtitle=${persistedTrackPreference?.subtitle?.javaClass?.simpleName ?: "none"}"
-            )
-        }
-        contentId?.takeIf { it.isNotBlank() }?.let { id ->
-            trackPreferenceDataStore.loadPlaybackSpeed(id)?.let { speed ->
-                _uiState.update { it.copy(playbackSpeed = speed) }
+            // Load saved watch progress BEFORE player init.
+            // This eliminates the race condition where ExoPlayer's STATE_READY
+            // callback fired before the DB read completed, causing the resume
+            // seek to be silently skipped — the player would start from 0:00
+            // or hang in buffering after a late seek.
+            if (loadSavedProgress) {
+                recordLoadingDiagnosticEvent(
+                    phase = "loading_saved_progress",
+                    message = context.getString(com.nuvio.tv.R.string.player_loading_preparing)
+                )
+                launch { loadSavedProgressSuspend(currentSeason, currentEpisode) }
             }
-        }
-        // Load saved watch progress BEFORE player init.
-        // This eliminates the race condition where ExoPlayer's STATE_READY
-        // callback fired before the DB read completed, causing the resume
-        // seek to be silently skipped — the player would start from 0:00
-        // or hang in buffering after a late seek.
-        if (loadSavedProgress) {
-            recordLoadingDiagnosticEvent(
-                phase = "loading_saved_progress",
-                message = context.getString(com.nuvio.tv.R.string.player_loading_preparing)
-            )
-            loadSavedProgressSuspend(currentSeason, currentEpisode)
         }
         recordLoadingDiagnosticEvent(
             phase = "initializing_player",

@@ -450,7 +450,8 @@ private fun FolderRow(
             modifier = Modifier.padding(start = FolderStart, end = FolderEnd, bottom = 10.dp)
         )
         val startPx = with(LocalDensity.current) { FolderStart.toPx() }
-        CompositionLocalProvider(LocalBringIntoViewSpec provides remember(startPx) { PinToStart(startPx) }) {
+        val stepPx = with(LocalDensity.current) { (dims.posterWidth + dims.gap).toPx() }
+        CompositionLocalProvider(LocalBringIntoViewSpec provides remember(startPx, stepPx) { PinToStart(startPx, stepPx) }) {
             LazyRow(
                 state = listState,
                 modifier = Modifier.fillMaxWidth().height(dims.posterHeight).focusRestorer(),

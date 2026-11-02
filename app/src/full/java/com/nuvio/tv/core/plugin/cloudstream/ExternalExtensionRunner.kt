@@ -27,10 +27,14 @@ import com.nuvio.tv.core.tmdb.TmdbMetadataService
 import com.nuvio.tv.core.tmdb.TmdbService
 import com.nuvio.tv.domain.model.ContentType
 import com.nuvio.tv.domain.model.LocalScraperResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
@@ -43,6 +47,13 @@ private const val EXECUTION_TIMEOUT_MS = 120_000L
 // minutes — cap them at 60s and return the partial link set collected so far.
 private const val LOADLINKS_TIMEOUT_MS = 60_000L
 private const val MIN_TITLE_SIMILARITY = 0.5
+/** How often links found so far are handed over while loadLinks is still running. */
+private const val LINK_BATCH_MS = 1_500L
+/** How often a source is checked for its first links, which go out at once. */
+private const val FIRST_LINK_CHECK_MS = 250L
+private val SeriesTypes = setOf(TvType.TvSeries, TvType.Anime, TvType.OVA, TvType.Cartoon, TvType.AsianDrama)
+private val MovieTypes = setOf(TvType.Movie, TvType.AnimeMovie)
+private val AnimeTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
 private const val MAX_ALT_TITLES = 8
 
 /**
@@ -56,37 +67,93 @@ class ExternalExtensionRunner @Inject constructor(
     private val extensionLoader: ExternalExtensionLoader,
     private val extractorRegistry: ExternalExtractorRegistry,
     private val tmdbMetadataService: TmdbMetadataService,
-    private val tmdbService: TmdbService
+    private val tmdbService: TmdbService,
+    private val torrentSettings: com.nuvio.tv.core.torrent.TorrentSettings
 ) {
     suspend fun execute(
         scraperId: String,
         tmdbId: String,
         mediaType: String,
         season: Int?,
-        episode: Int?
-    ): List<LocalScraperResult> = withContext(Dispatchers.IO) {
-        extensionLoader.ensureExtractorsLoaded(listOf(scraperId))
+        episode: Int?,
+        /** Gets links in batches while loadLinks is still running, as CloudStream lists them as they come. */
+        onPartial: (suspend (List<LocalScraperResult>) -> Unit)? = null,
+        /** The source languages that run (see SourceLanguages); null runs every source. */
+        languages: Set<String>? = null
+    ): List<LocalScraperResult> {
+        // Torrent links only when P2P is switched on in Settings; otherwise they never reach the list.
+        val p2pEnabled = runCatching { torrentSettings.settings.first().p2pEnabled }.getOrDefault(false)
+        fun List<LocalScraperResult>.playable() =
+            if (p2pEnabled) this else filterNot { it.url.startsWith("magnet:", ignoreCase = true) }
+        val sink = onPartial?.let { emit -> LinkSink { batch -> batch.playable().takeIf { it.isNotEmpty() }?.let { emit(it) } } }
+        return executeAll(scraperId, tmdbId, mediaType, season, episode, sink, languages).playable()
+    }
 
-        val api = extensionLoader.getApi(scraperId)
-        if (api == null) {
-            Log.e(TAG, "No API loaded for scraper: $scraperId")
+    private suspend fun executeAll(
+        scraperId: String,
+        tmdbId: String,
+        mediaType: String,
+        season: Int?,
+        episode: Int?,
+        sink: LinkSink?,
+        languages: Set<String>?
+    ): List<LocalScraperResult> = withContext(Dispatchers.IO + (sink ?: kotlin.coroutines.EmptyCoroutineContext)) {
+        val apis = extensionLoader.getApis(scraperId)
+        if (apis.isEmpty()) {
+            Log.e(TAG, "No sources loaded for scraper: $scraperId")
             return@withContext emptyList()
         }
-
-        try {
-            executeInternal(api, tmdbId, mediaType, season, episode)
-        } catch (e: Exception) {
-            Log.e(TAG, "Extension ${api.name} failed: ${e.javaClass.simpleName}: ${e.message}", e)
-            emptyList()
-        } catch (e: Error) {
-            val missing = extractMissingClass(e)
-            if (missing != null) {
-                Log.e(TAG, "Extension ${api.name} MISSING CLASS: $missing", e)
-            } else {
-                Log.e(TAG, "Extension ${api.name} linkage error: ${e.javaClass.simpleName}: ${e.message}", e)
-            }
-            emptyList()
+        // A plugin can register several sources: ask them all at once. Sources only for anime sit out a title
+        // that isn't animation, as no one would pick them for it in CloudStream.
+        // An extension's sources can be in different languages: only the chosen ones run.
+        val candidates = apis.filter { api ->
+            api.supportsMedia(mediaType) &&
+                (languages == null || com.nuvio.tv.core.plugin.SourceLanguages.allows(listOf(api.lang), languages))
         }
+        val skipAnimeOnly = candidates.any { it.isAnimeOnly() } && !isAnimation(tmdbId, mediaType)
+        coroutineScope {
+            candidates.filterNot { skipAnimeOnly && it.isAnimeOnly() }.map { api ->
+                async {
+                    try {
+                        executeInternal(api, tmdbId, mediaType, season, episode)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Extension ${api.name} failed: ${e.javaClass.simpleName}: ${e.message}", e)
+                        emptyList()
+                    } catch (e: Error) {
+                        val missing = extractMissingClass(e)
+                        if (missing != null) {
+                            Log.e(TAG, "Extension ${api.name} MISSING CLASS: $missing", e)
+                        } else {
+                            Log.e(TAG, "Extension ${api.name} linkage error: ${e.javaClass.simpleName}: ${e.message}", e)
+                        }
+                        emptyList()
+                    }
+                }
+            }.awaitAll().flatten()
+        }
+    }
+
+    private fun MainAPI.isAnimeOnly(): Boolean {
+        val types = runCatching { supportedTypes }.getOrNull().orEmpty()
+        return types.isNotEmpty() && types.all { it in AnimeTypes }
+    }
+
+    /** Whether TMDB files the title under animation (in any language's name for it); true when unknown. */
+    private suspend fun isAnimation(tmdbId: String, mediaType: String): Boolean {
+        val type = if (mediaType.equals("movie", ignoreCase = true)) ContentType.MOVIE else ContentType.SERIES
+        val enrichment = runCatching { tmdbMetadataService.fetchEnrichment(tmdbId, type) }.getOrNull() ?: return true
+        return enrichment.genres.any { it.contains("anim", ignoreCase = true) || it.contains("アニメ") || it.contains("动画") || it.contains("애니") }
+    }
+
+    /** Whether [this] source serves [mediaType] (movie, or series/anime) at all, by its declared types. */
+    private fun MainAPI.supportsMedia(mediaType: String): Boolean {
+        val types = runCatching { supportedTypes }.getOrNull().orEmpty()
+        if (types.isEmpty()) return true
+        val movie = mediaType.equals("movie", ignoreCase = true)
+        // A movie needs a source with something besides series kinds, and a series one besides movie kinds.
+        return if (movie) types.any { it !in SeriesTypes } else types.any { it !in MovieTypes }
     }
 
     suspend fun executeWithDiagnostics(
@@ -97,10 +164,8 @@ class ExternalExtensionRunner @Inject constructor(
         episode: Int?,
         diagnostics: TestDiagnostics
     ): List<LocalScraperResult> = withContext(Dispatchers.IO) {
-        extensionLoader.ensureExtractorsLoaded(listOf(scraperId), diagnostics)
-
         diagnostics.addStep("Loading DEX extension...")
-        val apis = extensionLoader.loadExtensionWithDiagnostics(scraperId, diagnostics)
+        val apis = extensionLoader.load(scraperId, diagnostics)?.apis.orEmpty()
         val api = apis.firstOrNull()
 
         if (api == null) {
@@ -442,24 +507,7 @@ class ExternalExtensionRunner @Inject constructor(
         // (returning null locally) rather than propagating cancellation out and
         // discarding the already-collected link set. This is the cancellation-scope
         // trick that lets us return partial results from mega-aggregators.
-        val completed = withTimeoutOrNull(LOADLINKS_TIMEOUT_MS) {
-            try {
-                api.loadLinks(
-                    data = data,
-                    isCasting = false,
-                    subtitleCallback = { subtitles.add(it) },
-                    callback = { links.add(it) }
-                )
-                true
-            } catch (e: Exception) {
-                Log.w(TAG, "TmdbProvider ${api.name} loadLinks threw: ${e.javaClass.simpleName} (${links.size} links collected)")
-                false
-            } catch (e: Error) {
-                val missing = extractMissingClass(e)
-                Log.w(TAG, "TmdbProvider ${api.name} loadLinks error: ${missing ?: e.message} (${links.size} links collected)")
-                false
-            }
-        }
+        val completed = runLoadLinks(api, data, links, subtitles, "TmdbProvider")
         if (completed == null) {
             Log.w(TAG, "TmdbProvider ${api.name} loadLinks timed out at ${LOADLINKS_TIMEOUT_MS}ms (${links.size} links collected so far)")
         }
@@ -472,6 +520,60 @@ class ExternalExtensionRunner @Inject constructor(
         Log.d(TAG, "TmdbProvider ${api.name}: ${links.size} links, ${subtitles.size} subs")
         val domainSubtitles = subtitles.toDomainSubtitles(api.name)
         return links.filterValid().map { link -> link.toLocalScraperResult(api.name, domainSubtitles) }
+    }
+
+    /**
+     * Runs [api]'s loadLinks for up to LOADLINKS_TIMEOUT_MS, collecting into [links] and [subtitles]. While it runs,
+     * new links go to the caller's [LinkSink] every LINK_BATCH_MS, so they show before the slowest site answers.
+     * Returns what loadLinks returned (false when it threw), or null when it ran out of time.
+     */
+    private suspend fun runLoadLinks(
+        api: MainAPI,
+        data: String,
+        links: MutableList<ExtractorLink>,
+        subtitles: MutableList<SubtitleFile>,
+        kind: String
+    ): Boolean? = coroutineScope {
+        val sink = coroutineContext[LinkSink]
+        val batches = sink?.let {
+            launch {
+                var sent = 0
+                while (true) {
+                    // The first links go as soon as there are any (auto-play can start on them); after that, every
+                    // LINK_BATCH_MS so the list isn't redrawn for each link.
+                    delay(if (sent == 0) FIRST_LINK_CHECK_MS else LINK_BATCH_MS)
+                    val snapshot = synchronized(links) { links.toList() }
+                    if (snapshot.size <= sent) continue
+                    val subs = synchronized(subtitles) { subtitles.toList() }.toDomainSubtitles(api.name)
+                    val fresh = snapshot.drop(sent).filterValid().map { it.toLocalScraperResult(api.name, subs) }
+                    sent = snapshot.size
+                    if (fresh.isNotEmpty()) runCatching { sink.emit(fresh) }
+                }
+            }
+        }
+        try {
+            withTimeoutOrNull(LOADLINKS_TIMEOUT_MS) {
+                try {
+                    api.loadLinks(
+                        data = data,
+                        isCasting = false,
+                        subtitleCallback = { subtitles.add(it) },
+                        callback = { links.add(it) }
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "$kind ${api.name} loadLinks threw: ${e.javaClass.simpleName}: ${e.message} (${links.size} links collected)")
+                    false
+                } catch (e: Error) {
+                    val missing = extractMissingClass(e)
+                    Log.w(TAG, "$kind ${api.name} loadLinks error: ${missing ?: e.message} (${links.size} links collected)")
+                    false
+                }
+            }
+        } finally {
+            batches?.cancel()
+        }
     }
 
     private suspend fun executeSearchBased(
@@ -518,7 +620,7 @@ class ExternalExtensionRunner @Inject constructor(
         var outcome = trySearch(api, title)
         var searchResults = outcome.items
         var hostDead = outcome.hostUnreachable
-        var unsupported = outcome.unsupported
+        var unsupported = outcome.stop
 
         if (searchResults.isNullOrEmpty() && !hostDead && !unsupported && title.contains(Regex("[:\\-–—]"))) {
             val simplified = title.replace(Regex("[:\\-–—]"), " ").replace(Regex("\\s+"), " ").trim()
@@ -526,7 +628,7 @@ class ExternalExtensionRunner @Inject constructor(
             outcome = trySearch(api, simplified)
             searchResults = outcome.items
             if (outcome.hostUnreachable) hostDead = true
-            if (outcome.unsupported) unsupported = true
+            if (outcome.stop) unsupported = true
         }
 
         // Multi-title fallback: if primary found nothing AND host is reachable AND
@@ -541,7 +643,7 @@ class ExternalExtensionRunner @Inject constructor(
                     alts.map { alt -> async { alt to trySearch(api, alt) } }.awaitAll()
                 }
                 altOutcomes.firstOrNull { it.second.hostUnreachable }?.let { hostDead = true }
-                altOutcomes.firstOrNull { it.second.unsupported }?.let { unsupported = true }
+                altOutcomes.firstOrNull { it.second.stop }?.let { unsupported = true }
                 if (!hostDead && !unsupported) {
                     altOutcomes.firstOrNull { !it.second.items.isNullOrEmpty() }?.let { (alt, o) ->
                         Log.d(TAG, "SearchBased ${api.name}: alt title \"$alt\" returned ${o.items?.size ?: 0} results")
@@ -554,7 +656,7 @@ class ExternalExtensionRunner @Inject constructor(
         if (searchResults.isNullOrEmpty()) {
             when {
                 hostDead -> Log.w(TAG, "SearchBased ${api.name}: host unreachable, skipping (primary=\"$title\")")
-                unsupported -> Log.w(TAG, "SearchBased ${api.name}: search() unsupported, skipping (primary=\"$title\")")
+                unsupported -> Log.w(TAG, "SearchBased ${api.name}: search() unsupported or failing, skipping (primary=\"$title\")")
                 else -> Log.w(TAG, "SearchBased ${api.name}: 0 search results for any of ${candidateTitles.size} titles (primary=\"$title\")")
             }
             return emptyList()
@@ -597,23 +699,7 @@ class ExternalExtensionRunner @Inject constructor(
         val links = java.util.Collections.synchronizedList(mutableListOf<ExtractorLink>())
         val subtitles = java.util.Collections.synchronizedList(mutableListOf<SubtitleFile>())
 
-        val success = withTimeoutOrNull(LOADLINKS_TIMEOUT_MS) {
-            try {
-                api.loadLinks(
-                    data = data,
-                    isCasting = false,
-                    subtitleCallback = { subtitles.add(it) },
-                    callback = { links.add(it) }
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "SearchBased ${api.name} loadLinks threw: ${e.javaClass.simpleName}: ${e.message}", e)
-                false
-            } catch (e: Error) {
-                val missing = extractMissingClass(e)
-                Log.e(TAG, "SearchBased ${api.name} loadLinks error: ${missing ?: e.message}", e)
-                false
-            }
-        }
+        val success = runLoadLinks(api, data, links, subtitles, "SearchBased")
         if (success == null) {
             Log.w(TAG, "SearchBased ${api.name} loadLinks timed out at ${LOADLINKS_TIMEOUT_MS}ms (${links.size} links collected so far)")
         }
@@ -694,8 +780,13 @@ class ExternalExtensionRunner @Inject constructor(
     private data class SearchOutcome(
         val items: List<SearchResponse>?,
         val hostUnreachable: Boolean = false,
-        val unsupported: Boolean = false // provider didn't implement search()
-    )
+        val unsupported: Boolean = false, // provider didn't implement search()
+        /** search() threw (not set up, site changed): other titles would fail the same way. */
+        val failed: Boolean = false
+    ) {
+        /** Whether trying the title again in other forms is pointless. */
+        val stop: Boolean get() = unsupported || failed
+    }
 
     private suspend fun trySearch(api: MainAPI, query: String): SearchOutcome = try {
         SearchOutcome(api.search(query, 1)?.items)
@@ -708,12 +799,12 @@ class ExternalExtensionRunner @Inject constructor(
         Log.e(TAG, "SearchBased ${api.name}: search() not implemented; skipping provider")
         SearchOutcome(null, unsupported = true)
     } catch (e: Exception) {
-        Log.e(TAG, "SearchBased ${api.name} search(\"$query\") threw: ${e.javaClass.simpleName}: ${e.message}", e)
-        SearchOutcome(null)
+        Log.e(TAG, "SearchBased ${api.name} search(\"$query\") threw: ${e.javaClass.simpleName}: ${e.message}")
+        SearchOutcome(null, failed = true)
     } catch (e: Error) {
         val missing = extractMissingClass(e)
         Log.e(TAG, "SearchBased ${api.name} search(\"$query\") error: ${missing ?: e.message}", e)
-        SearchOutcome(null)
+        SearchOutcome(null, failed = true)
     }
 
     private fun equalsIgnoreCase(a: String, b: String): Boolean = a.equals(b, ignoreCase = true)
@@ -842,6 +933,9 @@ class ExternalExtensionRunner @Inject constructor(
             when {
                 url.isBlank() -> false
                 url == "error" || url == "null" -> false
+                // Torrents (TorraStream and the like) play through Echo's torrent support, as Stremio's do;
+                // execute() drops them again unless P2P is on.
+                url.startsWith("magnet:", ignoreCase = true) -> true
                 !url.startsWith("http://") && !url.startsWith("https://") -> false
                 else -> true
             }.also { valid ->
@@ -898,4 +992,10 @@ class ExternalExtensionRunner @Inject constructor(
             subtitles = subtitles
         )
     }
+}
+
+/** Where [ExternalExtensionRunner.runLoadLinks] hands links over in batches, set by [ExternalExtensionRunner.execute]. */
+private class LinkSink(val emit: suspend (List<LocalScraperResult>) -> Unit) :
+    kotlin.coroutines.AbstractCoroutineContextElement(LinkSink) {
+    companion object Key : kotlin.coroutines.CoroutineContext.Key<LinkSink>
 }

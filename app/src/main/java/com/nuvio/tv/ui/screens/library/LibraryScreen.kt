@@ -1,12 +1,12 @@
 package com.nuvio.tv.ui.screens.library
 
+import com.nuvio.tv.ui.newlook.home.AmbientPageWash
 import com.nuvio.tv.ui.newlook.underSidebar
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,7 +45,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -202,34 +201,28 @@ fun LibraryScreen(
             .fillMaxSize()
             .onGloballyPositioned { rootOffset = it.positionInRoot() }
     ) {
-        Canvas(Modifier.fillMaxSize().underSidebar()) {
-            drawRect(
-                Brush.linearGradient(
-                    colors = listOf(Color(0xFF403A40), Color(0xFF29272D), Color(0xFF343137)),
-                    start = Offset.Zero,
-                    end = Offset(size.width, size.height)
-                )
-            )
-            val radius = size.maxDimension * 0.78f
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0x668F858E), Color(0x228F858E), Color.Transparent),
-                    center = Offset(size.width * 0.78f, size.height * 0.12f),
-                    radius = radius
-                ),
-                radius = radius,
-                center = Offset(size.width * 0.78f, size.height * 0.12f)
-            )
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0x444C5A61), Color(0x224C5A61), Color.Transparent),
-                    center = Offset(size.width * 0.18f, size.height * 0.88f),
-                    radius = radius * 0.82f
-                ),
-                radius = radius * 0.82f,
-                center = Offset(size.width * 0.18f, size.height * 0.88f)
-            )
-        }
+        // A blurry grey page, as the Calendar's: the colours of what's in focus (the title inside a bin, the focused
+        // bin's first title on the bins grid), blurred and under a dim veil so they read as a tint rather than a fill.
+        val washUrl = when {
+            tab == LibraryTab.Cloud -> null
+            state.openBin != null -> {
+                val focusedTitle = lastFocused?.removePrefix("title:")?.let { key ->
+                    state.openTitles.firstOrNull { it.entry.key == key }
+                } ?: state.openTitles.firstOrNull()
+                focusedTitle?.let { title ->
+                    binsViewModel.cachedBackdrop(title) ?: title.preview.background ?: title.preview.poster
+                }
+            }
+            else -> {
+                val focusedBin = lastFocused?.removePrefix("bin:")?.let { id -> state.bins.firstOrNull { it.id == id } }
+                    ?: state.bins.firstOrNull()
+                focusedBin?.let { com.nuvio.tv.core.bins.BinsReducer.sortedEntries(it.entries, state.sort).firstOrNull() }
+                    ?.let { it.background ?: it.poster }
+            }
+        } ?: com.nuvio.tv.ui.newlook.home.rememberLastAmbientUrl()
+        Box(Modifier.fillMaxSize().underSidebar().background(LibraryBase))
+        AmbientPageWash(url = washUrl, modifier = Modifier.fillMaxSize().underSidebar())
+        Box(Modifier.fillMaxSize().underSidebar().background(LibraryWashDim))
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -303,7 +296,8 @@ fun LibraryScreen(
                         }
                     },
                     onLongClick = { bin, anchor ->
-                        if (!state.reordering) overlay = LibraryOverlay.BinOptions(bin, local(anchor))
+                        // A tracker's list has nothing to star, rename or delete here.
+                        if (!state.reordering && bin.source == null) overlay = LibraryOverlay.BinOptions(bin, local(anchor))
                     },
                     onStar = { binsViewModel.toggleStar(it) }
                 )
@@ -345,13 +339,13 @@ fun LibraryScreen(
             is LibraryOverlay.TitleOptions -> BinPillMenu(
                 anchor = current.anchor,
                 title = current.title.entry.name,
-                items = listOf(
+                items = listOfNotNull(
                     BinMenuItem(stringResource(R.string.bins_title_open)) {
                         dismissOverlay(null)
                         binsViewModel.onTitleOpened(current.bin, current.title)
                         onNavigateToDetail(current.title.entry.id, current.title.entry.type, current.title.entry.addonBaseUrl)
                     },
-                    BinMenuItem(stringResource(R.string.bins_title_remove, current.bin.name)) {
+                    if (current.bin.source != null) null else BinMenuItem(stringResource(R.string.bins_title_remove, current.bin.name)) {
                         val titles = state.openTitles
                         val at = titles.indexOfFirst { it.entry.key == current.title.entry.key }
                         val next = titles.getOrNull(at + 1) ?: titles.getOrNull(at - 1)
@@ -637,3 +631,6 @@ private fun sortLabelText(sort: BinSort): String = stringResource(
         BinSort.TITLE_ZA -> R.string.library_sort_title_desc
     }
 )
+
+private val LibraryBase = Color(0xFF1C1C1E)
+private val LibraryWashDim = Color.Black.copy(alpha = 0.42f)

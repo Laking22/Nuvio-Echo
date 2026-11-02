@@ -7,6 +7,7 @@ import androidx.media3.common.util.UnstableApi
 import com.nuvio.tv.core.debrid.DirectDebridPlayableResult
 import com.nuvio.tv.core.intro.PlaybackIntroState
 import com.nuvio.tv.core.network.NetworkResult
+import com.nuvio.tv.core.player.AutoPlayRace
 import com.nuvio.tv.core.player.BetaFeatures
 import com.nuvio.tv.core.player.StreamAutoPlaySelector
 import com.nuvio.tv.data.local.PlayerSettings
@@ -28,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -796,7 +798,9 @@ private fun PlayerRuntimeController.openExternalStreamInBrowser(
 @androidx.annotation.OptIn(UnstableApi::class)
 internal fun PlayerRuntimeController.switchToSourceStream(
     stream: Stream,
-    startIntro: Boolean = true
+    startIntro: Boolean = true,
+    /** False when the caller resumes at a spot of its own (a quality or audio switch), which saved progress mustn't override. */
+    loadSavedProgress: Boolean = true
 ) {
     sourceStreamsScope?.cancel()
     sourceStreamsScope = null
@@ -968,7 +972,11 @@ internal fun PlayerRuntimeController.switchToSourceStream(
         initializePlayer(playbackUrl, playbackHeaders)
     }
 
-    loadSavedProgressFor(currentSeason, currentEpisode)
+    if (loadSavedProgress) {
+        loadSavedProgressFor(currentSeason, currentEpisode)
+    } else {
+        pendingResumeProgress = null
+    }
 }
 
 internal fun PlayerRuntimeController.dismissEpisodesPanel() {
@@ -1222,10 +1230,24 @@ internal fun PlayerRuntimeController.selectEpisodeFromPanel(video: Video) {
             } else {
                 null
             }
+        val raced = chosen?.let { pick ->
+            raceAutoPlayPick(
+                pick = pick,
+                streams = streams,
+                mode = playerSettings.streamAutoPlayMode,
+                regexPattern = playerSettings.streamAutoPlayRegex,
+                preferences = playerSettings.streamAutoPlayPreferences,
+                source = playerSettings.streamAutoPlaySource,
+                installedAddonNames = installedAddonNames,
+                selectedAddons = playerSettings.streamAutoPlaySelectedAddons,
+                selectedPlugins = playerSettings.streamAutoPlaySelectedPlugins,
+                bingeGroup = bingeGroup
+            )
+        }
         // The list was closed, or another episode picked, in the meantime: leave it be.
         val state = _uiState.value
         if (!state.showEpisodeStreams || state.episodeStreamsForVideoId != video.id) return@launch
-        val playable = chosen?.let { resolveDirectDebridStreamIfNeeded(it, video.season, video.episode) }
+        val playable = raced?.let { resolveDirectDebridStreamIfNeeded(it, video.season, video.episode) }
         if (playable != null) {
             switchToEpisodeStream(playable, forcedTargetVideo = video, startIntro = false)
         } else if (introStarted) {
@@ -1298,13 +1320,17 @@ internal fun PlayerRuntimeController.loadStreamsForEpisode(video: Video, forceRe
         // Initialize episode source chips with LOADING status
         updateEpisodeSourceChipsForFetchStart(type, video.id, installedAddons)
 
-        streamRepository.getStreamsFromAllAddons(
-            type = type,
-            videoId = video.id,
-            season = video.season,
-            episode = video.episode,
-            forceRefresh = forceRefresh
-        ).collect { result ->
+        // The next episode's sources fetched while this one played list at once; Reload searches again.
+        val held = if (forceRefresh) null else heldNextEpisodeStreams(video.id, allowStale = true)
+        val results = held?.let { flowOf<NetworkResult<List<AddonStreams>>>(NetworkResult.Success(it)) }
+            ?: streamRepository.getStreamsFromAllAddons(
+                type = type,
+                videoId = video.id,
+                season = video.season,
+                episode = video.episode,
+                forceRefresh = forceRefresh
+            )
+        results.collect { result ->
             when (result) {
                 is NetworkResult.Success -> {
                     val addonStreams = StreamAutoPlaySelector.orderAddonStreams(result.data, installedAddonOrder)
@@ -1868,7 +1894,11 @@ internal fun PlayerRuntimeController.prepareNextEpisode() {
                 PreparedNextEpisode(nextVideo.id, pick = null, pickerOnly = true)
             } else {
                 Log.d(PlayerRuntimeController.TAG, "Finding a source for the next episode: S${nextVideo.season}E${nextVideo.episode}")
-                PreparedNextEpisode(nextVideo.id, findNextEpisodeStream(nextVideo, type, playerSettings), pickerOnly = false)
+                PreparedNextEpisode(
+                    nextVideo.id,
+                    findNextEpisodeStream(nextVideo, type, playerSettings, useHeldWhenStale = false),
+                    pickerOnly = false
+                )
             }
         } catch (e: CancellationException) {
             throw e
@@ -1966,7 +1996,8 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
             }
             // Asked for by hand and played without a picker: the intro covers the search too.
             if (introForNext) startIntroForNewStream()
-            val pick = findNextEpisodeStream(nextVideo, type, playerSettings)
+            // Fetched early in this episode, its sources play at once, however long ago that was.
+            val pick = findNextEpisodeStream(nextVideo, type, playerSettings, useHeldWhenStale = true)
             playNextEpisodePick(nextVideo, nextInfo, pick, userInitiated, introForNext)
         } catch (e: CancellationException) {
             throw e
@@ -2038,12 +2069,14 @@ private suspend fun PlayerRuntimeController.playNextEpisodePick(
 
 /**
  * Searches the addons for [nextVideo] and picks its source as auto-play would (debrid links resolved), waiting no
- * longer than auto-play's timeout.
+ * longer than auto-play's timeout. Sources fetched early in this episode ([fetchNextEpisodeStreamsEarly]) are picked
+ * from without a search: whatever their age when [useHeldWhenStale], otherwise only while fresh.
  */
 private suspend fun PlayerRuntimeController.findNextEpisodeStream(
     nextVideo: Video,
     type: String,
-    playerSettings: PlayerSettings
+    playerSettings: PlayerSettings,
+    useHeldWhenStale: Boolean
 ): NextEpisodePick = coroutineScope {
     streamRepository.setLocalPluginSearchPaused(false)
     val shouldAutoSelectInManualMode =
@@ -2148,7 +2181,17 @@ private suspend fun PlayerRuntimeController.findNextEpisodeStream(
 
     val timeoutSeconds = playerSettings.streamAutoPlayTimeoutSeconds
 
+    // Already fetched while this episode played: pick from those, with no search and nothing to wait for.
+    val held = heldNextEpisodeStreams(nextVideo.id, allowStale = useHeldWhenStale)
+    if (held != null) {
+        lastSuccessData = held
+        timeoutElapsed = true
+        trySelectStream(held)?.let { recordSelection(it) }
+        searchSettled.complete(Unit)
+    }
+
     val innerJob = launch {
+        if (held != null) return@launch
         streamRepository.getStreamsFromAllAddons(
             type = type,
             videoId = nextVideo.id,
@@ -2216,10 +2259,59 @@ private suspend fun PlayerRuntimeController.findNextEpisodeStream(
         innerJob.cancel()
     }
 
-    val streamToPlay = selectedStream?.let {
+    val raced = selectedStream?.let { pick ->
+        val streams = lastSuccessData
+            ?.let { StreamAutoPlaySelector.orderAddonStreams(it, installedAddonOrder).flatMap { group -> group.streams } }
+            .orEmpty()
+        raceAutoPlayPick(
+            pick = pick,
+            streams = streams,
+            mode = effectiveMode,
+            regexPattern = effectiveRegex,
+            preferences = effectivePreferences,
+            source = effectiveSource,
+            installedAddonNames = installedAddonOrder.toSet(),
+            selectedAddons = effectiveSelectedAddons,
+            selectedPlugins = effectiveSelectedPlugins,
+            bingeGroup = currentStreamBingeGroup.takeIf { playerSettings.streamAutoPlayPreferBingeGroupForNextEpisode }
+        )
+    }
+    val streamToPlay = raced?.let {
         resolveDirectDebridStreamIfNeeded(it, nextVideo.season, nextVideo.episode)
     }
     NextEpisodePick(stream = streamToPlay, refreshPicker = lastError != null || selectedStream != null)
+}
+
+/**
+ * Auto-play's [pick] raced against its other matches (Race matching sources), as on the source page: the first to
+ * return video. [pick] itself when the setting is off or nothing can race it.
+ */
+private suspend fun PlayerRuntimeController.raceAutoPlayPick(
+    pick: Stream,
+    streams: List<Stream>,
+    mode: StreamAutoPlayMode,
+    regexPattern: String,
+    preferences: Set<String>,
+    source: StreamAutoPlaySource,
+    installedAddonNames: Set<String>,
+    selectedAddons: Set<String>,
+    selectedPlugins: Set<String>,
+    bingeGroup: String?
+): Stream {
+    if (!BetaFeatures.settings(context).raceAutoPlaySources) return pick
+    val field = AutoPlayRace.fieldFor(
+        pick = pick,
+        streams = streams,
+        mode = mode,
+        regexPattern = regexPattern,
+        preferences = preferences,
+        source = source,
+        installedAddonNames = installedAddonNames,
+        selectedAddons = selectedAddons,
+        selectedPlugins = selectedPlugins,
+        bingeGroup = bingeGroup
+    ) ?: return pick
+    return AutoPlayRace.pick(field)
 }
 
 private fun PlayerRuntimeController.playNextCloudLibraryFile(

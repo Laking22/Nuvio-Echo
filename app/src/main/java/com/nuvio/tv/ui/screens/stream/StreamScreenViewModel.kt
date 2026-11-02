@@ -52,7 +52,9 @@ import com.nuvio.tv.ui.screens.player.StreamSidecarSubtitles
 import com.nuvio.tv.ui.util.localizedGenreLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -61,6 +63,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -359,6 +362,30 @@ class StreamScreenViewModel @Inject constructor(
         streamLoadScope = newScope
         streamLoadJob = newScope.launch {
             streamLoadCompleted = false
+            // The source search doesn't depend on the reads below, so it's joined now and its results wait here until
+            // the screen is ready for them; a search finished in the background has them ready at once. Not for a
+            // title whose streams may come with its details, which might not be searched at all.
+            val earlySearch = if (shouldAttemptEmbeddedMetaStreamLookup()) {
+                null
+            } else {
+                Channel<NetworkResult<List<AddonStreams>>>(Channel.UNLIMITED).also { results ->
+                    launch {
+                        try {
+                            streamRepository.getStreamsFromAllAddons(
+                                type = contentType,
+                                videoId = videoId,
+                                season = season,
+                                episode = episode,
+                                forceRefresh = forceRefresh
+                            ).collect { results.send(it) }
+                            results.close()
+                        } catch (e: Throwable) {
+                            results.close(e)
+                            if (e is CancellationException) throw e
+                        }
+                    }
+                }
+            }
             val playerSettings = playerSettingsDataStore.playerSettings.first()
             if (manualSelection) {
                 directAutoPlayModeInitializedForSession = true
@@ -427,6 +454,14 @@ class StreamScreenViewModel @Inject constructor(
                 }
                 if (cached != null) {
                     Log.i(TAG, "AUTOPLAY_PICK: via=last_link name=${cached.streamName}")
+                    // Links die (a dead one left the player loading for minutes): with Race matching sources on, the
+                    // player checks a remembered link that's slow to start, and moves on to another source if it
+                    // sends no video. It plays at once, as before; the check costs nothing when it starts.
+                    if (betaPerformanceSettings.current.value.raceAutoPlaySources &&
+                        cached.url.startsWith("http", ignoreCase = true)
+                    ) {
+                        com.nuvio.tv.core.player.AutoPlayRace.watchSlowStart(cached.url)
+                    }
                     autoPlayHandledForSession = true
                     resolvedAutoPlayTarget = true
                     playbackConnectionPrewarmer.prewarm(cached.url.takeIf { u -> u.isNotBlank() }, cached.headers)
@@ -486,6 +521,16 @@ class StreamScreenViewModel @Inject constructor(
                 playerSettings.streamAutoPlayReuseBingeGroup) {
                 contentId?.let { bingeGroupCacheDataStore.get(it) }
             } else null
+            // Race matching sources: auto-play's matches start their check as the addons' results come in, so the race
+            // is mostly run when auto-play picks. Not with a remembered release for the next episode, which plays
+            // without a race when it's found.
+            val raceHeadStart = if (betaPerformanceSettings.current.value.raceAutoPlaySources &&
+                persistedBingeGroup == null && !autoPlayHandledForSession
+            ) {
+                com.nuvio.tv.core.player.AutoPlayRace.HeadStart(newScope)
+            } else {
+                null
+            }
 
             fun applySuccess(addonStreamGroups: List<AddonStreams>, isAllLoaded: Boolean) {
                 val orderedAddonStreams = StreamAutoPlaySelector.orderAddonStreams(
@@ -518,6 +563,20 @@ class StreamScreenViewModel @Inject constructor(
 
                 val allStreams = mergedAddonStreams.flatMap { it.streams }
                 val availableAddons = mergedAddonStreams.map { it.addonName }
+                if (raceHeadStart != null && !isAllLoaded && !autoPlayHandledForSession && !resolvedAutoPlayTarget) {
+                    raceHeadStart.offer(
+                        StreamAutoPlaySelector.raceCandidates(
+                            streams = allStreams,
+                            mode = playerSettings.streamAutoPlayMode,
+                            regexPattern = playerSettings.streamAutoPlayRegex,
+                            source = playerSettings.streamAutoPlaySource,
+                            installedAddonNames = installedAddonOrder.toSet(),
+                            selectedAddons = playerSettings.streamAutoPlaySelectedAddons,
+                            selectedPlugins = playerSettings.streamAutoPlaySelectedPlugins,
+                            preferences = playerSettings.streamAutoPlayPreferences
+                        )
+                    )
+                }
                 // Auto-select only after all addons have responded or the
                 // configured timeout has elapsed. This gives slower addons a
                 // chance to return higher-quality streams before the selector
@@ -556,6 +615,29 @@ class StreamScreenViewModel @Inject constructor(
                     resolvedAutoPlayTarget = true
                     logAutoPlayPick("selector", selectedAutoPlayStream, persistedBingeGroup)
                 }
+                // Race matching sources: auto-play's matches race and the first to return video plays; it's handed
+                // over when the race ends.
+                val raceField = selectedAutoPlayStream?.let { pick ->
+                    autoPlayRaceField(pick, allStreams, playerSettings, installedAddonOrder.toSet(), persistedBingeGroup)
+                }
+                if (selectedAutoPlayStream != null && raceField != null) {
+                    if (playerSettings.showPlayerLoadingStatus) {
+                        updateUiStateIfChanged {
+                            it.copy(directAutoPlayMessage = context.getString(R.string.stream_racing_sources, raceField.size))
+                        }
+                    }
+                    launch {
+                        val winner = com.nuvio.tv.core.player.AutoPlayRace.pick(raceField, raceHeadStart)
+                        // Auto-play was called off while the links raced (a source picked by hand, or the list shown):
+                        // the winner isn't played.
+                        if (autoPlayHandledForSession) return@launch
+                        if (winner != selectedAutoPlayStream) logAutoPlayPick("race", winner, persistedBingeGroup)
+                        updateUiStateIfChanged { it.copy(autoPlayStream = winner) }
+                    }
+                } else if (selectedAutoPlayStream != null) {
+                    // Auto-play's pick plays without a race: the checks made ahead of it aren't needed.
+                    raceHeadStart?.stop()
+                }
 
                 val currentFilter = _uiState.value.selectedAddonFilter
                 val fullFiltered = if (currentFilter == null) {
@@ -588,7 +670,7 @@ class StreamScreenViewModel @Inject constructor(
                         // shouldAutoSelect=false once a target is resolved, and
                         // would otherwise clobber the real pick with null before
                         // Compose observes it.
-                        autoPlayStream = selectedAutoPlayStream ?: it.autoPlayStream,
+                        autoPlayStream = selectedAutoPlayStream?.takeIf { raceField == null } ?: it.autoPlayStream,
                         error = null,
                         showDirectAutoPlayOverlay = if (directAutoPlayFlowEnabledForSession || it.autoPlayPlaybackInfo != null) {
                             true
@@ -687,13 +769,13 @@ class StreamScreenViewModel @Inject constructor(
             }
 
             val streamLoadInner = launch {
-                streamRepository.getStreamsFromAllAddons(
+                (earlySearch?.consumeAsFlow() ?: streamRepository.getStreamsFromAllAddons(
                     type = contentType,
                     videoId = videoId,
                     season = season,
                     episode = episode,
                     forceRefresh = forceRefresh
-                ).collect { result ->
+                )).collect { result ->
                     when (result) {
                         is NetworkResult.Success -> {
                             lastSuccessData = result.data
@@ -1435,9 +1517,29 @@ class StreamScreenViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Gets the selected stream for playback
-     */
+    /** The links to race for auto-play's [pick] (Race matching sources); null when it plays alone. */
+    private fun autoPlayRaceField(
+        pick: Stream,
+        streams: List<Stream>,
+        playerSettings: com.nuvio.tv.data.local.PlayerSettings,
+        installedAddonNames: Set<String>,
+        bingeGroup: String?
+    ): List<Stream>? {
+        if (!betaPerformanceSettings.current.value.raceAutoPlaySources) return null
+        return com.nuvio.tv.core.player.AutoPlayRace.fieldFor(
+            pick = pick,
+            streams = streams,
+            mode = playerSettings.streamAutoPlayMode,
+            regexPattern = playerSettings.streamAutoPlayRegex,
+            preferences = playerSettings.streamAutoPlayPreferences,
+            source = playerSettings.streamAutoPlaySource,
+            installedAddonNames = installedAddonNames,
+            selectedAddons = playerSettings.streamAutoPlaySelectedAddons,
+            selectedPlugins = playerSettings.streamAutoPlaySelectedPlugins,
+            bingeGroup = bingeGroup
+        )
+    }
+
     /** What auto-play picked and how, with the quality read from it: low-quality starts are diagnosed from this. */
     private fun logAutoPlayPick(via: String, stream: Stream, bingeGroup: String?) {
         Log.i(
@@ -1448,6 +1550,9 @@ class StreamScreenViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Gets the selected stream for playback
+     */
     fun getStreamForPlayback(stream: Stream, saveLastLink: Boolean = true): StreamPlaybackInfo {
         cancelStreamsLoad()
         val playbackInfo = StreamPlaybackInfo(

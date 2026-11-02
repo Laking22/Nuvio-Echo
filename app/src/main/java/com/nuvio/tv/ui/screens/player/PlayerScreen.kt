@@ -74,17 +74,17 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
@@ -4274,43 +4274,28 @@ private fun PlayerBufferingIndicator(
 
 internal enum class AudioQualitySection { AUDIO, QUALITY }
 
-/** The merged panel's section tabs: Audio | Quality. Focus one and press OK to switch. */
+/** The merged card's section tabs: Audio | Quality, as pills in one glass groove. Focus one and press OK to switch. */
 @Composable
 private fun AudioQualityTabs(
     selected: AudioQualitySection,
     hasAudio: Boolean,
     onSelect: (AudioQualitySection) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.07f))
+            .padding(3.dp)
+    ) {
         listOf(AudioQualitySection.AUDIO to R.string.player_section_audio, AudioQualitySection.QUALITY to R.string.player_section_quality)
             .forEach { (section, label) ->
                 if (section == AudioQualitySection.AUDIO && !hasAudio) return@forEach
-                var focused by remember { mutableStateOf(false) }
-                val isSelected = section == selected
-                Text(
+                PopPill(
                     text = stringResource(label),
-                    color = when {
-                        focused -> Color.Black
-                        isSelected -> Color.White
-                        else -> Color.White.copy(alpha = 0.6f)
-                    },
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .onFocusChanged { focused = it.isFocused }
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(
-                            when {
-                                focused -> Color.White
-                                isSelected -> Color.White.copy(alpha = 0.16f)
-                                else -> Color.Transparent
-                            }
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { onSelect(section) }
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                    selected = section == selected,
+                    onClick = { onSelect(section) }
                 )
             }
     }

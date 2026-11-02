@@ -349,7 +349,8 @@ class NewLookPreviewTest {
             layoutPreferences = layout,
             watchProgressRepository = progress,
             watchedSeriesStateHolder = seriesWatched,
-            metaRepository = io.mockk.mockk(relaxed = true)
+            metaRepository = io.mockk.mockk(relaxed = true),
+            trackingLibrary = com.nuvio.tv.core.tracking.TrackingLibraryProviderRegistry(emptySet())
         )
         val cloud = io.mockk.mockk<com.nuvio.tv.ui.screens.library.CloudLibraryViewModel>(relaxed = true)
         io.mockk.every { cloud.uiState } returns MutableStateFlow(com.nuvio.tv.ui.screens.library.CloudUiState())
@@ -628,6 +629,7 @@ class NewLookPreviewTest {
                         menuOnTop = menuOnTop,
                         hideMenu = hideMenu,
                         contentInset = inset,
+                        rootRoutes = setOf(Screen.Home.route),
                         menuFocusedState = state,
                         focusTopBarAction = { runCatching { itemFocus.getValue(Screen.Home.route).requestFocus() } },
                         topBarContent = { onDown, modifier ->

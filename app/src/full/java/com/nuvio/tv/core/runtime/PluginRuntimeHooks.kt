@@ -5,6 +5,7 @@ import android.app.Application
 import android.os.Build
 import android.util.Log
 import com.lagradost.cloudstream3.AcraApplication
+import com.lagradost.cloudstream3.CommonActivity
 import com.lagradost.cloudstream3.app
 import com.lagradost.nicehttp.ignoreAllSSLErrors
 import com.nuvio.tv.NuvioApplication
@@ -29,6 +30,9 @@ object PluginRuntimeHooks {
     @Volatile
     private var isCloudstreamInitialized = false
 
+    @Volatile
+    private var httpCache: Cache? = null
+
     /**
      * Lazily initialize Conscrypt + the cloudstream baseClient. Safe to call
      * repeatedly; only the first call performs work. Must be invoked before any
@@ -48,31 +52,53 @@ object PluginRuntimeHooks {
                 Log.w("NuvioApplication", "Failed to install Conscrypt: ${e.message}")
             }
 
-            try {
-                app.baseClient = OkHttpClient.Builder()
-                    .dns(com.nuvio.tv.core.network.IPv4FirstDns())
-                    .cookieJar(NuvioApplication.extensionCookieJar)
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .ignoreAllSSLErrors()
-                    .cache(Cache(
-                        directory = File(currentApp.cacheDir, "http_cache"),
-                        maxSize = 50L * 1024L * 1024L
-                    ))
-                    .build()
-            } catch (e: Throwable) {
-                Log.w("NuvioApplication", "Failed to initialize NiceHttp client (API ${Build.VERSION.SDK_INT}): ${e.message}")
-            }
-            
+            buildExtensionClient(currentApp)
+
             isCloudstreamInitialized = true
         }
     }
 
     fun onActivityCreate(activity: Activity) {
         AcraApplication.setActivity(activity)
+        CommonActivity.activity = activity
     }
 
-    fun onActivityDestroy() {
-        AcraApplication.setActivity(null)
+    /** Rebuilds the extensions' HTTP client, after the DNS setting changes. */
+    fun rebuildExtensionClient() {
+        val currentApp = application ?: return
+        if (isCloudstreamInitialized) buildExtensionClient(currentApp)
+    }
+
+    /**
+     * The client every extension's requests go through (CloudStream's `app`), set up as CloudStream sets up its own:
+     * the chosen DNS, a shared cookie jar, a 50MB response cache, and certificate errors ignored.
+     */
+    private fun buildExtensionClient(currentApp: Application) {
+        try {
+            val base = OkHttpClient.Builder()
+                .cookieJar(NuvioApplication.extensionCookieJar)
+                .followRedirects(true)
+                .followSslRedirects(true)
+                .ignoreAllSSLErrors()
+            val dns = ExtensionDns.dnsFor(ExtensionDns.current(currentApp), base.build())
+            // One cache for every client built: a second Cache over the same folder (after a DNS change) fights the
+            // first over its journal.
+            val cache = httpCache ?: Cache(
+                directory = File(currentApp.cacheDir, "http_cache"),
+                maxSize = 50L * 1024L * 1024L
+            ).also { httpCache = it }
+            app.baseClient = base
+                .dns(dns)
+                .cache(cache)
+                .build()
+        } catch (e: Throwable) {
+            Log.w("NuvioApplication", "Failed to initialize NiceHttp client (API ${Build.VERSION.SDK_INT}): ${e.message}")
+        }
+    }
+
+    /** Forgets [activity] as the one extensions use, unless another (an extension's settings) has taken over. */
+    fun onActivityDestroy(activity: Activity) {
+        if (AcraApplication.getActivity() === activity) AcraApplication.setActivity(null)
+        if (CommonActivity.activity === activity) CommonActivity.activity = null
     }
 }

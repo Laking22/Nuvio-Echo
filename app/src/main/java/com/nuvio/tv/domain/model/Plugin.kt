@@ -142,7 +142,9 @@ data class ExternalPluginEntry(
     val iconUrl: String? = null,
     val url: String,
     val fileSize: Long? = null,
-    val repositoryUrl: String? = null
+    val repositoryUrl: String? = null,
+    /** The language its sources are in, as the repo lists it ("en", "hi", "pt-br"). */
+    val language: String? = null
 )
 
 /**

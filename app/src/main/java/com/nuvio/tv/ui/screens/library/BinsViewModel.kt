@@ -12,6 +12,11 @@ import com.nuvio.tv.core.bins.BinSort
 import com.nuvio.tv.core.bins.BinsReducer
 import com.nuvio.tv.core.bins.BinsRepository
 import com.nuvio.tv.core.poster.CustomPosterScreen
+import com.nuvio.tv.core.tracking.TrackingLibraryProviderRegistry
+import com.nuvio.tv.core.tracking.TrackingProviderId
+import com.nuvio.tv.core.tracking.TrackingRefreshIntent
+import com.nuvio.tv.domain.model.LibraryEntry
+import com.nuvio.tv.domain.model.LibraryListTab
 import com.nuvio.tv.core.poster.patternForScreen
 import com.nuvio.tv.core.poster.withCustomPosterUrls
 import com.nuvio.tv.data.local.LayoutPreferenceDataStore
@@ -28,7 +33,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -73,7 +83,8 @@ class BinsViewModel @Inject constructor(
     private val layoutPreferences: LayoutPreferenceDataStore,
     private val watchProgressRepository: WatchProgressRepository,
     private val watchedSeriesStateHolder: com.nuvio.tv.data.local.WatchedSeriesStateHolder,
-    private val metaRepository: MetaRepository
+    private val metaRepository: MetaRepository,
+    private val trackingLibrary: TrackingLibraryProviderRegistry
 ) : ViewModel() {
 
     private val local = MutableStateFlow(Local())
@@ -95,10 +106,27 @@ class BinsViewModel @Inject constructor(
         watchedSeriesStateHolder.fullyWatchedSeriesIds
     ) { movies, series -> movies to series }
 
-    val uiState: StateFlow<BinsUiState> = combine(repository.state, local, posterLayout, watched) { state, local, layout, watched ->
+    /** Every list on the connected trackers (Trakt, Simkl, MDBList), as read-only bins. */
+    private val listBins: Flow<List<Bin>> = trackingLibrary.providers().let { providers ->
+        if (providers.isEmpty()) {
+            flowOf(emptyList())
+        } else {
+            combine(
+                providers.map { provider ->
+                    provider.isAuthenticated.flatMapLatest { signedIn ->
+                        if (!signedIn) flowOf(emptyList())
+                        else combine(provider.tabs, provider.items) { tabs, items -> listBinsOf(provider.providerId, tabs, items) }
+                    }
+                }
+            ) { perProvider -> perProvider.flatMap { it } }
+        }
+    }.distinctUntilChanged()
+
+    val uiState: StateFlow<BinsUiState> = combine(repository.state, local, posterLayout, watched, listBins) { state, local, layout, watched, lists ->
         val (width, corner, pattern) = layout
-        val bins = BinsReducer.sortedBins(state.bins, state.sort)
-        val open = local.openBinId?.let { id -> state.bins.firstOrNull { it.id == id } }
+        // The viewer's own bins in the chosen sort, then the trackers' lists in the trackers' order.
+        val bins = BinsReducer.sortedBins(state.bins, state.sort) + lists
+        val open = local.openBinId?.let { id -> bins.firstOrNull { it.id == id } }
         val titles = open?.let { bin ->
             val sorted = BinsReducer.sortedEntries(bin.entries, state.sort)
             val previews = sorted.map { it.toPreview() }.withCustomPosterUrls(pattern)
@@ -120,9 +148,24 @@ class BinsViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BinsUiState())
 
+    init {
+        // The lists are only as fresh as the trackers' last sync: catch up when the Library opens.
+        viewModelScope.launch {
+            trackingLibrary.providers().forEach { provider ->
+                if (provider.isAuthenticated.first()) {
+                    runCatching { provider.refresh(TrackingRefreshIntent.AUTOMATIC) }
+                }
+            }
+        }
+    }
+
     fun openBin(bin: Bin) {
         local.update { Local(openBinId = bin.id) }
-        viewModelScope.launch { repository.markBinViewed(bin.id) }
+        if (bin.source == null) viewModelScope.launch { repository.markBinViewed(bin.id) }
+    }
+
+    private fun showReadOnly(bin: Bin) {
+        showMessage(context.getString(R.string.bins_list_read_only, bin.source))
     }
 
     fun closeBin() {
@@ -137,6 +180,7 @@ class BinsViewModel @Inject constructor(
     /** Custom order on (starting from what's shown) or off. */
     fun toggleReorder() {
         val state = uiState.value
+        state.openBin?.takeIf { it.source != null }?.let { showReadOnly(it); return }
         if (state.reordering) {
             local.update { it.copy(reordering = false, picked = null) }
             showMessage(context.getString(R.string.bins_custom_order_saved))
@@ -181,6 +225,7 @@ class BinsViewModel @Inject constructor(
     }
 
     fun toggleStar(bin: Bin) {
+        if (bin.source != null) return showReadOnly(bin)
         viewModelScope.launch { repository.toggleStar(bin.id) }
         showMessage(
             if (bin.starred) context.getString(R.string.bins_unstarred)
@@ -216,7 +261,7 @@ class BinsViewModel @Inject constructor(
     }
 
     fun onTitleOpened(bin: Bin, title: BinTitle) {
-        viewModelScope.launch { repository.markEntryViewed(bin.id, title.entry.key) }
+        if (bin.source == null) viewModelScope.launch { repository.markEntryViewed(bin.id, title.entry.key) }
         prefetch(title.entry)
     }
 
@@ -261,3 +306,44 @@ internal fun BinEntry.toPreview(): MetaPreview = MetaPreview(
     imdbRating = imdbRating,
     genres = genres
 )
+
+/** A tracker's lists as bins: one per list that has titles, named for the list (the card names the tracker). */
+internal fun listBinsOf(provider: TrackingProviderId, tabs: List<LibraryListTab>, items: List<LibraryEntry>): List<Bin> {
+    val label = when (provider) {
+        TrackingProviderId.TRAKT -> "Trakt"
+        TrackingProviderId.SIMKL -> "Simkl"
+        TrackingProviderId.MDBLIST -> "MDBList"
+    }
+    return tabs.mapIndexedNotNull { index, tab ->
+        val entries = items
+            .filter { tab.key in it.listKeys }
+            .mapIndexed { position, item ->
+                BinEntry(
+                    id = item.id,
+                    type = item.type,
+                    name = item.name,
+                    poster = item.poster,
+                    background = item.background,
+                    logo = item.logo,
+                    description = item.description,
+                    releaseInfo = item.releaseInfo,
+                    imdbRating = item.imdbRating,
+                    genres = item.genres,
+                    addonBaseUrl = item.addonBaseUrl,
+                    addedAt = item.listedAt,
+                    order = item.listRanks[tab.key] ?: position
+                )
+            }
+            .distinctBy { it.key }
+        if (entries.isEmpty()) return@mapIndexedNotNull null
+        Bin(
+            id = "list:${provider.storageId}:${tab.key}",
+            name = tab.title,
+            order = LIST_BIN_ORDER_BASE + index,
+            entries = entries,
+            source = label
+        )
+    }
+}
+
+private const val LIST_BIN_ORDER_BASE = 100_000

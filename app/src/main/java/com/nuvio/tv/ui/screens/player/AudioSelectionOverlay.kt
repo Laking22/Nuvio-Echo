@@ -2,38 +2,37 @@
 
 package com.nuvio.tv.ui.screens.player
 
-import com.nuvio.tv.ui.theme.NuvioTheme
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -51,7 +50,6 @@ import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
 import com.nuvio.tv.core.streams.AudioMenuOption
@@ -175,95 +173,75 @@ internal fun AudioSelectionOverlay(
         pendingControlFocusTarget = null
     }
 
-    PlayerOverlayScaffold(
-        visible = visible,
-        onDismiss = onDismiss,
-        modifier = modifier,
-        captureKeys = false,
-        contentPadding = PaddingValues(start = 44.dp, end = 44.dp, top = 28.dp, bottom = 64.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .width(724.dp)
-                .align(Alignment.BottomStart)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            if (sectionTabs != null) {
-                Box(modifier = Modifier.padding(bottom = NuvioTheme.spacing.sm)) { sectionTabs() }
-            } else Text(
-                text = stringResource(R.string.audio_dialog_title),
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                modifier = Modifier.padding(bottom = NuvioTheme.spacing.sm)
-            )
+    // The gear swaps the list for the extras (delay, amplification, centre mix). With nothing to list, they show.
+    var showSettings by remember(visible) { mutableStateOf(tracks.isEmpty() && languageOptions == null) }
+    // Left of the steppers there's nothing in the card: the D-pad stays put.
+    val stepperLeft = FocusRequester.Cancel
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md),
-                verticalAlignment = Alignment.Top,
-                modifier = Modifier.padding(bottom = NuvioTheme.spacing.sm)
-            ) {
-                Column(modifier = Modifier.width(444.dp)) {
-                    if (languageOptions != null) {
-                        AudioLanguageList(
-                            options = languageOptions,
-                            isLoadingSources = isLoadingSources,
-                            listState = listState,
-                            initialFocusRequester = tracksFocusRequester,
-                            rightFocusRequester = when {
-                                canDecreaseDelay -> delayMinusFocusRequester
-                                canIncreaseDelay -> delayPlusFocusRequester
-                                else -> persistFocusRequester
-                            },
-                            onTrackSelected = onTrackSelected,
-                            onLanguageSelected = onLanguageSelected,
-                            onSourcesRequested = onLanguageSourcesRequested
-                        )
-                    } else AudioTracksContent(
-                        tracks = tracks,
-                        selectedIndex = selectedIndex,
-                        listState = listState,
-                        initialFocusRequester = tracksFocusRequester,
-                        rightFocusRequester = when {
-                            canDecreaseDelay -> delayMinusFocusRequester
-                            canIncreaseDelay -> delayPlusFocusRequester
-                            canDecreaseAmp -> ampMinusFocusRequester
-                            canIncreaseAmp -> ampPlusFocusRequester
-                            canDecreaseCenterMix -> centerMinusFocusRequester
-                            canIncreaseCenterMix -> centerPlusFocusRequester
-                            else -> persistFocusRequester
-                        },
-                        onTrackFocused = { lastFocusedAudioIndex = it },
-                        onTrackSelected = onTrackSelected
-                    )
-                }
-                Column(modifier = Modifier.width(268.dp)) {
-                    AudioControlsContent(
-                        audioDelayMs = audioDelayMs,
-                        audioAmplificationDb = audioAmplificationDb,
-                        isAmplificationAvailable = isAmplificationAvailable,
-                        centerMixLevelDb = centerMixLevelDb,
-                        isCenterMixAvailable = isCenterMixAvailable,
-                        persistAmplification = persistAmplification,
-                        delayMinusFocusRequester = delayMinusFocusRequester,
-                        delayPlusFocusRequester = delayPlusFocusRequester,
-                        ampMinusFocusRequester = ampMinusFocusRequester,
-                        ampPlusFocusRequester = ampPlusFocusRequester,
-                        centerMinusFocusRequester = centerMinusFocusRequester,
-                        centerPlusFocusRequester = centerPlusFocusRequester,
-                        persistFocusRequester = persistFocusRequester,
-                        leftFocusRequester = tracksFocusRequester,
-                        onAudioDelayChange = onAudioDelayChange,
-                        onAmplificationChange = { nextDb, focusTarget ->
-                            pendingControlFocusTarget = focusTarget
-                            onAmplificationChange(nextDb)
-                        },
-                        onCenterMixLevelChange = onCenterMixLevelChange,
-                        onPersistAmplificationChange = onPersistAmplificationChange
-                    )
-                }
+    PlayerPopCard(
+        visible = visible,
+        modifier = modifier,
+        head = {
+            Box(modifier = Modifier.weight(1f)) {
+                if (sectionTabs != null) sectionTabs() else Text(
+                    text = stringResource(R.string.audio_dialog_title),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
             }
+            PopGearButton(
+                open = showSettings,
+                onClick = { showSettings = !showSettings },
+                contentDescription = stringResource(R.string.player_audio_settings)
+            )
         }
+    ) {
+        if (showSettings) {
+            PopHint(text = stringResource(R.string.player_audio_settings))
+            AudioControlsContent(
+                audioDelayMs = audioDelayMs,
+                audioAmplificationDb = audioAmplificationDb,
+                isAmplificationAvailable = isAmplificationAvailable,
+                centerMixLevelDb = centerMixLevelDb,
+                isCenterMixAvailable = isCenterMixAvailable,
+                persistAmplification = persistAmplification,
+                delayMinusFocusRequester = delayMinusFocusRequester,
+                delayPlusFocusRequester = delayPlusFocusRequester,
+                ampMinusFocusRequester = ampMinusFocusRequester,
+                ampPlusFocusRequester = ampPlusFocusRequester,
+                centerMinusFocusRequester = centerMinusFocusRequester,
+                centerPlusFocusRequester = centerPlusFocusRequester,
+                persistFocusRequester = persistFocusRequester,
+                leftFocusRequester = stepperLeft,
+                onAudioDelayChange = onAudioDelayChange,
+                onAmplificationChange = { nextDb, focusTarget ->
+                    pendingControlFocusTarget = focusTarget
+                    onAmplificationChange(nextDb)
+                },
+                onCenterMixLevelChange = onCenterMixLevelChange,
+                onPersistAmplificationChange = onPersistAmplificationChange
+            )
+        } else if (languageOptions != null) {
+            AudioLanguageList(
+                options = languageOptions,
+                isLoadingSources = isLoadingSources,
+                listState = listState,
+                initialFocusRequester = tracksFocusRequester,
+                rightFocusRequester = FocusRequester.Cancel,
+                onTrackSelected = onTrackSelected,
+                onLanguageSelected = onLanguageSelected,
+                onSourcesRequested = onLanguageSourcesRequested
+            )
+        } else AudioTracksContent(
+            tracks = tracks,
+            selectedIndex = selectedIndex,
+            listState = listState,
+            initialFocusRequester = tracksFocusRequester,
+            rightFocusRequester = FocusRequester.Cancel,
+            onTrackFocused = { lastFocusedAudioIndex = it },
+            onTrackSelected = onTrackSelected
+        )
     }
 }
 
@@ -278,21 +256,15 @@ private fun AudioTracksContent(
     onTrackSelected: (Int) -> Unit
 ) {
     if (tracks.isEmpty()) {
-        Text(
-            text = stringResource(R.string.audio_lang_default),
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color.White.copy(alpha = 0.7f),
-            modifier = Modifier.padding(top = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.md)
-        )
+        PopHint(text = stringResource(R.string.audio_lang_default))
         return
     }
 
     LazyColumn(
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        contentPadding = PaddingValues(top = NuvioTheme.spacing.sm, bottom = NuvioTheme.spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
-            .heightIn(max = 620.dp)
+            .heightIn(max = PopListMaxHeight)
             .fillMaxWidth()
     ) {
         items(items = tracks, key = { track -> track.index }) { track ->
@@ -327,84 +299,25 @@ private fun AudioTrackCard(
         track.codec,
         track.channelCount?.let { "$it ch" },
         track.sampleRate?.let { "${it / 1000} kHz" }
-    ).joinToString(" | ")
+    ).joinToString(" · ")
+    val language = track.language?.takeIf { it.isNotBlank() && it != "und" }?.let { languageCodeToName(it) }
 
-    Card(
+    PopRow(
+        selected = isSelected,
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .focusProperties { right = rightFocusRequester }
-            .onFocusChanged { if (it.isFocused) onFocused() },
-        colors = CardDefaults.colors(
-            containerColor = if (isSelected) NuvioTheme.colors.Secondary else Color.Transparent,
-            focusedContainerColor = if (isSelected) NuvioTheme.colors.Secondary else Color.Transparent
-        ),
-        shape = CardDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md)),
-        border = CardDefaults.border(
-            border = Border(
-                border = BorderStroke(NuvioTheme.spacing.xxs, Color.Transparent),
-                shape = RoundedCornerShape(NuvioTheme.radii.md)
-            ),
-            focusedBorder = Border(
-                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                shape = RoundedCornerShape(NuvioTheme.radii.md)
-            )
-        ),
-        scale = CardDefaults.scale(focusedScale = 1f, pressedScale = 1f)
-    ) {
-        val primaryTextColor = if (isSelected) NuvioTheme.colors.OnSecondary else Color.White
-        val secondaryTextColor = if (isSelected) {
-            NuvioTheme.colors.OnSecondary.copy(alpha = 0.82f)
-        } else {
-            Color.White.copy(alpha = 0.72f)
-        }
-        val metadataTextColor = if (isSelected) {
-            NuvioTheme.colors.OnSecondary.copy(alpha = 0.72f)
-        } else {
-            NuvioTheme.colors.TextTertiary
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = NuvioTheme.spacing.md, vertical = NuvioTheme.spacing.sm),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xs)
-            ) {
-                Text(
-                    text = track.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = primaryTextColor
-                )
-                if (!track.language.isNullOrBlank() && track.language != "und") {
-                    Text(
-                        text = languageCodeToName(track.language),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = secondaryTextColor
-                    )
-                }
-                if (metadata.isNotBlank()) {
-                    Text(
-                        text = metadata,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = metadataTextColor
-                    )
-                }
-            }
-
-            if (isSelected) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = NuvioTheme.colors.OnSecondary
-                )
-            }
-        }
+            .onFocusChanged { if (it.isFocused) onFocused() }
+    ) { primary, secondary ->
+        PopRowText(
+            title = track.name,
+            primary = primary,
+            secondary = secondary,
+            below = listOfNotNull(language?.takeIf { !track.name.contains(it, ignoreCase = true) }, metadata.takeIf { it.isNotBlank() })
+                .joinToString(" · ")
+        )
+        PopRowEnd(selected = isSelected, note = null, secondary = secondary)
     }
 }
 
@@ -509,8 +422,9 @@ private fun AudioControlsContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = NuvioTheme.spacing.xs, bottom = NuvioTheme.spacing.sm),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .heightIn(max = PopListMaxHeight)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         AdjustmentSection(
             title = stringResource(R.string.audio_delay_label),
@@ -560,7 +474,7 @@ private fun AudioControlsContent(
 
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             AdjustmentSection(
                 title = stringResource(R.string.audio_mix_label),
@@ -628,41 +542,16 @@ private fun AudioControlsContent(
                 }
             )
 
-            Card(
-                onClick = { onPersistAmplificationChange(!persistAmplification) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(persistFocusRequester)
-                    .focusProperties {
+            PopSettingRow(label = stringResource(R.string.audio_mix_persist_label)) {
+                PopPill(
+                    text = stringResource(if (persistAmplification) R.string.subtitle_style_on else R.string.subtitle_style_off),
+                    selected = persistAmplification,
+                    onClick = { onPersistAmplificationChange(!persistAmplification) },
+                    focusRequester = persistFocusRequester,
+                    modifier = Modifier.focusProperties {
                         left = persistLeftFocusRequester
                         up = persistUpFocusRequester
-                    },
-                colors = CardDefaults.colors(
-                    containerColor = if (persistAmplification) NuvioTheme.colors.Secondary else Color.Transparent,
-                    focusedContainerColor = if (persistAmplification) NuvioTheme.colors.Secondary else Color.Transparent
-                ),
-                shape = CardDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md)),
-                border = CardDefaults.border(
-                    border = Border(
-                        border = BorderStroke(NuvioTheme.spacing.xxs, Color.Transparent),
-                        shape = RoundedCornerShape(NuvioTheme.radii.md)
-                    ),
-                    focusedBorder = Border(
-                        border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                        shape = RoundedCornerShape(NuvioTheme.radii.md)
-                    )
-                ),
-                scale = CardDefaults.scale(focusedScale = 1f, pressedScale = 1f)
-            ) {
-                Text(
-                    text = if (persistAmplification) {
-                        stringResource(R.string.audio_mix_persist_on)
-                    } else {
-                        stringResource(R.string.audio_mix_persist_off)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (persistAmplification) NuvioTheme.colors.OnSecondary else Color.White,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
+                    }
                 )
             }
         }
@@ -687,54 +576,30 @@ private fun AdjustmentSection(
     onDecreaseHold: ((Int) -> Unit)? = null,
     onIncreaseHold: ((Int) -> Unit)? = null
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xs)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.92f)
+    PopSettingRow(label = title, helper = helperText) {
+        StepCard(
+            icon = Icons.Default.Remove,
+            enabled = canDecrease,
+            focusRequester = minusFocusRequester,
+            leftFocusRequester = minusLeftFocusRequester,
+            rightFocusRequester = if (canIncrease) plusFocusRequester else FocusRequester.Default,
+            upFocusRequester = upFocusRequester,
+            downFocusRequester = downFocusRequester,
+            onClick = onDecrease,
+            onHoldTick = onDecreaseHold
         )
-
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Text(
-                text = valueText,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White
-            )
+            PopStepperValue(text = valueText)
         }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            StepCard(
-                icon = Icons.Default.Remove,
-                enabled = canDecrease,
-                focusRequester = minusFocusRequester,
-                leftFocusRequester = minusLeftFocusRequester,
-                rightFocusRequester = if (canIncrease) plusFocusRequester else FocusRequester.Default,
-                upFocusRequester = upFocusRequester,
-                downFocusRequester = downFocusRequester,
-                onClick = onDecrease,
-                onHoldTick = onDecreaseHold
-            )
-            StepCard(
-                icon = Icons.Default.Add,
-                enabled = canIncrease,
-                focusRequester = plusFocusRequester,
-                leftFocusRequester = plusLeftFocusRequester,
-                upFocusRequester = upFocusRequester,
-                downFocusRequester = downFocusRequester,
-                onClick = onIncrease,
-                onHoldTick = onIncreaseHold
-            )
-        }
-
-        Text(
-            text = helperText,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.66f)
+        StepCard(
+            icon = Icons.Default.Add,
+            enabled = canIncrease,
+            focusRequester = plusFocusRequester,
+            leftFocusRequester = plusLeftFocusRequester,
+            upFocusRequester = upFocusRequester,
+            downFocusRequester = downFocusRequester,
+            onClick = onIncrease,
+            onHoldTick = onIncreaseHold
         )
     }
 }
@@ -786,7 +651,7 @@ private fun StepCard(
         },
         interactionSource = interactionSource,
         modifier = Modifier
-            .width(NuvioTheme.spacing.huge)
+            .size(30.dp)
             .focusRequester(focusRequester)
             .focusProperties {
                 canFocus = enabled
@@ -796,39 +661,33 @@ private fun StepCard(
                 downFocusRequester?.let { down = it }
             },
         colors = CardDefaults.colors(
-            containerColor = if (enabled) Color.Transparent else Color.White.copy(alpha = 0.06f),
-            focusedContainerColor = if (enabled) Color.Transparent else Color.White.copy(alpha = 0.06f)
+            containerColor = Color.White.copy(alpha = if (enabled) 0.10f else 0.04f),
+            focusedContainerColor = if (enabled) Color.White else Color.White.copy(alpha = 0.04f)
         ),
-        shape = CardDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md)),
-        border = CardDefaults.border(
-            border = Border(
-                border = BorderStroke(NuvioTheme.spacing.xxs, if (enabled) Color.White.copy(alpha = 0.18f) else Color.Transparent),
-                shape = RoundedCornerShape(NuvioTheme.radii.md)
-            ),
-            focusedBorder = Border(
-                border = NuvioTheme.focusRing.border(
-                    width = NuvioTheme.spacing.xxs,
-                    alpha = if (enabled) 1f else 0f
-                ),
-                shape = RoundedCornerShape(NuvioTheme.radii.md)
-            )
-        ),
+        shape = CardDefaults.shape(StepShape),
+        border = CardDefaults.border(border = Border.None, focusedBorder = Border.None),
         scale = CardDefaults.scale(focusedScale = 1f, pressedScale = 1f)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-            horizontalArrangement = Arrangement.Center
+        val focused by interactionSource.collectIsFocusedAsState()
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
+                tint = when {
+                    !enabled -> Color.White.copy(alpha = 0.3f)
+                    focused -> Color(0xFF111111)
+                    else -> Color.White
+                },
+                modifier = Modifier.size(16.dp)
             )
         }
     }
 }
+
+private val StepShape = RoundedCornerShape(10.dp)
 
 private enum class AudioControlFocusTarget {
     DelayMinus,

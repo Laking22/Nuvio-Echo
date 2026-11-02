@@ -199,7 +199,6 @@ class SearchViewModelPaginationTest {
         )
 
         val layoutPreferences = mockk<LayoutPreferenceDataStore>()
-        every { layoutPreferences.discoverLocation } returns flowOf(com.nuvio.tv.domain.model.DiscoverLocation.OFF)
         every { layoutPreferences.posterCardWidthDp } returns flowOf(126)
         every { layoutPreferences.posterLabelsEnabled } returns flowOf(true)
         every { layoutPreferences.catalogAddonNameEnabled } returns flowOf(true)
@@ -221,7 +220,6 @@ class SearchViewModelPaginationTest {
             addonRepository = SingleAddonRepository(addon),
             catalogRepository = repository,
             metaRepository = mockk(relaxed = true),
-            discoverSelectionDataStore = mockk(relaxed = true),
             layoutPreferenceDataStore = layoutPreferences,
             searchHistoryDataStore = history,
             watchProgressRepository = watchProgress,

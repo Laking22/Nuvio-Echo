@@ -43,6 +43,15 @@ class PluginViewModel @Inject constructor(
     init {
         loadLogoBytes()
         observePluginData()
+        viewModelScope.launch {
+            pluginManager.sourceLanguages.collect { languages -> _uiState.update { it.copy(sourceLanguages = languages) } }
+        }
+        _uiState.update {
+            it.copy(
+                extensionDns = pluginManager.extensionDns(context),
+                extensionDnsOptions = pluginManager.extensionDnsOptions
+            )
+        }
     }
 
     private fun loadLogoBytes() {
@@ -72,6 +81,8 @@ class PluginViewModel @Inject constructor(
                 } else {
                     nextState.scrapers
                 }
+                findScrapersWithSettings(visibleScrapers.map { it.id })
+                refreshInstalledLanguages()
                 _uiState.update {
                     it.copy(
                         pluginsEnabled = nextState.pluginsEnabled,
@@ -94,6 +105,9 @@ class PluginViewModel @Inject constructor(
             is PluginUiEvent.TestScraper -> testScraper(event.scraperId)
             is PluginUiEvent.SetPluginsEnabled -> setPluginsEnabled(event.enabled)
             is PluginUiEvent.SetGroupStreamsByRepository -> setGroupStreamsByRepository(event.enabled)
+            PluginUiEvent.CycleExtensionDns -> cycleExtensionDns()
+            is PluginUiEvent.ToggleSourceLanguage -> toggleSourceLanguage(event.language)
+            is PluginUiEvent.OpenExtensionSettings -> pluginManager.openExtensionSettings(context, event.scraperId)
             PluginUiEvent.ClearTestResults -> _uiState.update { it.copy(testResults = null, testDiagnostics = null, testScraperId = null) }
             PluginUiEvent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
             PluginUiEvent.ClearSuccess -> _uiState.update { it.copy(successMessage = null) }
@@ -224,6 +238,43 @@ class PluginViewModel @Inject constructor(
         viewModelScope.launch {
             pluginManager.setPluginsEnabled(enabled)
         }
+    }
+
+    private var settingsLookup: kotlinx.coroutines.Job? = null
+
+    /** Which of [scraperIds] have their own settings screen; CloudStream extensions load (once) to tell. */
+    private fun findScrapersWithSettings(scraperIds: List<String>) {
+        settingsLookup?.cancel()
+        settingsLookup = viewModelScope.launch {
+            val found = scraperIds.filter { runCatching { pluginManager.hasExtensionSettings(it) }.getOrDefault(false) }.toSet()
+            _uiState.update { it.copy(scrapersWithSettings = found) }
+        }
+    }
+
+    private fun refreshInstalledLanguages() {
+        viewModelScope.launch {
+            val installed = runCatching { pluginManager.installedSourceLanguages() }.getOrDefault(emptyMap())
+            _uiState.update { it.copy(installedLanguages = installed) }
+        }
+    }
+
+    /** Turns [language]'s sources on or off; the last chosen language stays on. */
+    private fun toggleSourceLanguage(language: String) {
+        if (isReadOnly) return
+        val current = _uiState.value.sourceLanguages
+        val next = if (language in current) current - language else current + language
+        if (next.isEmpty()) return
+        viewModelScope.launch { pluginManager.setSourceLanguages(next) }
+    }
+
+    private fun cycleExtensionDns() {
+        if (isReadOnly) return
+        val options = _uiState.value.extensionDnsOptions
+        if (options.isEmpty()) return
+        val index = options.indexOfFirst { it.first == _uiState.value.extensionDns }
+        val next = options[(index + 1) % options.size].first
+        pluginManager.setExtensionDns(context, next)
+        _uiState.update { it.copy(extensionDns = next) }
     }
 
     private fun setGroupStreamsByRepository(enabled: Boolean) {

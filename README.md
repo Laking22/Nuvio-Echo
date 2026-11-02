@@ -23,9 +23,9 @@
 
 | Your device | File |
 | --- | --- |
-| Most Android TV and Google TV boxes (32-bit) | [app-full-armeabi-v7a-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-armeabi-v7a-beta.apk) |
-| 64-bit devices (NVIDIA Shield, newer Google TV devices) | [app-full-arm64-v8a-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-arm64-v8a-beta.apk) |
-| Not sure | [app-full-universal-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta/app-full-universal-beta.apk) (works on any device, bigger download) |
+| Most Android TV and Google TV boxes (32-bit) | [app-full-armeabi-v7a-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta.6/app-full-armeabi-v7a-beta.apk) |
+| 64-bit devices (NVIDIA Shield, newer Google TV devices) | [app-full-arm64-v8a-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta.6/app-full-arm64-v8a-beta.apk) |
+| Not sure | [app-full-universal-beta.apk](https://github.com/Laking22/Nuvio-Echo/releases/download/v1.1.0-beta.6/app-full-universal-beta.apk) (works on any device, bigger download) |
 
 To install, open the APK on your TV with a file manager or the Downloader app and allow installs from that app when asked. A newer APK installs over the old one and keeps your settings, and once Echo is installed it can update itself (**Settings → About → Check for updates**).
 

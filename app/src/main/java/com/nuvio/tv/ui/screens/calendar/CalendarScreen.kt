@@ -186,6 +186,9 @@ fun CalendarScreen(
             .focusGroup()
     ) {
         AmbientPageWash(url = washUrl, modifier = Modifier.fillMaxSize().underSidebar())
+        // Calmer than Home's: the page is mostly open background, so the show's colours sit under a dim veil and read
+        // as a tint rather than a vivid fill.
+        Box(modifier = Modifier.fillMaxSize().underSidebar().background(CalendarWashDim))
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -1296,3 +1299,5 @@ internal fun dayLabel(date: LocalDate, locale: Locale): String =
 
 private fun fullDate(date: LocalDate, locale: Locale): String =
     date.format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))
+
+private val CalendarWashDim = Color.Black.copy(alpha = 0.42f)

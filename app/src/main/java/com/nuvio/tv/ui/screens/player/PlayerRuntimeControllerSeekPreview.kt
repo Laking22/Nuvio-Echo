@@ -31,13 +31,14 @@ internal fun PlayerRuntimeController.playingSourceRequestKey(): String? =
 
 /**
  * Other sources of the playing title to take seek thumbnails from, in the order to try them. A thumbnail costs one
- * keyframe download, and keyframes grow with the file's bitrate, so the smallest files come first, whatever their
- * quality: [minHeight] (Settings → Preview quality) is only the lowest quality allowed, and nothing above what's
- * playing is (its pictures take longer to decode). With the playing file's size known, only smaller files are taken.
- * Sources with no stated size come after, lowest quality first. In each group, those on a different server from
- * playback come first, so thumbnails don't compete with the stream for it, and servers that didn't answer last. Servers that gave thumbnails before go
- * first among equals; those that refused range requests, and sources that already failed, are left out. Only sources with a
- * link already: none is resolved just for a preview.
+ * keyframe download and one decode on the TV's software decoder, so the cheapest come first ([previewCost]): smaller
+ * pictures, AVC before HEVC (HEVC takes the software decoder several times longer, so a small HEVC file can be slower
+ * to preview than a bigger AVC one), then smaller files. 10-bit sources are left out. [minHeight] (Settings → Preview
+ * quality) is only the lowest quality allowed, and nothing above what's playing is. With the playing file's size
+ * known, only smaller files are taken. Sources with no stated size come after. In each group, those on a different
+ * server from playback come first, so thumbnails don't compete with the stream for it, and servers that didn't
+ * answer last. Servers that gave thumbnails before go first among equals; those that refused range requests, and
+ * sources that already failed, are left out. Only sources with a link already: none is resolved just for a preview.
  */
 internal fun PlayerRuntimeController.seekPreviewAlternates(minHeight: Int): List<SeekThumbnailSource> {
     val streams = _uiState.value.sourceAllStreams
@@ -64,6 +65,9 @@ internal fun PlayerRuntimeController.seekPreviewAlternates(minHeight: Int): List
         if (episode != null && !SeekPreviewEpisodes.names(stream, episode.first, episode.second)) return@mapNotNull null
         val quality = StreamQualityParser.parse(stream) ?: return@mapNotNull null
         if (quality.height < minHeight) return@mapNotNull null
+        // 10-bit pictures (HDR, Dolby Vision, "10bit") decode only on the hardware decoder playback is using, so the
+        // engine turns such a source down, but only after reading its index (seconds of scrubbing on nothing).
+        if (com.nuvio.tv.core.player.AutoPlayPreferences.isTenBit(stream)) return@mapNotNull null
         if (playing != null && quality.ordinal < playing.ordinal) return@mapNotNull null
         val url = stream.getStreamUrl()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
         if (SeekPreviewHosts.refuses(url)) return@mapNotNull null
@@ -82,10 +86,11 @@ internal fun PlayerRuntimeController.seekPreviewAlternates(minHeight: Int): List
     val answered = compareBy<Candidate> { if (SeekPreviewHosts.silent(it.url)) 1 else 0 }
     val otherServer = compareBy<Candidate> { if (playbackHost != null && hostOf(it.url) == playbackHost) 1 else 0 }
     val worked = compareBy<Candidate> { if (SeekPreviewHosts.worked(it.url)) 0 else 1 }
+    val cheapest = compareBy<Candidate> { previewCost(it.stream, it.quality, it.size) }
     val sized = candidates.filter { it.size != null }
-        .sortedWith(answered.then(otherServer).then(compareBy<Candidate> { it.size }).then(worked))
+        .sortedWith(answered.then(otherServer).then(cheapest).then(worked))
     val unsized = candidates.filter { it.size == null }
-        .sortedWith(answered.then(otherServer).then(compareBy<Candidate> { it.quality.height }).then(worked))
+        .sortedWith(answered.then(otherServer).then(cheapest).then(worked))
     return (sized + unsized).mapNotNull { candidate ->
         val request = PlayerMediaSourceFactory.normalizePlaybackRequest(
             candidate.url, candidate.stream.behaviorHints?.proxyHeaders?.request
@@ -129,6 +134,18 @@ internal object SeekPreviewEpisodes {
 }
 
 private fun hostOf(url: String): String? = runCatching { android.net.Uri.parse(url).host }.getOrNull()
+
+/**
+ * A rough cost (ms) of one thumbnail from [stream], for ordering only: decoding its keyframe in software (by picture
+ * size, several times longer for HEVC), plus downloading it (keyframes grow with the file).
+ */
+internal fun previewCost(stream: Stream, quality: StreamQuality, size: Long?): Double {
+    val pixels = (quality.height / 1080.0).let { it * it }
+    var decode = 120.0 * pixels
+    if (com.nuvio.tv.core.player.AutoPlayPreferences.isHevc(stream)) decode *= 2.5
+    val download = size?.let { it / 1_000_000_000.0 * 25.0 } ?: (pixels * 60.0)
+    return decode + download
+}
 
 /** "2.1 GB", for logs. */
 private fun formatPreviewSize(bytes: Long): String = "%.1f GB".format(bytes / 1_000_000_000.0)

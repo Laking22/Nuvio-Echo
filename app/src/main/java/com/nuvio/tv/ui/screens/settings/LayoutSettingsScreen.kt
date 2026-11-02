@@ -150,7 +150,7 @@ private fun LayoutSectionContent(
     when (section) {
         LayoutSection.HOME_LAYOUT -> LayoutHomeLayoutSection(uiState, onEvent)
         LayoutSection.HOME_CONTENT -> LayoutHomeContentSection(uiState, onEvent)
-        LayoutSection.SIDEBAR -> LayoutSidebarSection(uiState, onEvent)
+        LayoutSection.SIDEBAR -> LayoutSidebarSection()
         LayoutSection.CONTINUE_WATCHING -> LayoutContinueWatchingSection(uiState, onEvent)
         LayoutSection.POSTER_CARD -> LayoutPosterCardSection(uiState, onEvent)
         LayoutSection.CARD_DEPTH -> LayoutCardDepthSection(uiState, onEvent)

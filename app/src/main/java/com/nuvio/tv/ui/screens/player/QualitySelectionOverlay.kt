@@ -2,26 +2,21 @@
 
 package com.nuvio.tv.ui.screens.player
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -31,12 +26,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.material3.Border
-import androidx.tv.material3.Card
-import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
-import androidx.tv.material3.Icon
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
 import com.nuvio.tv.core.player.BetaPerformanceSettingsEntryPoint
@@ -45,7 +35,6 @@ import com.nuvio.tv.core.streams.StreamQuality
 import com.nuvio.tv.core.streams.StreamQualityMenu
 import com.nuvio.tv.domain.model.Stream
 import com.nuvio.tv.data.local.BetaPerformanceSettings
-import com.nuvio.tv.ui.theme.NuvioTheme
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.delay
 
@@ -103,33 +92,32 @@ internal fun QualitySelectionOverlay(
         initialFocusDone = true
     }
 
-    PlayerOverlayScaffold(
+    PlayerPopCard(
         visible = visible,
-        onDismiss = onDismiss,
         modifier = modifier,
-        captureKeys = false,
-        contentPadding = PaddingValues(start = 44.dp, end = 44.dp, top = 28.dp, bottom = 64.dp)
+        head = {
+            Box(modifier = Modifier.weight(1f)) {
+                if (sectionTabs != null) sectionTabs() else Text(
+                    text = stringResource(R.string.quality_menu_title),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+            }
+        }
     ) {
+        PopHint(
+            text = stringResource(
+                if (isLoading && options.isEmpty()) R.string.quality_menu_loading
+                else R.string.quality_menu_subtitle
+            )
+        )
         Column(
             modifier = Modifier
-                .width(460.dp)
-                .align(Alignment.BottomStart),
-            verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xs)
+                .heightIn(max = PopListMaxHeight)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            if (sectionTabs != null) sectionTabs() else Text(
-                text = stringResource(R.string.quality_menu_title),
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White
-            )
-            Text(
-                text = stringResource(
-                    if (isLoading && options.isEmpty()) R.string.quality_menu_loading
-                    else R.string.quality_menu_subtitle
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = NuvioTheme.colors.TextTertiary,
-                modifier = Modifier.padding(bottom = NuvioTheme.spacing.sm)
-            )
             if (autoShown) {
                 AutoQualityRow(
                     selected = autoActive,
@@ -159,21 +147,18 @@ private fun AutoQualityRow(
     focusRequester: FocusRequester?,
     onClick: () -> Unit
 ) {
-    QualityCard(selected = selected, focusRequester = focusRequester, onClick = onClick) { primary, secondary ->
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)
-        ) {
-            Text(text = stringResource(R.string.quality_auto), style = MaterialTheme.typography.titleMedium, color = primary)
-            Text(
-                text = if (selected && playing != null) playing.label else stringResource(R.string.quality_auto_desc),
-                style = MaterialTheme.typography.bodySmall,
-                color = secondary
-            )
-        }
-        if (selected) {
-            Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = NuvioTheme.colors.OnSecondary)
-        }
+    PopRow(
+        selected = selected,
+        onClick = onClick,
+        modifier = if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier
+    ) { primary, secondary ->
+        PopRowText(
+            title = stringResource(R.string.quality_auto),
+            primary = primary,
+            secondary = secondary,
+            inline = if (selected && playing != null) playing.label else stringResource(R.string.quality_auto_desc)
+        )
+        PopRowEnd(selected = selected, note = null, secondary = secondary)
     }
 }
 
@@ -185,84 +170,26 @@ private fun QualityRow(
     focusRequester: FocusRequester?,
     onClick: () -> Unit
 ) {
-    QualityCard(selected = ticked, focusRequester = focusRequester, onClick = onClick) { primary, secondary ->
-        QualityLabels(option.quality, primary = primary, secondary = secondary)
-        Column(horizontalAlignment = Alignment.End) {
-            when {
-                ticked -> Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = NuvioTheme.colors.OnSecondary)
-                // Auto is picked: the quality it's playing is labelled, not ticked.
-                option.isCurrent -> Text(
-                    text = stringResource(R.string.quality_playing),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = NuvioTheme.colors.TextTertiary
-                )
-                else -> Text(
-                    text = pluralStringResource(R.plurals.quality_source_count, option.sourceCount, option.sourceCount),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = NuvioTheme.colors.TextTertiary
-                )
-            }
-            // Only offered in another language: which, small, bottom right.
-            if (languageNote != null) {
-                Text(
-                    text = languageNote,
-                    fontSize = 9.sp,
-                    lineHeight = 10.sp,
-                    color = if (ticked) secondary else NuvioTheme.colors.TextTertiary,
-                    maxLines = 1
-                )
-            }
-        }
-    }
-}
-
-/** A focusable row of the menu, filled with the accent while [selected]. */
-@Composable
-private fun QualityCard(
-    selected: Boolean,
-    focusRequester: FocusRequester?,
-    onClick: () -> Unit,
-    content: @Composable androidx.compose.foundation.layout.RowScope.(primary: Color, secondary: Color) -> Unit
-) {
-    val shape = RoundedCornerShape(NuvioTheme.radii.md)
-    Card(
+    PopRow(
+        selected = ticked,
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier),
-        colors = CardDefaults.colors(
-            containerColor = if (selected) NuvioTheme.colors.Secondary else Color.Transparent,
-            focusedContainerColor = if (selected) NuvioTheme.colors.Secondary else Color.White.copy(alpha = 0.12f)
-        ),
-        shape = CardDefaults.shape(shape),
-        border = CardDefaults.border(
-            border = Border(border = BorderStroke(NuvioTheme.spacing.xxs, Color.Transparent), shape = shape),
-            focusedBorder = Border(border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs), shape = shape)
-        ),
-        scale = CardDefaults.scale(focusedScale = 1f, pressedScale = 1f)
-    ) {
-        val primary = if (selected) NuvioTheme.colors.OnSecondary else Color.White
-        val secondary = if (selected) NuvioTheme.colors.OnSecondary.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.72f)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = NuvioTheme.spacing.md, vertical = NuvioTheme.spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            content(primary, secondary)
-        }
-    }
-}
-
-@Composable
-private fun QualityLabels(quality: StreamQuality, primary: Color, secondary: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)
-    ) {
-        Text(text = quality.label, style = MaterialTheme.typography.titleMedium, color = primary)
-        Text(text = stringResource(quality.descriptionRes()), style = MaterialTheme.typography.bodySmall, color = secondary)
+        modifier = if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier
+    ) { primary, secondary ->
+        PopRowText(
+            title = option.quality.label,
+            primary = primary,
+            secondary = secondary,
+            inline = stringResource(option.quality.descriptionRes()),
+            // Only offered in another language: which.
+            below = languageNote
+        )
+        PopRowEnd(
+            selected = ticked,
+            // Auto is picked: the quality it's playing is labelled, not ticked.
+            note = if (option.isCurrent) stringResource(R.string.quality_playing)
+            else pluralStringResource(R.plurals.quality_source_count, option.sourceCount, option.sourceCount),
+            secondary = secondary
+        )
     }
 }
 

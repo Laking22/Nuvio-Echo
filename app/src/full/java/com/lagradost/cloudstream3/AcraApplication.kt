@@ -10,7 +10,7 @@ import java.lang.ref.WeakReference
 /**
  * Stub for CloudStream's AcraApplication.
  * Extensions (e.g. Yflix) reference AcraApplication.context and the getKey/setKey helpers.
- * We provide no-op implementations since we don't need extension settings persistence.
+ * Its key helpers forward to CloudStreamApp's, which store as CloudStream does.
  */
 open class AcraApplication {
     companion object {
@@ -47,32 +47,37 @@ open class AcraApplication {
             }
         }
 
-        /** Retrieve a stored value. No-op — always returns the default. */
-        @JvmStatic
-        fun <T> getKey(path: String, key: String, default: T? = null): T? = default
+        // The deprecated name for CloudStreamApp's key helpers: same storage.
 
-        /** Retrieve a stored value (single-key overload). */
         @JvmStatic
-        fun <T> getKey(key: String, default: T? = null): T? = default
+        fun <T> getKey(path: String, key: String, default: T? = null): T? =
+            CloudStreamApp.getKey<Any>(path, key)?.let {
+                @Suppress("UNCHECKED_CAST")
+                (it as? T) ?: default
+            } ?: default
 
-        /** Store a value. No-op. */
         @JvmStatic
-        fun setKey(path: String, key: String, value: Any?) {}
+        fun <T> getKey(key: String, default: T? = null): T? =
+            CloudStreamApp.getKey<Any>(key)?.let {
+                @Suppress("UNCHECKED_CAST")
+                (it as? T) ?: default
+            } ?: default
 
-        /** Store a value (single-key overload). No-op. */
         @JvmStatic
-        fun setKey(key: String, value: Any?) {}
+        fun setKey(path: String, key: String, value: Any?) = CloudStreamApp.setKey(path, key, value)
 
-        /** Remove stored keys by prefix. No-op. */
         @JvmStatic
-        fun removeKeys(prefix: String) {}
+        fun setKey(key: String, value: Any?) = CloudStreamApp.setKey(key, value)
 
-        /** Remove a single stored key. No-op. */
         @JvmStatic
-        fun removeKey(path: String, key: String) {}
+        fun removeKeys(prefix: String) {
+            CloudStreamApp.removeKeys(prefix)
+        }
 
-        /** Remove a single stored key (single-key overload). No-op. */
         @JvmStatic
-        fun removeKey(key: String) {}
+        fun removeKey(path: String, key: String) = CloudStreamApp.removeKey(path, key)
+
+        @JvmStatic
+        fun removeKey(key: String) = CloudStreamApp.removeKey(key)
     }
 }

@@ -168,6 +168,7 @@ class StreamRepositoryPluginIsolationTest {
             repository = StreamRepositoryImpl(
                 context = mockk<Context>(relaxed = true),
                 api = api,
+                foregroundApi = api,
                 addonRepository = addonRepository,
                 pluginManager = pluginManager,
                 profileManager = profileManager,

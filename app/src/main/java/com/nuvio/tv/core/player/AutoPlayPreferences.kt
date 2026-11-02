@@ -169,12 +169,19 @@ object AutoPlayPreferences {
         return (value * factor).toLong()
     }
 
+    /** [stream] says it's HEVC (x265, H.265). */
+    fun isHevc(stream: Stream): Boolean = HEVC.containsMatchIn(text(stream))
+
+    /** [stream] says its pictures are 10-bit: HDR, Dolby Vision, or "10bit" / Hi10P. */
+    fun isTenBit(stream: Stream): Boolean = text(stream).let { HDR.containsMatchIn(it) || TEN_BIT.containsMatchIn(it) }
+
     private fun text(stream: Stream): String = listOfNotNull(
         stream.name, stream.title, stream.description, stream.behaviorHints?.filename,
     ).joinToString(" ")
 
     private val CAM = Regex("(?<![a-z0-9])(cam|camrip|hdcam|ts|hdts|telesync|tc|telecine)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val HEVC = Regex("(?<![a-z0-9])(hevc|x265|h\\.?265)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val TEN_BIT = Regex("(?<![a-z0-9])(10[ ._-]?bit|hi10p?|main ?10)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val AVC = Regex("(?<![a-z0-9])(avc|x264|h\\.?264)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val HDR = Regex("(?<![a-z0-9])(hdr|hdr10|hdr10\\+|hdr10plus|dv|dovi|dolby ?vision)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val REMUX = Regex("(?<![a-z0-9])remux(?![a-z0-9])", RegexOption.IGNORE_CASE)

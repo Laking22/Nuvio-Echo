@@ -42,7 +42,6 @@ import com.nuvio.tv.ui.screens.player.PlayerScreen
 import com.nuvio.tv.ui.screens.player.PostPlayRecommendation
 import com.nuvio.tv.ui.screens.player.playerBackOpensCurrentEpisodeStreams
 import com.nuvio.tv.ui.screens.plugin.PluginScreen
-import com.nuvio.tv.ui.screens.search.DiscoverScreen
 import com.nuvio.tv.ui.screens.settings.AboutScreen
 import com.nuvio.tv.ui.screens.settings.LayoutSettingsScreen
 import com.nuvio.tv.ui.screens.settings.LicensesAttributionsScreen
@@ -87,12 +86,20 @@ fun NuvioNavHost(
             ) {
                 PlaybackNavHost(navController, startDestination)
                 PlaybackIntroHost()
-                com.nuvio.tv.ui.screens.search.VoiceListeningGlowHost()
                 com.nuvio.tv.ui.screens.calendar.CalendarReminderHost(navController)
                 com.nuvio.tv.ui.screens.detail.ReleaseReminderHost(navController)
             }
         }
     }
+}
+
+/** A menu screen: it leaves room for the sidebar itself (see RootScreenInset). */
+private fun androidx.navigation.NavGraphBuilder.rootScreen(
+    route: String,
+    content: @Composable androidx.compose.animation.AnimatedContentScope.(androidx.navigation.NavBackStackEntry) -> Unit
+) = composable(route) { entry ->
+    val scope = this
+    com.nuvio.tv.ui.newlook.RootScreenInset(route) { scope.content(entry) }
 }
 
 /** Opens the Speed Test screen; a no-op outside the nav host. */
@@ -175,7 +182,7 @@ private fun PlaybackNavHost(
             )
         }
 
-        composable(Screen.Home.route) {
+        rootScreen(Screen.Home.route) {
             fun createContinueWatchingRoute(
                 item: ContinueWatchingItem,
                 manualSelection: Boolean = false,
@@ -1140,7 +1147,7 @@ private fun PlaybackNavHost(
             )
         }
 
-        composable(Screen.Search.route) { backStackEntry ->
+        rootScreen(Screen.Search.route) { backStackEntry ->
             val searchViewModel: com.nuvio.tv.ui.screens.search.SearchViewModel =
                 androidx.hilt.navigation.compose.hiltViewModel(backStackEntry)
             com.nuvio.tv.ui.screens.search.KeyboardSearchScreen(
@@ -1157,7 +1164,7 @@ private fun PlaybackNavHost(
             )
         }
 
-        composable(Screen.Genres.route) {
+        rootScreen(Screen.Genres.route) {
             com.nuvio.tv.ui.screens.genres.GenresScreen(
                 onNavigateToDetail = { itemId, itemType, addonBaseUrl ->
                     navController.navigate(
@@ -1171,7 +1178,7 @@ private fun PlaybackNavHost(
             )
         }
 
-        composable(Screen.Calendar.route) {
+        rootScreen(Screen.Calendar.route) {
             com.nuvio.tv.ui.screens.calendar.CalendarScreen(
                 onOpenShow = { showId, addonBaseUrl, season, episode ->
                     navController.navigate(
@@ -1191,23 +1198,7 @@ private fun PlaybackNavHost(
             com.nuvio.tv.ui.screens.speedtest.SpeedTestScreen(navController = navController)
         }
 
-        composable(Screen.Discover.route) {
-            DiscoverScreen(
-                onNavigateToDetail = { itemId, itemType, addonBaseUrl ->
-                    val heroBackdrop = HeroBackdropState.consumeAndClear()
-                    navController.navigate(
-                        Screen.Detail.createRoute(
-                            itemId = itemId,
-                            itemType = itemType,
-                            addonBaseUrl = addonBaseUrl,
-                            heroBackdropUrl = heroBackdrop
-                        )
-                    )
-                }
-            )
-        }
-
-        composable(Screen.Library.route) {
+        rootScreen(Screen.Library.route) {
             LibraryScreen(
                 onNavigateToDetail = { itemId, itemType, addonBaseUrl ->
                     navController.navigate(Screen.Detail.createRoute(itemId, itemType, addonBaseUrl))
@@ -1236,11 +1227,13 @@ private fun PlaybackNavHost(
             )
         }
 
-        composable(Screen.Settings.route) {
+        rootScreen(Screen.Settings.route) {
             SettingsScreen(
                 onNavigateToTracking = { navController.navigate(Screen.Tracking.route) },
                 onNavigateToAddons = { navController.navigate(Screen.AddonManager.route) },
                 onNavigateToPlugins = { navController.navigate(Screen.Plugins.route) },
+                onNavigateToCatalogOrder = { navController.navigate(Screen.CatalogOrder.route) },
+                onNavigateToCollections = { navController.navigate(Screen.Collections.route) },
                 onNavigateToAuthQrSignIn = { navController.navigate(Screen.AuthQrSignIn.route) },
                 onNavigateToManageProfiles = { navController.navigate(Screen.ManageProfiles.route) },
                 onNavigateToSupportersContributors = {
@@ -1311,26 +1304,30 @@ private fun PlaybackNavHost(
         }
 
         composable(Screen.AddonManager.route) {
-            AddonManagerScreen(
-                onBackPress = { navController.popBackStack() },
-                onNavigateToCatalogOrder = { navController.navigate(Screen.CatalogOrder.route) },
-                onNavigateToCollections = { navController.navigate(Screen.Collections.route) }
-            )
+            com.nuvio.tv.ui.screens.settings.SettingsGlassPage {
+                AddonManagerScreen(
+                    onBackPress = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.CatalogOrder.route) {
-            CatalogOrderScreen(
-                onBackPress = { navController.popBackStack() }
-            )
+            com.nuvio.tv.ui.screens.settings.SettingsGlassPage {
+                CatalogOrderScreen(
+                    onBackPress = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.Collections.route) {
-            com.nuvio.tv.ui.screens.collection.CollectionManagementScreen(
-                onNavigateToEditor = { collectionId ->
-                    navController.navigate(Screen.CollectionEditor.createRoute(collectionId))
-                },
-                onBack = { navController.popBackStack() }
-            )
+            com.nuvio.tv.ui.screens.settings.SettingsGlassPage {
+                com.nuvio.tv.ui.screens.collection.CollectionManagementScreen(
+                    onNavigateToEditor = { collectionId ->
+                        navController.navigate(Screen.CollectionEditor.createRoute(collectionId))
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(
@@ -1343,9 +1340,11 @@ private fun PlaybackNavHost(
                 }
             )
         ) {
-            com.nuvio.tv.ui.screens.collection.CollectionEditorScreen(
-                onBack = { navController.popBackStack() }
-            )
+            com.nuvio.tv.ui.screens.settings.SettingsGlassPage {
+                com.nuvio.tv.ui.screens.collection.CollectionEditorScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(
@@ -1371,9 +1370,11 @@ private fun PlaybackNavHost(
 
         if (AppFeaturePolicy.pluginsEnabled) {
             composable(Screen.Plugins.route) {
-                PluginScreen(
-                    onBackPress = { navController.popBackStack() }
-                )
+                com.nuvio.tv.ui.screens.settings.SettingsGlassPage {
+                    PluginScreen(
+                        onBackPress = { navController.popBackStack() }
+                    )
+                }
             }
         }
 

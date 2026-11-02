@@ -169,9 +169,14 @@ internal fun buildNewLookRows(
         i == 0 || row.key == MODERN_UPCOMING_ROW_KEY
     }
     val wideRows = cwGroup.map { NewLookRow(it.key, it.title, RowKind.WIDE, it.items.list, source = it) }
+    // Custom enrichment: the highlight spots sit in the order like built-in rows, and only they get highlights.
+    val spots = com.nuvio.tv.core.home.EnrichmentSlots.active(settings)
     val merged = HomeRowOrder.merge(
-        orderKeys, BuiltInRow.entries, settings.homeRowOrder, continueWatching = wideRows.isNotEmpty()
+        orderKeys, BuiltInRow.entries, settings.homeRowOrder, continueWatching = wideRows.isNotEmpty(), slots = spots
     ) { types[it] }
+    val slotRows = if (spots.isEmpty()) emptyMap() else {
+        fillSlots(merged.filter(com.nuvio.tv.core.home.EnrichmentSlots::isSlot), smartCandidates(smartHighlights, settings, titles, epochDay))
+    }
 
     // Built-ins that follow each catalog row (by its index among the catalogs); those before every catalog lead.
     val leading = ArrayList<NewLookRow>()
@@ -182,10 +187,10 @@ internal fun buildNewLookRows(
             catalogIndex++
             continue
         }
-        val rows = if (key == HomeRowOrder.CONTINUE_WATCHING_KEY) {
-            wideRows
-        } else {
-            listOfNotNull(BuiltInRow.fromRowKey(key)?.let { builtInRows[it] })
+        val rows = when {
+            key == HomeRowOrder.CONTINUE_WATCHING_KEY -> wideRows
+            com.nuvio.tv.core.home.EnrichmentSlots.isSlot(key) -> listOfNotNull(slotRows[key])
+            else -> listOfNotNull(BuiltInRow.fromRowKey(key)?.let { builtInRows[it] })
         }
         if (rows.isEmpty()) continue
         if (catalogIndex < 0) leading += rows else after.getOrPut(catalogIndex) { ArrayList() } += rows
@@ -230,6 +235,9 @@ internal fun buildNewLookRows(
     // No catalogs yet: the built-ins and Continue Watching still show.
     if (!leadingPlaced) out += leading
 
+    // Custom enrichment placed them already, in their spots.
+    if (spots.isNotEmpty()) return out
+
     // Today's Smart Highlights, spread evenly: the user's grand rows count as highlights too, and stay put.
     val smartRows = smartRows(smartHighlights, settings, titles, epochDay)
     if (smartRows.isEmpty()) return out
@@ -244,12 +252,56 @@ internal fun buildNewLookRows(
     return withSmart
 }
 
-/**
- * Smart Highlights as Home rows, with the user's choices applied straight from the settings: blocked and snoozed
- * themes left out, removed titles taken out (a row left too short is dropped), a blocked AI-written name replaced by
- * the theme's own.
- */
+/** Today's Smart Highlights as Home rows, as many as the Enrichment level shows, some as grand rows. */
 private fun smartRows(
+    smart: List<SmartHighlightRow>,
+    settings: BetaPerformanceSettings,
+    titles: BuiltInTitles,
+    epochDay: Long
+): List<NewLookRow> {
+    val shown = smartCandidates(smart, settings, titles, epochDay)
+    // Today's number of them for the Enrichment level; some as grand rows at Medium and Heavy. Trakt's trending row
+    // leads as a grand row there, and the every-third rule counts the others only.
+    var others = 0
+    return shown.take(SmartHighlightPlanner.dailyCount(settings.enrichment, epochDay)).map { row ->
+        val grand = if (row.smart?.themeId == TraktHighlightSource.SPOTLIGHT_ID) {
+            settings.enrichment >= BetaPerformanceSettings.ENRICHMENT_MEDIUM
+        } else {
+            SmartHighlightPlanner.isGrand(settings.enrichment, others++)
+        }
+        if (grand) row.copy(kind = RowKind.GRAND) else row
+    }
+}
+
+/**
+ * Custom enrichment: each spot, in page order, takes the next of today's highlights, as a highlighted or grand row as
+ * the spot says. Trakt's trending row goes to the first grand spot when there is one. Spots left over stay empty.
+ */
+private fun fillSlots(slotKeys: List<String>, candidates: List<NewLookRow>): Map<String, NewLookRow> {
+    val pool = candidates.toMutableList()
+    val hasGrandSpot = slotKeys.any(com.nuvio.tv.core.home.EnrichmentSlots::isGrand)
+    val out = HashMap<String, NewLookRow>()
+    for (key in slotKeys) {
+        val grand = com.nuvio.tv.core.home.EnrichmentSlots.isGrand(key)
+        val spotlight = pool.indexOfFirst { it.smart?.themeId == TraktHighlightSource.SPOTLIGHT_ID }
+        val index = when {
+            grand && spotlight >= 0 -> spotlight
+            hasGrandSpot -> pool.indices.firstOrNull { it != spotlight } ?: -1
+            else -> if (pool.isEmpty()) -1 else 0
+        }
+        if (index < 0) continue
+        val row = pool.removeAt(index)
+        out[key] = row.copy(kind = if (grand) RowKind.GRAND else RowKind.HIGHLIGHT)
+    }
+    return out
+}
+
+/**
+ * Today's Smart Highlights that can show, best first: blocked and snoozed themes left out, removed titles and the
+ * kinds Enrichment excludes taken out (a row left too short is dropped), a blocked AI-written name replaced by the
+ * theme's own.
+ */
+private fun smartCandidates(
     smart: List<SmartHighlightRow>,
     settings: BetaPerformanceSettings,
     titles: BuiltInTitles,
@@ -257,10 +309,13 @@ private fun smartRows(
 ): List<NewLookRow> {
     if (!settings.smartHighlights) return emptyList()
     val prefix = BetaPerformanceSettings.SMART_NAME_PREFIX
-    val shown = smart.mapNotNull { row ->
+    return smart.mapNotNull { row ->
         if (row.themeId in settings.blockedHighlights) return@mapNotNull null
         if (SmartHighlightPlanner.isSnoozed(row.themeId, settings.snoozedHighlights, epochDay)) return@mapNotNull null
-        val items = row.items.filter { "${row.themeId}|${it.id}" !in settings.highlightExclusions }
+        val items = row.items.filter {
+            "${row.themeId}|${it.id}" !in settings.highlightExclusions &&
+                !com.nuvio.tv.core.home.EnrichmentExclusion.excludes(it, settings.enrichmentExclusions)
+        }
         if (items.size < SmartHighlightPlanner.MIN_ITEMS) return@mapNotNull null
         val nameBlocked = row.aiNamed && (prefix + HighlightNameFilter.normalise(row.title)) in settings.blockedHighlights
         val aiNamed = row.aiNamed && settings.smartHighlightAiNames && !nameBlocked
@@ -272,17 +327,6 @@ private fun smartRows(
             items = items.mapIndexed { i, item -> builtInItem(key, item, i, titles) },
             smart = SmartRowInfo(row.themeId, row.catalogueTitle, aiNamed)
         )
-    }
-    // Today's number of them for the Enrichment level; some as grand rows at Medium and Heavy. Trakt's trending row
-    // leads as a grand row there, and the every-third rule counts the others only.
-    var others = 0
-    return shown.take(SmartHighlightPlanner.dailyCount(settings.enrichment, epochDay)).map { row ->
-        val grand = if (row.smart?.themeId == TraktHighlightSource.SPOTLIGHT_ID) {
-            settings.enrichment >= BetaPerformanceSettings.ENRICHMENT_MEDIUM
-        } else {
-            SmartHighlightPlanner.isGrand(settings.enrichment, others++)
-        }
-        if (grand) row.copy(kind = RowKind.GRAND) else row
     }
 }
 

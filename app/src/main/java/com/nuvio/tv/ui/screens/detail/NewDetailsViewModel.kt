@@ -41,10 +41,14 @@ class NewDetailsViewModel @Inject constructor(
     private val reviewsRepository: TitleReviewsRepository,
     private val creditsRepository: TitleCreditsRepository,
     private val remindersStore: ReleaseRemindersStore,
+    detailsLoader: com.nuvio.tv.core.browse.BrowseDetailsLoader,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val itemId: String? = savedStateHandle["itemId"]
     private val itemType: String? = savedStateHandle["itemType"]
+
+    /** The Similar titles page's focused title, for its details panel (as Search shows them). */
+    val similarDetails = com.nuvio.tv.ui.screens.browse.FocusedDetailsTracker(viewModelScope, detailsLoader)
 
     val ratings: StateFlow<TitleRatings> = ratingsStore.ratings
         .stateIn(viewModelScope, SharingStarted.Eagerly, TitleRatings())

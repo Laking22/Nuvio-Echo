@@ -418,7 +418,7 @@
     <string name="settings_layout">Layout</string>
     <string name="settings_content_discovery">Content &amp; Discovery</string>
     <string name="settings_content_discovery_subtitle">Add-ons, plugins, catalogs, and discovery sources</string>
-    <string name="settings_content_discovery_addons_subtitle">Manage add-ons, catalog order, and collections</string>
+    <string name="settings_content_discovery_addons_subtitle">Install, order and remove add-ons</string>
     <string name="settings_content_discovery_plugins_subtitle">Manage repositories and stream providers</string>
     <string name="settings_plugins">Plugins</string>
     <string name="settings_plugins_subtitle">Repositories and providers</string>
@@ -605,6 +605,8 @@
     <string name="cd_increase">Increase</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_remove">Remove</string>
+    <string name="action_done">Done</string>
+    <string name="bins_list_read_only">This list is from %1$s. Change it there and it updates here.</string>
     <string name="action_switch">Switch</string>
     <string name="action_apply">Apply</string>
     <string name="sub_opacity">Opacity</string>
@@ -877,7 +879,7 @@
     <string name="sub_org_by_addon_desc">Group subtitles by addon source.</string>
 
     <string name="autoplay_preload_next_episode">Preload Next Episode Sources</string>
-    <string name="autoplay_preload_next_episode_sub">Start searching for sources in the background before the next episode button appears.</string>
+    <string name="autoplay_preload_next_episode_sub">Find the next episode\'s sources while this one plays, so Next starts it without searching.</string>
 
     <string name="autoplay_reuse_last_link">Reuse Last Link</string>
     <string name="autoplay_reuse_last_link_sub">Auto-play your last working stream for this same movie/episode when cache is still valid</string>
@@ -949,7 +951,7 @@
     <string name="layout_section_content">Home Content</string>
     <string name="layout_section_content_desc">Control what appears on home and search.</string>
     <string name="layout_section_sidebar">Menu &amp; Navigation</string>
-    <string name="layout_section_sidebar_desc">Where the menu sits and where Discover appears.</string>
+    <string name="layout_section_sidebar_desc">Where the menu sits and how it looks.</string>
     <string name="layout_section_card_depth_desc">Edge light and sheen on image cards.</string>
     <string name="layout_section_custom_poster_desc">Use artwork from an external poster service.</string>
     <string name="layout_show_hero">Show Hero Section</string>
@@ -1491,12 +1493,25 @@
     <string name="profile_avatars_available">Available avatars</string>
     <string name="profile_avatars_add_url">Add avatar URL</string>
     <string name="profile_avatars_url_title">Add an avatar</string>
-    <string name="profile_avatars_url_subtitle">Paste a direct HTTPS image link.</string>
+    <string name="profile_avatars_url_subtitle">Paste a direct HTTPS image link. To add several at once, separate them with commas.</string>
     <string name="profile_avatars_url_placeholder">https://example.com/avatar.webp</string>
     <string name="profile_avatars_invalid_url">Enter a valid HTTPS image URL.</string>
     <string name="profile_avatars_duplicate_url">That avatar has already been saved.</string>
     <string name="profile_avatars_empty">No avatars are available right now.</string>
     <string name="profile_avatars_yours">Your avatars</string>
+    <string name="profile_avatars_import">Import</string>
+    <string name="profile_avatars_export">Export</string>
+    <string name="profile_avatars_import_title">Import an avatar pack</string>
+    <string name="profile_avatars_import_subtitle">Paste a link to a pack (an exported Echo pack, or a list of image links), or paste the image links themselves separated by commas. Or import the newest pack in Downloads.</string>
+    <string name="profile_avatars_import_placeholder">https://example.com/avatars.json</string>
+    <string name="profile_avatars_import_downloads">From Downloads</string>
+    <string name="profile_avatars_import_failed">That pack couldn\'t be read. Check the link opens a pack or a list of image links.</string>
+    <string name="profile_avatars_import_none">No avatar pack found in Downloads. Export one from Echo first.</string>
+    <string name="profile_avatars_export_title">Avatar pack exported</string>
+    <string name="profile_avatars_export_saved">Saved to %1$s. Import it on another device from Downloads, or put the file online and paste its link into Import. The links are below too.</string>
+    <string name="profile_avatars_export_failed">The pack couldn\'t be saved to Downloads, but here are its links to paste into Import elsewhere.</string>
+    <string name="profile_avatars_report_duplicate">%1$d already saved</string>
+    <string name="profile_avatars_report_invalid">%1$d not direct image links</string>
     <string name="profile_avatars_yours_hint">Avatars you add appear in every profile\'s avatar picker. Select one to remove it.</string>
     <string name="profile_avatars_add">Add</string>
     <string name="profile_avatars_remove_title">Remove avatar?</string>
@@ -1629,6 +1644,8 @@
     <string name="addon_manage_addons_only_from_phone_subtitle">Scan a QR code to install or remove add-ons from your phone</string>
     <string name="addon_manage_collections_from_phone_subtitle">Scan a QR code to manage collections from your phone</string>
     <string name="addon_reorder_title">Reorder home catalogs</string>
+    <string name="settings_reorder_home_subtitle">The order of Home\'s rows: catalogs, collections, built-in rows and, with custom enrichment, the highlight spots.</string>
+    <string name="settings_collections_subtitle">Group catalogs into folders that show as rows on Home.</string>
     <string name="addon_reorder_subtitle">Controls catalog and collection row order on Home (Classic + Modern + Grid)</string>
     <string name="addon_qr_scan_instruction">Scan with your phone to manage addons, catalogs, and collections</string>
     <string name="addon_qr_addons_only_scan_instruction">Scan with your phone to install or remove add-ons</string>
@@ -1654,7 +1671,7 @@
     <string name="addon_catalogs_types">Catalogs: %1$d - Types: %2$s</string>
 
     <string name="catalog_order_title">Reorder Home Catalogs</string>
-    <string name="catalog_order_subtitle">This controls catalog row order on Home (Classic + Modern + Grid).</string>
+    <string name="catalog_order_subtitle">The order of Home\'s rows. Move any row, show it highlighted or as a grand row, or turn it off.</string>
     <string name="catalog_order_follow_addons">Follow addons order</string>
     <string name="catalog_order_follow_addons_desc">Catalogs follow addon manifest order. Collections can still be moved between addons.</string>
     <string name="catalog_order_empty">No home catalogs available yet.</string>
@@ -1667,6 +1684,8 @@
     <string name="stream_no_streams">No streams found</string>
     <string name="stream_no_streams_hint">Try installing more addons to find streams</string>
     <string name="stream_finding_source">Finding stream source</string>
+    <string name="stream_racing_sources">Checking %1$d links for the fastest</string>
+    <string name="player_link_no_video">This source isn\'t starting</string>
     <string name="debrid_resolving_stream">Resolving debrid stream</string>
     <string name="debrid_stale_stream">This Debrid result expired. Refreshing streams.</string>
     <string name="debrid_missing_api_key">Add a Debrid API key in Settings.</string>
@@ -2303,6 +2322,8 @@
     <!-- Update flow errors -->
     <string name="update_error_check_failed">Update check failed</string>
     <string name="update_error_download_failed">Download failed</string>
+    <string name="update_error_no_installer">This device couldn\'t open the installer. Install the APK from the release page instead.</string>
+    <string name="update_error_no_settings">Couldn\'t open Settings. Allow installs from unknown sources for this app in the device\'s security settings.</string>
     <string name="update_error_apk_missing">Downloaded file is missing</string>
 
     <!-- Profile PIN errors -->
@@ -3229,4 +3250,8 @@
     <string name="collections_editor_view_mode_rows">Rows</string>
     <string name="collections_editor_show_all_tab">Show \"All\" Tab</string>
     <string name="collections_editor_show_all_tab_desc">Combine all catalogs into one tab</string>
+    <plurals name="profile_avatars_added">
+        <item quantity="one">Added %1$d avatar</item>
+        <item quantity="other">Added %1$d avatars</item>
+    </plurals>
 </resources>

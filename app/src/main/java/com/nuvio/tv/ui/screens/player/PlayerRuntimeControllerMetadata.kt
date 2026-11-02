@@ -370,6 +370,7 @@ internal fun PlayerRuntimeController.evaluatePostPlayOverlayVisibility(positionM
     // Prefer the largest known duration; the per-poll value can drop transiently.
     val effectiveDurationEarly = maxOf(durationMs, lastKnownDuration)
     if (isShortPlaceholderDuration(effectiveDurationEarly)) return
+    fetchNextEpisodeStreamsEarly()
     // Act only after this stream has reported a position away from its end.
     if (!endDetectionArmed) {
         if (!PlayerNextEpisodeRules.isAwayFromEnd(

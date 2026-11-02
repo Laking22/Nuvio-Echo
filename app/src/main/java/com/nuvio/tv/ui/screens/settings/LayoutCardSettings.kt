@@ -37,6 +37,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.Border
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
@@ -44,6 +46,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
+import com.nuvio.tv.data.local.BetaPerformanceSettings
 import com.nuvio.tv.core.poster.CustomPosterScreen
 import com.nuvio.tv.domain.model.CardDepthStyle
 import com.nuvio.tv.domain.model.CardDepthSurface
@@ -53,6 +56,7 @@ import com.nuvio.tv.domain.model.DEFAULT_CARD_DEPTH_EDGE_STRENGTH
 import com.nuvio.tv.domain.model.DEFAULT_CARD_DEPTH_SHEEN_STRENGTH
 import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.components.cardDepthVisual
+import com.nuvio.tv.ui.newlook.home.NewLookDimens
 
 @Composable
 internal fun LayoutContinueWatchingSection(
@@ -114,8 +118,10 @@ internal fun LayoutContinueWatchingSection(
 @Composable
 internal fun LayoutPosterCardSection(
     uiState: LayoutSettingsUiState,
-    onEvent: (LayoutSettingsEvent) -> Unit
+    onEvent: (LayoutSettingsEvent) -> Unit,
+    betaViewModel: BetaPerformanceSettingsViewModel = hiltViewModel()
 ) {
+    val betaSettings by betaViewModel.settings.collectAsStateWithLifecycle()
     val widthOptions = listOf(
         PresetOption(stringResource(R.string.layout_preset_compact), 104),
         PresetOption(stringResource(R.string.layout_preset_dense), 112),
@@ -138,6 +144,30 @@ internal fun LayoutPosterCardSection(
         options = widthOptions,
         onSelected = { width -> onEvent(LayoutSettingsEvent.SetPosterCardWidth(width)) }
     )
+    // Highlighted cards follow the poster width (Dynamic) or take a size of their own (Custom).
+    OptionRow(
+        title = stringResource(R.string.layout_highlight_size),
+        selectedValue = if (betaSettings.highlightSizeCustom) 1 else 0,
+        options = listOf(
+            PresetOption(stringResource(R.string.layout_highlight_size_dynamic), 0),
+            PresetOption(stringResource(R.string.layout_highlight_size_custom), 1)
+        ),
+        onSelected = { mode -> betaViewModel.setHighlightSizeCustom(mode == 1) }
+    )
+    if (betaSettings.highlightSizeCustom) {
+        // Unset, Custom starts at the size Dynamic gives for this poster width.
+        val sizes = BetaPerformanceSettings.HIGHLIGHT_SIZE_PERCENTS
+        val dynamic = NewLookDimens.dynamicHighlightPercent(uiState.posterCardWidthDp)
+        val percent = betaSettings.highlightSizePercent ?: sizes.minBy { kotlin.math.abs(it - dynamic) }
+        SliderSettingsItem(
+            title = stringResource(R.string.layout_highlight_card_size),
+            subtitle = stringResource(R.string.layout_highlight_card_size_sub),
+            values = sizes,
+            selected = percent,
+            valueText = stringResource(R.string.layout_highlight_card_size_value, percent),
+            onValueChange = betaViewModel::setHighlightSizePercent
+        )
+    }
     OptionRow(
         title = stringResource(R.string.layout_card_radius),
         selectedValue = uiState.posterCardCornerRadiusDp,
@@ -146,7 +176,10 @@ internal fun LayoutPosterCardSection(
     )
     SettingsResetButton(
         text = stringResource(R.string.layout_reset_default),
-        onClick = { onEvent(LayoutSettingsEvent.ResetPosterCardStyle) }
+        onClick = {
+            onEvent(LayoutSettingsEvent.ResetPosterCardStyle)
+            betaViewModel.resetHighlightSize()
+        }
     )
 }
 

@@ -364,10 +364,16 @@ internal fun NewLookHomeContent(
     val contentStart = if (!menuOnTop && !hideMenu) NewLookLayout.ContentStartWithSidebar else NewLookLayout.ContentStartFullWidth
     // Grand cards are as wide as the hero window, which runs from contentStart to near the screen's right edge.
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    // Layout's poster width sizes posters and highlights together; grand cards remain tied to the hero window.
-    // Its corner radius rounds every row's cards.
-    val dims = remember(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp, screenWidth, contentStart) {
-        NewLookDimens.of(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp).withGrandWidth(screenWidth, contentStart)
+    // Layout's poster width sizes posters and highlights together, unless highlights have a size of their own
+    // (Custom); grand cards remain tied to the hero window. Its corner radius rounds every row's cards.
+    val highlightPercent = if (settings.highlightSizeCustom) {
+        settings.highlightSizePercent ?: NewLookDimens.dynamicHighlightPercent(uiState.posterCardWidthDp)
+    } else {
+        null
+    }
+    val dims = remember(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp, highlightPercent, screenWidth, contentStart) {
+        NewLookDimens.of(uiState.posterCardWidthDp, uiState.posterCardCornerRadiusDp, highlightPercent)
+            .withGrandWidth(screenWidth, contentStart)
     }
     val inset = chrome?.contentInset ?: 0.dp
     val memory = source.memory
@@ -412,7 +418,7 @@ internal fun NewLookHomeContent(
     LaunchedEffect(
         settings.enrichment, settings.smartHighlightAiNames, settings.smartHighlightTrakt,
         settings.smartHighlightMdbList, settings.blockedHighlights,
-        settings.snoozedHighlights
+        settings.snoozedHighlights, settings.enrichmentExclusions
     ) {
         source.refreshSmartHighlights()
     }
@@ -424,7 +430,8 @@ internal fun NewLookHomeContent(
         presentation.rows, builtIns, titles,
         settings.highlightedRows, settings.hiddenBuiltInRows, settings.plainBuiltInRows, settings.grandRows,
         settings.homeRowOrder, smartHighlights, settings.enrichment, settings.smartHighlightAiNames,
-        settings.blockedHighlights, settings.snoozedHighlights, settings.highlightExclusions, homePosterPattern
+        settings.blockedHighlights, settings.snoozedHighlights, settings.highlightExclusions, homePosterPattern,
+        settings.customEnrichment, settings.enrichmentExclusions
     ) {
         buildNewLookRows(
             presentation.rows.list, builtIns.withCustomPosterUrls(homePosterPattern), settings, titles, smartHighlights
@@ -695,8 +702,11 @@ internal fun NewLookHomeContent(
             if (distance != 0f) {
                 var travelled = 0f
                 val glide = AnimationState(initialValue = 0f, initialVelocity = pageVelocity[0])
+                // Paced by the focused row's height, so a held Down keeps up with focus as the rows do with Right.
+                val stepPx = rowHeightsPx.getOrNull(rows.indexOfFirst { it.key == focusedRowKey }) ?: 0
+                val spec = if (stepPx > 0) com.nuvio.tv.ui.newlook.PacedGlide(stepPx.toFloat()) else Glide.scroll
                 listState.scroll {
-                    glide.animateTo(distance, Glide.scroll) {
+                    glide.animateTo(distance, spec) {
                         travelled += scrollBy(value - travelled)
                         pageVelocity[0] = velocity
                     }
@@ -1253,14 +1263,31 @@ private val NoBringIntoView = object : BringIntoViewSpec {
 /** How long a row waits after focus moves before checking its focused card is at its start. */
 private const val ROW_PIN_CHECK_DELAY_MS = 300L
 
-/** Rows pin the focused card to their start, so a row always starts with its focused card. */
-internal class PinToStart(private val startPx: Float) : BringIntoViewSpec {
+/**
+ * Rows pin the focused card to their start, so a row always starts with its focused card. [stepPx] (a card and its
+ * gap) lets the row keep pace with a held key (see [com.nuvio.tv.ui.newlook.PacedGlide]); without it, the plain glide.
+ */
+internal class PinToStart(private val startPx: Float, stepPx: Float = 0f) : BringIntoViewSpec {
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-    override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> = Glide.scroll
+    override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> =
+        if (stepPx > 0f) com.nuvio.tv.ui.newlook.PacedGlide(stepPx) else Glide.scroll
 
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
         val distance = offset - startPx
         return if (abs(distance) < 1f) 0f else distance
+    }
+}
+
+/**
+ * How much of row card [index] shows as the row scrolls: whole until it reaches the row's start, gone once it's a card
+ * ([stepPx]) past it. Read in the draw phase, so a scrolling row only updates its cards' layers.
+ */
+private fun passedAlpha(state: LazyListState, index: Int, stepPx: Float): Float {
+    val first = state.firstVisibleItemIndex
+    return when {
+        index > first -> 1f
+        index < first -> 0f
+        else -> 1f - (state.firstVisibleItemScrollOffset / stepPx).coerceIn(0f, 1f)
     }
 }
 
@@ -1461,6 +1488,7 @@ private fun NewLookRowView(
         }
         // The focused card is what asks to be scrolled into view; a ranked card sits rankPad into its item.
         val startPx = with(density) { (contentStart + if (row.ranked) dims.rankPad else 0.dp).toPx() }
+        val stepPx = with(density) { (row.cardWidth(dims) + dims.gap).toPx() }
         // Now and then that scroll falls short (seen two cards short after quick moves), and the passed cards,
         // faded out, leave a gap before the focused one. Once the row is still, put its card back at the start.
         LaunchedEffect(listState, col) {
@@ -1469,7 +1497,7 @@ private fun NewLookRowView(
             val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == col }
             if (col < row.items.size && (item == null || abs(item.offset) > 2)) listState.animateScrollToItem(col)
         }
-        CompositionLocalProvider(LocalBringIntoViewSpec provides remember(startPx) { PinToStart(startPx) }) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides remember(startPx, stepPx) { PinToStart(startPx, stepPx) }) {
             LazyRow(
                 state = listState,
                 contentPadding = PaddingValues(start = contentStart, end = 720.dp),
@@ -1483,9 +1511,10 @@ private fun NewLookRowView(
                     .focusGroup()
             ) {
                 itemsIndexed(row.items, key = { _, item -> item.key }) { index, item ->
-                    val passed by animateFloatAsState(if (index < col) 0f else 1f, tween(200), label = "passed")
+                    // Cards fade as they slide past the row's start, not as focus leaves them: when the row trailed
+                    // focus (a held key), cards faded before the row got there and left a gap before the focused one.
                     val modifier = Modifier
-                        .graphicsLayer { alpha = passed }
+                        .graphicsLayer { alpha = passedAlpha(listState, index, stepPx) }
                         .then(
                             when (index) {
                                 focusCol -> Modifier.focusRequester(focusRequester)
@@ -1783,3 +1812,4 @@ internal fun expansionPrefetchTarget(
     val series = apiType.equals("series", true) || apiType.equals("tv", true)
     return if (series) ExpansionTarget(apiType, "$itemId:1:1", 1, 1) else ExpansionTarget(apiType, itemId, null, null)
 }
+

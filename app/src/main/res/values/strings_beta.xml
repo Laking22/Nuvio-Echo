@@ -182,6 +182,8 @@
     <string name="settings_label_starting_playback">Starting playback</string>
     <string name="ambient_details_page">Details pages too</string>
     <string name="quiet_focus_title">Quiet focus</string>
+    <string name="quiet_selection_title">Quiet selection</string>
+    <string name="quiet_selection_subtitle">Posters, highlights and Grand rows grow and rise a little when selected, with no outline.</string>
     <string name="quiet_focus_subtitle">A white edge, a slight lift and a soft shadow instead of a coloured ring.</string>
     <string name="hero_edge_to_edge_title">Edge-to-edge hero</string>
     <string name="hero_edge_to_edge_subtitle">The carousel fills the screen and fades into the rows, instead of a rounded window.</string>
@@ -189,10 +191,11 @@
     <string name="trailer_quality_subtitle">Auto matches each trailer to what it plays on: a card, a highlight, the hero or the full screen.</string>
     <string name="trailer_quality_auto">Auto</string>
     <string name="menu_glass_title">Menu glass</string>
-    <string name="menu_glass_subtitle">How opaque the sidebar and top bar are. High frosts them with the colours behind.</string>
+    <string name="menu_glass_subtitle">How opaque the sidebar is. High frosts it with the colours behind; Blur blurs what\'s behind it as it moves (Android 12 and up).</string>
     <string name="menu_glass_low">Low</string>
     <string name="menu_glass_mid">Mid</string>
     <string name="menu_glass_high">High</string>
+    <string name="menu_glass_blur">Blur</string>
     <!-- Longer explanations, behind the "i" button beside a setting -->
     <string name="settings_more_info">More info</string>
     <string name="settings_more_info_done">Got it</string>
@@ -201,6 +204,9 @@
     <string name="beta_prefetch_explainer">Asks your addons for sources before you press Play, so the list is ready and playback starts sooner when you do. Each early search asks every addon, so it uses a little more data, and can use up requests on rate-limited addons.</string>
     <string name="beta_warm_up_explainer">Opens a connection to each addon server as the app starts, so the first search skips the setup time (often a second or more on a slow server). Costs almost nothing once connected.</string>
     <string name="beta_fast_playback_explainer">Starts the video on a smaller first buffer and warms up the stream\'s server while the player is still loading. On a slow or unsteady connection, the first seconds may pause once to buffer.</string>
+    <string name="beta_race_sources_title">Race matching sources</string>
+    <string name="beta_race_sources_subtitle">Auto-play tries up to 8 of its matches at once and plays the first to send video</string>
+    <string name="beta_race_sources_explainer">A link has to actually deliver video (half a megabyte of it) to win, so one that answers but would take seconds to start loses to a faster one. Links start their check as each addon answers, so the race is usually over by the time auto-play picks; the quickest of those already through wins. Uses a few extra megabytes per start. A remembered link (Reuse last link) plays at once instead; if it hasn\'t shown a picture within six seconds, another source takes over. Torrents and links your debrid service still has to fetch aren\'t raced. Applies to next episodes and episodes picked in the player too.</string>
     <string name="beta_source_switch_timeout_explainer">When you pick another quality or audio in the player, the new source loads while the current one keeps playing. If it hasn\'t started within this time, Echo gives up on it and stays where you were.</string>
     <string name="beta_auto_quality_options_explainer">Stay loyal to language: Auto only switches to sources offered in the language you\'re listening to, even if a sharper one exists in another. Hot swap: the next source loads alongside the one playing and takes over at a matching frame, so there\'s no pause; a few devices can\'t do this, and Echo falls back to a normal switch.</string>
     <string name="beta_hardware_bitmaps_explainer">Decodes posters and artwork straight into graphics memory instead of app memory, which helps on TVs with little RAM. A few devices draw these images wrongly; turn it off if artwork looks broken. Takes effect after a restart.</string>
@@ -208,4 +214,18 @@
     <string name="pause_label">Paused</string>
     <string name="pause_left_hours">%1$dh %2$dm left</string>
     <string name="pause_left_minutes">%1$d min left</string>
+    <string name="extension_dns_title">DNS for CloudStream extensions</string>
+    <string name="extension_dns_subtitle">%1$s. Some sites are blocked by internet providers\' DNS; a DNS-over-HTTPS provider gets past that, as in CloudStream.</string>
+    <string name="extension_dns_system">The TV\'s own DNS</string>
+    <string name="extension_dns_cloudflare">Cloudflare</string>
+    <string name="extension_dns_google">Google</string>
+    <string name="extension_dns_adguard">AdGuard</string>
+    <string name="extension_dns_quad9">Quad9</string>
+    <string name="extension_dns_sb">DNS.SB</string>
+    <string name="extension_dns_canadian">Canadian Shield</string>
+    <string name="plugin_extension_settings">Settings</string>
+    <string name="plugin_extension_settings_failed">This extension\'s settings couldn\'t open</string>
+    <string name="plugin_source_languages_title">Source languages</string>
+    <string name="plugin_source_languages_subtitle">Only sources in these languages are asked for streams, as in CloudStream. Fewer sources find streams faster.</string>
+    <string name="plugin_source_language_pill">%1$s · %2$d</string>
 </resources>

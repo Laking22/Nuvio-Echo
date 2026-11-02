@@ -22,11 +22,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -50,6 +52,7 @@ private const val TAG = "PluginManager"
 // providers overlap with fast ones instead of batching in groups of 5. OkHttp's
 // dispatcher + the providers' own internal parallelism stay the real bottleneck.
 private const val MAX_CONCURRENT_SCRAPERS = 10
+private const val MAX_CONCURRENT_DEX_SOURCES = 64
 private const val MAX_RESULT_ITEMS = 150
 private const val MAX_RESPONSE_SIZE = 5 * 1024 * 1024L
 // Outer safety-net timeout for scrapers. The runner now internally caps loadLinks
@@ -57,6 +60,10 @@ private const val MAX_RESPONSE_SIZE = 5 * 1024 * 1024L
 // outside of loadLinks (e.g. slow TMDB enrichment, slow search). Generous to avoid
 // cancelling the runner's coroutine before it can return accumulated links.
 private const val SCRAPER_TIMEOUT_MS = 120_000L
+/** How long after startup the installed CloudStream extensions start loading, so they don't slow the first screen. */
+private const val EXTENSION_STARTUP_DELAY_MS = 6_000L
+/** The longest a CloudStream source waits for the other extensions (and their extractors) to finish loading. */
+private const val EXTENSION_LOAD_WAIT_MS = 20_000L
 private const val MANIFEST_SUFFIX = "/manifest.json"
 
 @Singleton
@@ -210,6 +217,9 @@ class PluginManager @Inject constructor(
     // Semaphore to limit concurrent scrapers
     private val scraperSemaphore = Semaphore(MAX_CONCURRENT_SCRAPERS)
 
+    /** CloudStream sources at once: high enough that a whole repo starts together. */
+    private val dexSemaphore = Semaphore(MAX_CONCURRENT_DEX_SOURCES)
+
     
     @OptIn(ExperimentalCoroutinesApi::class)
     private val pluginDispatcher: CoroutineDispatcher =
@@ -228,6 +238,7 @@ class PluginManager @Inject constructor(
     
     // Flow of all repositories
     val repositories: Flow<List<PluginRepository>> = dataStore.repositories
+
     
     // Flow of all scrapers
     val scrapers: Flow<List<ScraperInfo>> = dataStore.scrapers
@@ -240,6 +251,39 @@ class PluginManager @Inject constructor(
     private val syncScope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + Dispatchers.IO
     )
+
+    /** Completed when a CloudStream source is asked for before the startup load has begun: it begins at once. */
+    private val startExtensionsNow = kotlinx.coroutines.CompletableDeferred<Unit>()
+
+    init {
+        // As CloudStream does when it starts: load every installed extension once, in the background, so its
+        // sources and extractors are ready by the time anything is played. Enabled ones go first. It waits a few
+        // seconds so the first screen comes up first, unless something wants a source sooner.
+        syncScope.launch(pluginDispatcher) {
+            kotlinx.coroutines.withTimeoutOrNull(EXTENSION_STARTUP_DELAY_MS) { startExtensionsNow.await() }
+            val dex = if (dataStore.pluginsEnabled.first()) {
+                dataStore.scrapers.first().filter { it.type == RepositoryType.EXTERNAL_DEX }
+            } else {
+                emptyList()
+            }
+            val repoUrls = dataStore.repositories.first().associate { it.id to it.url }
+            com.lagradost.cloudstream3.plugins.PluginManager.setOnline(
+                dex.map { scraper ->
+                    com.lagradost.cloudstream3.plugins.PluginData(
+                        internalName = scraper.name,
+                        url = repoUrls[scraper.repositoryId],
+                        isOnline = true,
+                        filePath = externalExtensionLoader.extensionFile(scraper.id).absolutePath,
+                        version = scraper.version.toIntOrNull() ?: 0
+                    )
+                }
+            )
+            externalExtensionLoader.loadAll(
+                first = dex.filter { it.enabled }.map { it.id },
+                then = dex.filterNot { it.enabled }.map { it.id }
+            )
+        }
+    }
 
     var isSyncingFromRemote = false
 
@@ -591,10 +635,8 @@ class PluginManager @Inject constructor(
         val parseResult = externalRepoParser.tryParse(repo.url)
             ?: return Result.failure(Exception("Failed to parse external repository"))
 
-        // Evict stale class loaders for old scrapers
-        val oldScrapers = dataStore.scrapers.first().filter { it.repositoryId == repo.id }
-        oldScrapers.forEach { externalExtensionLoader.evictCache(it.id) }
-
+        // Extensions whose version changed are replaced (and reloaded) one by one as their new file arrives; the rest
+        // keep running untouched.
         val updatedRepo = repo.copy(
             name = parseResult.name,
             lastUpdated = System.currentTimeMillis(),
@@ -662,27 +704,15 @@ class PluginManager @Inject constructor(
         
         Log.d(TAG, "Executing ${enabledScraperList.size} scrapers for $mediaType:$tmdbId")
 
-        // Preload all extractors from EXTERNAL_DEX repos before any scraper runs
-        val dexScraperIds = enabledScraperList
-            .filter { it.type == RepositoryType.EXTERNAL_DEX }
-            .map { it.id }
-        if (dexScraperIds.isNotEmpty()) {
-            // Also load ALL dex scrapers from the same repos (not just enabled ones)
-            // since extractors can live in any .cs3 file
-            val allDexIds = dataStore.scrapers.first()
-                .filter { it.type == RepositoryType.EXTERNAL_DEX }
-                .map { it.id }
-            withContext(Dispatchers.IO) {
-                externalExtensionLoader.ensureExtractorsLoaded(allDexIds)
-            }
-        }
-
-        val results = enabledScraperList.mapIndexed { index, scraper ->
+        val languages = sourceLanguages.first()
+        var jsIndex = 0
+        val results = enabledScraperList.filter { SourceLanguages.allows(it.contentLanguage, languages) }.map { scraper ->
+            val startDelay = if (scraper.type == RepositoryType.NUVIO_JS) jsIndex++ * 60L else 0L
             async(scraperOrchestrationDispatcher) {
-                if (index > 0) {
-                    kotlinx.coroutines.delay(index * 60L)
+                if (startDelay > 0) {
+                    kotlinx.coroutines.delay(startDelay)
                 }
-                executeScraperWithSingleFlight(scraper, tmdbId, mediaType, season, episode)
+                executeScraperWithSingleFlight(scraper, tmdbId, mediaType, season, episode, languages)
             }
         }.awaitAll()
         
@@ -708,26 +738,24 @@ class PluginManager @Inject constructor(
             return@channelFlow
         }
         
-        Log.d(TAG, "Streaming execution of ${enabledList.size} scrapers for $mediaType:$tmdbId")
- 
-        // Preload all extractors from EXTERNAL_DEX repos before any scraper runs
-        val dexScraperIds = enabledList.filter { it.type == RepositoryType.EXTERNAL_DEX }.map { it.id }
-        if (dexScraperIds.isNotEmpty()) {
-            val allDexIds = dataStore.scrapers.first()
-                .filter { it.type == RepositoryType.EXTERNAL_DEX }
-                .map { it.id }
-            withContext(Dispatchers.IO) {
-                externalExtensionLoader.ensureExtractorsLoaded(allDexIds)
-            }
-        }
- 
-        enabledList.forEachIndexed { index, scraper ->
+        val languages = sourceLanguages.first()
+        val runnable = enabledList.filter { SourceLanguages.allows(it.contentLanguage, languages) }
+        Log.d(TAG, "Streaming execution of ${runnable.size} of ${enabledList.size} scrapers for $mediaType:$tmdbId")
+
+        var jsIndex = 0
+        runnable.forEach { scraper ->
+            // JS plugins run on Echo's CPU, so their starts are spread out; CloudStream sources mostly wait on
+            // the network, so they all start at once.
+            val startDelay = if (scraper.type == RepositoryType.NUVIO_JS) jsIndex++ * 60L else 0L
             launch(scraperOrchestrationDispatcher) {
-                if (index > 0) {
-                    kotlinx.coroutines.delay(index * 60L)
+                if (startDelay > 0) {
+                    kotlinx.coroutines.delay(startDelay)
                 }
                 try {
-                    val results = executeScraperWithSingleFlight(scraper, tmdbId, mediaType, season, episode)
+                    val results = executeScraperWithSingleFlight(scraper, tmdbId, mediaType, season, episode, languages) { partial ->
+                        // Links a CloudStream source has found so far; the full list follows and merges with them.
+                        send(scraper to partial.map { it.copy(provider = scraper.name) })
+                    }
                     if (results.isNotEmpty()) {
                         send(scraper to results)
                     }
@@ -746,7 +774,9 @@ class PluginManager @Inject constructor(
         tmdbId: String,
         mediaType: String,
         season: Int?,
-        episode: Int?
+        episode: Int?,
+        languages: Set<String>? = null,
+        onPartial: (suspend (List<LocalScraperResult>) -> Unit)? = null
     ): List<LocalScraperResult> {
         val cacheKey = "${scraper.id}:$tmdbId:$mediaType:$season:$episode"
         
@@ -763,8 +793,9 @@ class PluginManager @Inject constructor(
         // Create new deferred
         return coroutineScope {
             val deferred = async {
-                scraperSemaphore.withPermit {
-                    executeScraper(scraper, tmdbId, mediaType, season, episode)
+                val permits = if (scraper.type == RepositoryType.EXTERNAL_DEX) dexSemaphore else scraperSemaphore
+                permits.withPermit {
+                    executeScraper(scraper, tmdbId, mediaType, season, episode, onPartial, languages)
                 }
             }
             
@@ -789,10 +820,12 @@ class PluginManager @Inject constructor(
         tmdbId: String,
         mediaType: String,
         season: Int?,
-        episode: Int?
+        episode: Int?,
+        onPartial: (suspend (List<LocalScraperResult>) -> Unit)? = null,
+        languages: Set<String>? = null
     ): List<LocalScraperResult> {
         return when (scraper.type) {
-            RepositoryType.EXTERNAL_DEX -> executeExternalDexScraper(scraper, tmdbId, mediaType, season, episode)
+            RepositoryType.EXTERNAL_DEX -> executeExternalDexScraper(scraper, tmdbId, mediaType, season, episode, onPartial, languages)
             RepositoryType.NUVIO_JS -> executeJsScraper(scraper, tmdbId, mediaType, season, episode)
         }
     }
@@ -863,17 +896,20 @@ class PluginManager @Inject constructor(
         tmdbId: String,
         mediaType: String,
         season: Int?,
-        episode: Int?
+        episode: Int?,
+        onPartial: (suspend (List<LocalScraperResult>) -> Unit)? = null,
+        languages: Set<String>? = null
     ): List<LocalScraperResult> {
         return try {
             Log.d(TAG, "Executing DEX scraper: ${scraper.name}")
+            // Extractors can live in any installed extension: give the background load a moment to finish, starting
+            // it now if it's still waiting out its delay (a title opened in the first seconds).
+            startExtensionsNow.complete(Unit)
+            externalExtensionLoader.awaitStartupLoad(EXTENSION_LOAD_WAIT_MS)
             val results = withTimeoutOrNull(SCRAPER_TIMEOUT_MS) {
-                // DEX (.cs3) scrapers run arbitrary Kotlin from external repos.
-                // Wrap on the low-priority pool for the same reason as the JS
-                // path: keep their CPU footprint out of ExoPlayer's way.
-                withContext(pluginDispatcher) {
-                    externalExtensionRunner.execute(scraper.id, tmdbId, mediaType, season, episode)
-                }
+                // CloudStream extensions are coroutines waiting on the network: they run on the IO pool, not the
+                // JS plugins' 10 low-priority threads, so they don't queue behind each other.
+                externalExtensionRunner.execute(scraper.id, tmdbId, mediaType, season, episode, onPartial, languages)
             }
             if (results == null) {
                 Log.w(TAG, "DEX scraper ${scraper.name} timed out after ${SCRAPER_TIMEOUT_MS}ms")
@@ -887,6 +923,52 @@ class PluginManager @Inject constructor(
         }
     }
     
+    /** The source languages that run: those chosen on the Plugins page, else English and the app's language. */
+    val sourceLanguages: Flow<Set<String>> = dataStore.sourceLanguages.map { it ?: SourceLanguages.defaults() }
+
+    suspend fun setSourceLanguages(languages: Set<String>) {
+        if (languages.isNotEmpty()) dataStore.setSourceLanguages(languages)
+    }
+
+    /** Each language the installed sources are in, with how many sources; for choosing on the Plugins page. */
+    suspend fun installedSourceLanguages(): Map<String, Int> = withContext(Dispatchers.IO) {
+        dataStore.scrapers.first()
+            .flatMap { scraper -> scraperLanguages(scraper).distinct() }
+            .groupingBy { it }
+            .eachCount()
+    }
+
+    /** [scraper]'s languages: from its repo, else (CloudStream extensions installed earlier) from its loaded sources. */
+    private fun scraperLanguages(scraper: ScraperInfo): List<String> {
+        val listed = scraper.contentLanguage.mapNotNull(SourceLanguages::normalize)
+        if (listed.isNotEmpty() || scraper.type != RepositoryType.EXTERNAL_DEX) return listed
+        if (!externalExtensionLoader.isLoaded(scraper.id)) return emptyList()
+        return externalExtensionLoader.getApis(scraper.id).mapNotNull { SourceLanguages.normalize(it.lang) }
+    }
+
+    /** The DNS choices for CloudStream extensions, as (key, label) pairs. */
+    val extensionDnsOptions: List<Pair<Int, Int>> =
+        com.nuvio.tv.core.runtime.ExtensionDns.Provider.entries.map { it.key to it.labelRes }
+
+    fun extensionDns(context: android.content.Context): Int =
+        com.nuvio.tv.core.runtime.ExtensionDns.current(context).key
+
+    fun setExtensionDns(context: android.content.Context, key: Int) {
+        val provider = com.nuvio.tv.core.runtime.ExtensionDns.Provider.entries.firstOrNull { it.key == key } ?: return
+        com.nuvio.tv.core.runtime.ExtensionDns.set(context, provider)
+    }
+
+    /** Whether [scraperId] is a CloudStream extension with its own settings screen (loading it if needed). */
+    suspend fun hasExtensionSettings(scraperId: String): Boolean = withContext(pluginDispatcher) {
+        val scraper = dataStore.scrapers.first().firstOrNull { it.id == scraperId }
+        scraper?.type == RepositoryType.EXTERNAL_DEX &&
+            externalExtensionLoader.load(scraperId)?.plugin?.openSettings != null
+    }
+
+    fun openExtensionSettings(context: android.content.Context, scraperId: String) {
+        com.nuvio.tv.core.plugin.cloudstream.ExtensionSettingsActivity.open(context, scraperId)
+    }
+
     /**
      * Test a scraper with sample data, returning results along with diagnostic steps.
      */
@@ -904,16 +986,6 @@ class PluginManager @Inject constructor(
         val testTmdbId = "603"
         val testMediaType = if (scraper.supportsType("movie")) "movie" else "series"
         diagnostics.addStep("Test: TMDB $testTmdbId ($testMediaType)")
-
-        // Preload extractors from ALL .cs3 files in the same repo(s)
-        if (scraper.type == RepositoryType.EXTERNAL_DEX) {
-            val allDexIds = dataStore.scrapers.first()
-                .filter { it.type == RepositoryType.EXTERNAL_DEX }
-                .map { it.id }
-            withContext(Dispatchers.IO) {
-                externalExtensionLoader.ensureExtractorsLoaded(allDexIds, diagnostics)
-            }
-        }
 
         val testSeason = if (testMediaType == "movie") null else 1
         val testEpisode = if (testMediaType == "movie") null else 1
@@ -1070,8 +1142,10 @@ class PluginManager @Inject constructor(
         plugins: List<ExternalPluginEntry>
     ) = withContext(Dispatchers.IO) {
         val existingScrapers = dataStore.scrapers.first().toMutableList()
+        val existingById = existingScrapers.associateBy { it.id }
         val downloadSemaphore = Semaphore(MAX_PARALLEL_DOWNLOADS)
         val newScrapers = java.util.Collections.synchronizedList(mutableListOf<ScraperInfo>())
+        val replaced = java.util.Collections.synchronizedList(mutableListOf<String>())
 
         // Download all extensions in parallel with limited concurrency
         val jobs = plugins.map { plugin ->
@@ -1079,8 +1153,19 @@ class PluginManager @Inject constructor(
                 downloadSemaphore.withPermit {
                     try {
                         val scraperId = "$repoId:${plugin.internalName}"
+                        val existing = existingById[scraperId]
 
-                        val file = externalExtensionLoader.downloadExtension(scraperId, plugin.url)
+                        // A refresh only fetches what changed: the same version already installed stays as it is.
+                        val file = if (
+                            existing != null && existing.version == plugin.version.toString() &&
+                            externalExtensionLoader.extensionFile(scraperId).exists()
+                        ) {
+                            externalExtensionLoader.extensionFile(scraperId)
+                        } else {
+                            externalExtensionLoader.downloadExtension(scraperId, plugin.url)?.also {
+                                if (existing != null) replaced += scraperId
+                            }
+                        }
                         if (file == null) {
                             Log.e(TAG, "Failed to download extension: ${plugin.name}")
                             return@withPermit
@@ -1101,10 +1186,11 @@ class PluginManager @Inject constructor(
                             version = plugin.version.toString(),
                             filename = plugin.url,
                             supportedTypes = supportedTypes,
-                            enabled = true,
+                            // A refresh keeps the user's choice; a refresh used to switch every source back on.
+                            enabled = existing?.enabled ?: true,
                             manifestEnabled = plugin.status == 1,
                             logo = plugin.iconUrl,
-                            contentLanguage = emptyList(),
+                            contentLanguage = listOfNotNull(plugin.language?.takeIf { it.isNotBlank() }),
                             formats = null,
                             type = RepositoryType.EXTERNAL_DEX
                         )
@@ -1126,7 +1212,13 @@ class PluginManager @Inject constructor(
         existingScrapers.addAll(newScrapers)
         dataStore.saveScrapers(existingScrapers)
 
-        Log.d(TAG, "Downloaded ${newScrapers.size}/${plugins.size} extensions for repo $repoId")
+        // Updated extensions load again in the background, so their extractors are there for the others now.
+        if (replaced.isNotEmpty()) {
+            val ids = replaced.toList()
+            syncScope.launch(pluginDispatcher) { externalExtensionLoader.reload(ids) }
+        }
+
+        Log.d(TAG, "Downloaded ${newScrapers.size}/${plugins.size} extensions for repo $repoId (${replaced.size} updated)")
     }
 
     companion object {

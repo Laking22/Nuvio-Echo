@@ -17,7 +17,7 @@ hiltNavigationCompose = "1.2.0"
 retrofit = "2.9.0"
 okhttp = "4.12.0"
 moshi = "1.15.1"
-coroutines = "1.8.1"
+coroutines = "1.11.0"
 coil = "3.3.0"
 navigationCompose = "2.8.8"
 datastore = "1.1.1"
@@ -29,13 +29,15 @@ jsoup = "1.17.2"
 gson = "2.10.1"
 markdownRenderer = "0.33.0"
 nanohttpd = "2.3.1"
-cloudstream = "v4.7.0"
-nicehttp = "0.4.16"
+# The commit CloudStream's pre-release is built from: extensions are compiled against it.
+cloudstream = "5024ace292"
+nicehttp = "0.4.18"
 conscrypt = { strictly = "2.5.2" }
 zxing = "3.5.3"
+material = "1.12.0"
 supabase = "3.2.1"
-ktor = "3.1.1"
-kotlinxSerialization = "1.8.0"
+ktor = "3.5.0"
+kotlinxSerialization = "1.11.0"
 sentry = "8.47.0"
 sentryGradle = "6.14.0"
 benchmarkMacro = "1.4.1"
@@ -47,6 +49,8 @@ baselineProfilePlugin = "1.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+okhttp-dnsoverhttps = { group = "com.squareup.okhttp3", name = "okhttp-dnsoverhttps", version.ref = "okhttp" }
+google-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }

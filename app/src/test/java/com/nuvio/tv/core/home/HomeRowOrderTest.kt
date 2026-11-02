@@ -164,4 +164,34 @@ class HomeRowOrderTest {
         // Without Continue Watching on Home, the key isn't listed.
         assertFalse(cw in HomeRowOrder.merge(catalogs, BuiltInRow.entries, moved) { types[it] })
     }
+
+    @Test
+    fun `enrichment spots spread through the catalogs and stay where they're moved`() {
+        val catalogs = (1..9).map { "catalog_$it" }
+        val spots = EnrichmentSlots.keys(com.nuvio.tv.data.local.BetaPerformanceSettings.ENRICHMENT_LOW)
+        val fresh = HomeRowOrder.merge(catalogs, emptyList(), emptyList(), slots = spots) { null }
+        // Three spots among nine catalogs: after the 2nd, 4th and 6th.
+        assertEquals(listOf("catalog_2", "catalog_4", "catalog_6"), spots.map { fresh[fresh.indexOf(it) - 1] })
+
+        // Moved to the very top, the first spot stays there; the rest keep their places.
+        var moved = fresh
+        repeat(fresh.indexOf(spots[0])) { moved = HomeRowOrder.move(moved, spots[0], -1) }
+        val again = HomeRowOrder.merge(catalogs, emptyList(), moved, slots = spots) { null }
+        assertEquals(spots[0], again.first())
+        assertEquals(moved, again)
+
+        // Without custom enrichment the spots aren't listed, even though their places are saved.
+        assertTrue(HomeRowOrder.merge(catalogs, emptyList(), moved) { null }.none(EnrichmentSlots::isSlot))
+    }
+
+    @Test
+    fun `enrichment levels give highlight and grand spots`() {
+        val low = EnrichmentSlots.keys(com.nuvio.tv.data.local.BetaPerformanceSettings.ENRICHMENT_LOW)
+        val medium = EnrichmentSlots.keys(com.nuvio.tv.data.local.BetaPerformanceSettings.ENRICHMENT_MEDIUM)
+        val heavy = EnrichmentSlots.keys(com.nuvio.tv.data.local.BetaPerformanceSettings.ENRICHMENT_HEAVY)
+        assertEquals(3 to 0, low.count { !EnrichmentSlots.isGrand(it) } to low.count(EnrichmentSlots::isGrand))
+        assertEquals(3 to 2, medium.count { !EnrichmentSlots.isGrand(it) } to medium.count(EnrichmentSlots::isGrand))
+        assertEquals(6 to 3, heavy.count { !EnrichmentSlots.isGrand(it) } to heavy.count(EnrichmentSlots::isGrand))
+        assertEquals(listOf(1, 2, 1, 3, 2), medium.map(EnrichmentSlots::number))
+    }
 }

@@ -211,6 +211,28 @@ fun PluginScreenContent(
                 )
             }
 
+            if (uiState.installedLanguages.size > 1) {
+                item {
+                    SourceLanguagesCard(
+                        installed = uiState.installedLanguages,
+                        selected = uiState.sourceLanguages,
+                        isReadOnly = viewModel.isReadOnly,
+                        onToggle = { viewModel.onEvent(PluginUiEvent.ToggleSourceLanguage(it)) }
+                    )
+                }
+            }
+
+            if (uiState.extensionDnsOptions.isNotEmpty()) {
+                item {
+                    ExtensionDnsCard(
+                        label = uiState.extensionDnsOptions.firstOrNull { it.first == uiState.extensionDns }?.second
+                            ?.let { stringResource(it) }.orEmpty(),
+                        isReadOnly = viewModel.isReadOnly,
+                        onClick = { viewModel.onEvent(PluginUiEvent.CycleExtensionDns) }
+                    )
+                }
+            }
+
             // Repositories section
             item {
                 Text(
@@ -262,6 +284,9 @@ fun PluginScreenContent(
                             viewModel.onEvent(PluginUiEvent.ToggleScraper(scraper.id, enabled))
                         },
                         onTest = { viewModel.onEvent(PluginUiEvent.TestScraper(scraper.id)) },
+                        onSettings = if (scraper.id in uiState.scrapersWithSettings) {
+                            { viewModel.onEvent(PluginUiEvent.OpenExtensionSettings(scraper.id)) }
+                        } else null,
                         isTesting = uiState.isTesting && uiState.testScraperId == scraper.id,
                         testResults = if (uiState.testScraperId == scraper.id) uiState.testResults else null,
                         testDiagnostics = if (uiState.testScraperId == scraper.id) uiState.testDiagnostics else null,
@@ -313,6 +338,112 @@ fun PluginScreenContent(
             }
         }
     }
+    }
+}
+
+/**
+ * Which languages' sources are asked for streams, as CloudStream's provider languages: one pill per language the
+ * installed sources are in (most sources first), lit while chosen. OK turns a language on or off.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun SourceLanguagesCard(
+    installed: Map<String, Int>,
+    selected: Set<String>,
+    isReadOnly: Boolean,
+    onToggle: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(NuvioTheme.colors.BackgroundCard, RoundedCornerShape(NuvioTheme.radii.md))
+            .padding(18.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.plugin_source_languages_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = NuvioTheme.colors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.xs))
+        Text(
+            text = stringResource(R.string.plugin_source_languages_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = NuvioTheme.colors.TextSecondary
+        )
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.md))
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)
+        ) {
+            installed.entries.sortedByDescending { it.value }.forEach { (code, count) ->
+                val on = code in selected
+                Surface(
+                    onClick = { if (!isReadOnly) onToggle(code) },
+                    shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50)),
+                    colors = ClickableSurfaceDefaults.colors(
+                        containerColor = if (on) NuvioTheme.colors.Secondary else NuvioTheme.colors.Surface,
+                        focusedContainerColor = if (on) NuvioTheme.colors.Secondary else NuvioTheme.colors.FocusBackground
+                    ),
+                    border = ClickableSurfaceDefaults.border(
+                        focusedBorder = Border(
+                            border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                            shape = RoundedCornerShape(50)
+                        )
+                    ),
+                    scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f)
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.plugin_source_language_pill,
+                            com.nuvio.tv.core.plugin.SourceLanguages.displayName(code),
+                            count
+                        ),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (on) NuvioTheme.colors.OnSecondary else NuvioTheme.colors.TextPrimary,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The DNS CloudStream extensions use; OK steps to the next choice. */
+@Composable
+private fun ExtensionDnsCard(
+    label: String,
+    isReadOnly: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = { if (!isReadOnly) onClick() },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = NuvioTheme.colors.BackgroundCard,
+            focusedContainerColor = NuvioTheme.colors.FocusBackground
+        ),
+        border = ClickableSurfaceDefaults.border(
+            focusedBorder = Border(
+                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                shape = RoundedCornerShape(NuvioTheme.radii.md)
+            )
+        ),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md)),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.01f)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
+            Text(
+                text = stringResource(R.string.extension_dns_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = NuvioTheme.colors.TextPrimary
+            )
+            Spacer(modifier = Modifier.height(NuvioTheme.spacing.xs))
+            Text(
+                text = stringResource(R.string.extension_dns_subtitle, label),
+                style = MaterialTheme.typography.bodyMedium,
+                color = NuvioTheme.colors.TextSecondary
+            )
+        }
     }
 }
 
@@ -1208,13 +1339,16 @@ private fun ScraperCard(
     onTest: () -> Unit,
     isTesting: Boolean,
     testResults: List<LocalScraperResult>?,
+    /** Opens the extension's own settings screen, when it has one. */
+    onSettings: (() -> Unit)? = null,
     testDiagnostics: com.nuvio.tv.core.plugin.TestDiagnostics? = null,
     isReadOnly: Boolean = false
 ) {
     var showResults by remember { mutableStateOf(false) }
     var isTestFocused by remember { mutableStateOf(false) }
     var isToggleFocused by remember { mutableStateOf(false) }
-    val isCardFocused = isTestFocused || isToggleFocused
+    var isSettingsFocused by remember { mutableStateOf(false) }
+    val isCardFocused = isTestFocused || isToggleFocused || isSettingsFocused
     val cardBorderColor by animateColorAsState(
         targetValue = if (isCardFocused) NuvioTheme.colors.FocusRing else Color.Transparent,
         label = "scraperCardBorder"
@@ -1286,6 +1420,22 @@ private fun ScraperCard(
                     horizontalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (onSettings != null) {
+                        Button(
+                            onClick = onSettings,
+                            modifier = Modifier.onFocusChanged { isSettingsFocused = it.isFocused },
+                            colors = ButtonDefaults.colors(
+                                containerColor = NuvioTheme.colors.Surface,
+                                contentColor = NuvioTheme.colors.TextPrimary,
+                                focusedContainerColor = NuvioTheme.colors.FocusBackground,
+                                focusedContentColor = NuvioTheme.colors.Primary
+                            ),
+                            shape = ButtonDefaults.shape(RoundedCornerShape(NuvioTheme.radii.md))
+                        ) {
+                            Text(text = stringResource(R.string.plugin_extension_settings))
+                        }
+                    }
+
                     // Test button
                     Button(
                         onClick = onTest,

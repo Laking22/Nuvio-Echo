@@ -201,9 +201,10 @@ internal class PlayerMediaSourceFactory(private val context: Context) {
                 "backBufferMs=${NuvioExoPlayerPerformanceHelper.backBufferMs} " +
                 "targetMb=${NuvioExoPlayerPerformanceHelper.targetBufferSizeMb} " +
                 "safeNativeMb=${NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)} " +
-                "parallel=${if (useParallelConnections) parallelConnectionCount else 0} chunkKb=$parallelChunkSizeKb " +
-                PlayerMemoryReporter.snapshot(context)
+                "parallel=${if (useParallelConnections) parallelConnectionCount else 0} chunkKb=$parallelChunkSizeKb"
         )
+        // Memory is read by the sampler, off this thread: reading it walks the process's whole memory map, which is slow
+        // on a TV and held up the start of every link here.
         PlayerMemoryReporter.startSampling(context)
         val useChunkSessionSource = useParallelConnections && !isHls && !isDash
         parallelStartupPrefetchUnlocked.set(!useChunkSessionSource)

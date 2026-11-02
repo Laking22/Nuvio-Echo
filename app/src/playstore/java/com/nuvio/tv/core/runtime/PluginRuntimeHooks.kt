@@ -8,5 +8,5 @@ object PluginRuntimeHooks {
 
     fun onActivityCreate(activity: Activity) = Unit
 
-    fun onActivityDestroy() = Unit
+    fun onActivityDestroy(activity: Activity) = Unit
 }

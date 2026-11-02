@@ -30,7 +30,7 @@
     <string name="catalog_order_grand">Grand</string>
     <string name="catalog_order_grand_on">Grand row</string>
     <string name="catalog_order_built_in">Nuvio · built-in row</string>
-    <string name="catalog_order_built_in_subtitle">New look: Nuvio\'s own rows are listed with your catalogs. Move them, highlight them or turn them off like any other row.</string>
+    <string name="catalog_order_built_in_subtitle">Nuvio\'s own rows are listed with your catalogs, and with custom enrichment on, so are the highlight spots.</string>
 
     <!-- Built-in highlighted rows -->
     <string name="home_row_trending_week">Trending This Week</string>
@@ -102,6 +102,10 @@
     <string name="player_btn_stream_info">Stream info</string>
     <string name="player_btn_report">Report issue</string>
     <string name="player_section_audio">Audio</string>
+    <string name="player_audio_settings">Audio settings</string>
+    <string name="audio_mix_persist_label">Keep between sessions</string>
+    <string name="player_subtitle_style">Subtitle style</string>
+    <string name="player_subtitles_available">%1$s · %2$d available</string>
     <string name="player_section_quality">Quality</string>
     <!-- Smart Highlights -->
     <string name="smart_highlight_dialog_subtitle">In “%1$s”</string>
@@ -112,6 +116,18 @@
     <string name="smart_highlight_more_options">More options</string>
     <string name="settings_group_highlights">Highlights</string>
     <string name="beta_enrichment_title">Enrichment</string>
+    <string name="custom_enrichment_title">Custom enrichment</string>
+    <string name="custom_enrichment_subtitle">Highlights only appear in spots you place in Reorder home catalogs.</string>
+    <string name="custom_enrichment_explainer">With this on, Reorder home catalogs lists numbered spots (Highlight #1, #2… and, at Medium and Heavy, Grand row #1, #2…) that you move like any row. Each day\'s Smart Highlights fill those spots in order, and appear nowhere else on Home. Enrichment sets how many spots there are: Low has 3 highlight spots, Medium 3 highlight and 2 grand, Heavy 6 highlight and 3 grand.</string>
+    <string name="enrichment_exclusions_title">Exclusions</string>
+    <string name="enrichment_exclusions_explainer">Selected kinds of title are kept out of the Smart Highlights. Types: movies, series, anime (animation from Japan, or tagged anime) and K-dramas (Korean series). Genres are matched on each title\'s genres, so a title in any selected genre is left out. Rows left with too few titles are replaced by the next theme.</string>
+    <string name="enrichment_exclusion_movie">Movies</string>
+    <string name="enrichment_exclusion_series">Series</string>
+    <string name="enrichment_exclusion_anime">Anime</string>
+    <string name="enrichment_exclusion_kdrama">K-drama</string>
+    <string name="enrichment_slot_highlight">Highlight #%1$d</string>
+    <string name="enrichment_slot_grand">Grand row #%1$d</string>
+    <string name="enrichment_slot_subtitle">Custom enrichment spot: one of today\'s highlights shows here.</string>
     <string name="beta_enrichment_subtitle">Spread of generated highlights on Home.</string>
     <string name="beta_enrichment_off">Off</string>
     <string name="beta_enrichment_low">Low</string>
@@ -126,4 +142,10 @@
     <string name="beta_smart_highlights_reset_title">Bring back blocked highlights</string>
     <string name="beta_smart_highlights_reset_subtitle">%1$d hidden.</string>
     <string name="beta_smart_highlights_reset_none">Nothing hidden.</string>
+    <string name="layout_highlight_size">Highlight size</string>
+    <string name="layout_highlight_size_dynamic">Dynamic</string>
+    <string name="layout_highlight_size_custom">Custom</string>
+    <string name="layout_highlight_card_size">Highlight card size</string>
+    <string name="layout_highlight_card_size_sub">Highlighted rows\' cards, sized on their own instead of following the poster width.</string>
+    <string name="layout_highlight_card_size_value">%1$d%%</string>
 </resources>

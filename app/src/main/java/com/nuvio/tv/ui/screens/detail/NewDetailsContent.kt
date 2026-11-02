@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.Shuffle
@@ -247,12 +249,12 @@ internal fun Meta.castAndCrew(): Pair<List<MetaCastMember>, List<MetaCastMember>
     return castOnly to crew
 }
 
-private enum class NdPanel { EPISODES, CAST }
+private enum class NdPanel { EPISODES, CAST, SIMILAR, REVIEWS }
 
 /**
  * The new details page (Beta speed-ups → New details page). On the left, top to bottom: logo, details, synopsis
  * (focus it to open the full details sideways), credits, the rating row, then Play and a menu marked by a sliding
- * glass lens. Below: Similar titles, the collection, and Reviews. Episodes and Cast & Crew open full-screen panels.
+ * glass lens. Below: the collection. Episodes, Cast & Crew, Similar titles and Reviews open full-screen panels.
  */
 /** The details page takes its title's colours as its background (Appearance → Look & feel → Ambient colour). */
 val LocalDetailsAmbient = androidx.compose.runtime.staticCompositionLocalOf { false }
@@ -371,6 +373,8 @@ internal fun NewDetailsContent(
     val playFocus = remember { FocusRequester() }
     val episodesItemFocus = remember { FocusRequester() }
     val castItemFocus = remember { FocusRequester() }
+    val similarItemFocus = remember { FocusRequester() }
+    val reviewsItemFocus = remember { FocusRequester() }
     var returnFocusTo by remember { mutableStateOf<FocusRequester?>(null) }
 
     LaunchedEffect(meta.id) {
@@ -568,6 +572,12 @@ internal fun NewDetailsContent(
                     onPlayFocusChanged = { playFocused = it },
                     onOpenEpisodes = { returnFocusTo = episodesItemFocus; panel = NdPanel.EPISODES },
                     onOpenCast = { returnFocusTo = castItemFocus; panel = NdPanel.CAST },
+                    similarCount = state.moreLikeThis.size,
+                    similarItemFocus = similarItemFocus,
+                    onOpenSimilar = { returnFocusTo = similarItemFocus; panel = NdPanel.SIMILAR },
+                    reviewsCount = titleReviews.items.size,
+                    reviewsItemFocus = reviewsItemFocus,
+                    onOpenReviews = { returnFocusTo = reviewsItemFocus; panel = NdPanel.REVIEWS },
                     onTrailer = onTrailerClick,
                     onRandomEpisode = {
                         meta.watchableEpisodes().randomOrNull()?.let(onPlayEpisode)
@@ -579,22 +589,6 @@ internal fun NewDetailsContent(
                     }
                 )
             }
-            if (state.moreLikeThis.isNotEmpty()) {
-                item(key = "nd_similar", contentType = "nd_row") {
-                    RowScroll(rowSpec) { NdTitleRow(
-                        title = stringResource(R.string.nd_row_similar),
-                        items = state.moreLikeThis,
-                        footer = when (state.moreLikeThisSource) {
-                            MoreLikeThisSource.TMDB -> stringResource(R.string.detail_more_like_this_powered_by_tmdb)
-                            MoreLikeThisSource.TRAKT -> stringResource(R.string.detail_more_like_this_powered_by_trakt)
-                            MoreLikeThisSource.SIMKL -> stringResource(R.string.detail_more_like_this_powered_by_simkl)
-                            null -> null
-                        },
-                        onClick = { onNavigateToDetail(it.id, it.apiType, null) },
-                        onLongClick = onPosterLongPress
-                    ) }
-                }
-            }
             if (state.collection.isNotEmpty()) {
                 item(key = "nd_collection", contentType = "nd_row") {
                     RowScroll(rowSpec) { NdTitleRow(
@@ -604,15 +598,6 @@ internal fun NewDetailsContent(
                         onClick = { onNavigateToDetail(it.id, it.apiType, null) },
                         onLongClick = onPosterLongPress
                     ) }
-                }
-            }
-            item(key = "nd_reviews", contentType = "nd_reviews") {
-                RowScroll(rowSpec) {
-                    NdReviewsRow(
-                        subtitle = null,
-                        reviews = titleReviews,
-                        onOpen = { list, index -> reviewDirection = 0; openReview = list to index }
-                    )
                 }
             }
         }
@@ -645,6 +630,25 @@ internal fun NewDetailsContent(
                 onCompany = { kind, company ->
                     company.tmdbId?.let { onNavigateToTmdbEntityBrowse(kind, it, company.name, meta.apiType) }
                 },
+                onClose = { panel = null }
+            )
+            NdPanel.SIMILAR -> SimilarTitlesPanel(
+                meta = meta,
+                items = state.moreLikeThis,
+                footer = when (state.moreLikeThisSource) {
+                    MoreLikeThisSource.TMDB -> stringResource(R.string.detail_more_like_this_powered_by_tmdb)
+                    MoreLikeThisSource.TRAKT -> stringResource(R.string.detail_more_like_this_powered_by_trakt)
+                    MoreLikeThisSource.SIMKL -> stringResource(R.string.detail_more_like_this_powered_by_simkl)
+                    null -> null
+                },
+                details = extras.similarDetails,
+                onOpen = { onNavigateToDetail(it.id, it.apiType, null) },
+                onClose = { panel = null }
+            )
+            NdPanel.REVIEWS -> ReviewsPanel(
+                meta = meta,
+                reviews = titleReviews,
+                onOpenReview = { list, index -> reviewDirection = 0; openReview = list to index },
                 onClose = { panel = null }
             )
             null -> Unit
@@ -762,6 +766,12 @@ private fun NdHero(
     onPlayFocusChanged: (Boolean) -> Unit,
     onOpenEpisodes: () -> Unit,
     onOpenCast: () -> Unit,
+    similarCount: Int,
+    similarItemFocus: FocusRequester,
+    onOpenSimilar: () -> Unit,
+    reviewsCount: Int,
+    reviewsItemFocus: FocusRequester,
+    onOpenReviews: () -> Unit,
     onTrailer: () -> Unit,
     onRandomEpisode: () -> Unit,
     onFocusedInHero: () -> Unit
@@ -844,6 +854,11 @@ private fun NdHero(
                         pluralStringResource(R.plurals.nd_seasons_count, state.seasons.count { it > 0 }, state.seasons.count { it > 0 }),
                         episodesItemFocus, onOpenEpisodes))
                     add(NdMenuItem(Icons.Outlined.Group, stringResource(R.string.nd_menu_cast), null, castItemFocus, onOpenCast))
+                    if (similarCount > 0) {
+                        add(NdMenuItem(Icons.Outlined.GridView, stringResource(R.string.nd_menu_similar), null, similarItemFocus, onOpenSimilar))
+                    }
+                    add(NdMenuItem(Icons.Outlined.ChatBubbleOutline, stringResource(R.string.nd_menu_reviews),
+                        reviewsCount.takeIf { it > 0 }?.toString(), reviewsItemFocus, onOpenReviews))
                     // A series' trailers are in the Episodes panel's Trailers tab instead.
                     if (state.trailerButtonEnabled && !state.trailerUrl.isNullOrBlank() && !hasTrailersTab) {
                         add(NdMenuItem(Icons.Outlined.Movie, stringResource(R.string.nd_menu_trailer), null, null, onTrailer))

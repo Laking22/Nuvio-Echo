@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStoreFile
-import com.nuvio.tv.domain.model.DiscoverLocation
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,25 +28,15 @@ private class ScopedDataStore(
     val job: Job
 )
 
-internal val discoverLocationMigration = object : DataMigration<Preferences> {
-    override suspend fun shouldMigrate(currentData: Preferences): Boolean =
-        legacySearchDiscoverEnabledKey in currentData
+/** Clears the removed Discover screen's settings from a profile's layout settings, once. */
+internal val retiredDiscoverSettingsCleanup = object : DataMigration<Preferences> {
+    private val keys = listOf(legacySearchDiscoverEnabledKey, discoverLocationKey, lastNonOffDiscoverLocationKey)
+
+    override suspend fun shouldMigrate(currentData: Preferences): Boolean = keys.any { it in currentData }
 
     override suspend fun migrate(currentData: Preferences): Preferences {
         val mutable = currentData.toMutablePreferences()
-        val legacy = mutable[legacySearchDiscoverEnabledKey]
-        if (legacy != null && mutable[discoverLocationKey] == null) {
-            val rememberedLocation = mutable[lastNonOffDiscoverLocationKey]?.let {
-                runCatching { DiscoverLocation.valueOf(it) }.getOrNull()
-            }?.takeIf { it != DiscoverLocation.OFF }
-            val resolved = if (legacy && rememberedLocation != null) {
-                rememberedLocation
-            } else {
-                DiscoverLocation.fromLegacySearchDiscoverEnabled(legacy)
-            }
-            mutable[discoverLocationKey] = resolved.name
-        }
-        mutable.remove(legacySearchDiscoverEnabledKey)
+        keys.forEach { mutable.remove(it) }
         return mutable.toPreferences()
     }
 
@@ -135,7 +124,7 @@ class ProfileDataStoreFactory @Inject constructor(
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.IO + job)
         val migrations = if (fileName == "layout_settings" || fileName.startsWith("layout_settings_p")) {
-            listOf(discoverLocationMigration)
+            listOf(retiredDiscoverSettingsCleanup)
         } else {
             emptyList()
         }

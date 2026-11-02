@@ -9,6 +9,14 @@ import com.nuvio.tv.domain.model.ScraperInfo
 data class PluginUiState(
     val pluginsEnabled: Boolean = true,
     val groupStreamsByRepository: Boolean = false,
+    /** The DNS CloudStream extensions use (its key), and the choices as (key, label); none in the Play Store build. */
+    val extensionDns: Int = 0,
+    val extensionDnsOptions: List<Pair<Int, Int>> = emptyList(),
+    /** The source languages that run, and each language the installed sources are in with how many. */
+    val sourceLanguages: Set<String> = emptySet(),
+    val installedLanguages: Map<String, Int> = emptyMap(),
+    /** CloudStream extensions that have their own settings screen. */
+    val scrapersWithSettings: Set<String> = emptySet(),
     val repositories: List<PluginRepository> = emptyList(),
     val scrapers: List<ScraperInfo> = emptyList(),
     val isLoading: Boolean = false,
@@ -51,6 +59,9 @@ sealed interface PluginUiEvent {
     data class TestScraper(val scraperId: String) : PluginUiEvent
     data class SetPluginsEnabled(val enabled: Boolean) : PluginUiEvent
     data class SetGroupStreamsByRepository(val enabled: Boolean) : PluginUiEvent
+    object CycleExtensionDns : PluginUiEvent
+    data class ToggleSourceLanguage(val language: String) : PluginUiEvent
+    data class OpenExtensionSettings(val scraperId: String) : PluginUiEvent
     object ClearTestResults : PluginUiEvent
     object ClearError : PluginUiEvent
     object ClearSuccess : PluginUiEvent

@@ -142,19 +142,32 @@ object StreamAutoPlaySelector {
 
         if (mode == StreamAutoPlayMode.MANUAL) return null
 
+        return modeMatches(candidateStreams, mode, regexPattern, preferences).firstOrNull()
+    }
+
+    /**
+     * Every stream [mode] accepts, best first: the regex's (or preferred sources') matches, or every playable stream for
+     * First stream. Auto-play plays the first; [raceCandidates] tries several at once.
+     */
+    private fun modeMatches(
+        candidateStreams: List<Stream>,
+        mode: StreamAutoPlayMode,
+        regexPattern: String,
+        preferences: Set<String>
+    ): List<Stream> {
         return when (mode) {
-            StreamAutoPlayMode.MANUAL -> null
+            StreamAutoPlayMode.MANUAL -> emptyList()
             StreamAutoPlayMode.FIRST_STREAM ->
-                AutoPlayPreferences.withoutLowQuality(candidateStreams.filter { isPlayable(it) }).firstOrNull()
+                AutoPlayPreferences.withoutLowQuality(candidateStreams.filter { isPlayable(it) })
             StreamAutoPlayMode.REGEX_MATCH -> {
                 if (AutoPlayPreferences.isConfigured(preferences)) {
-                    return AutoPlayPreferences.rank(candidateStreams.filter { isPlayable(it) }, preferences).firstOrNull()
+                    return AutoPlayPreferences.rank(candidateStreams.filter { isPlayable(it) }, preferences)
                 }
                 val pattern = regexPattern.trim()
  
                 // Try to compile the user regex
                 val userRegex = runCatching { Regex(pattern, RegexOption.IGNORE_CASE) }.getOrNull()
-                if (userRegex == null) return null
+                if (userRegex == null) return emptyList()
 
                 // Auto-extract exclusion patterns from negative lookaheads
                 val exclusionMatches = Regex("\\(\\?![^)]*?\\(([^)]+)\\)").findAll(pattern)
@@ -193,10 +206,28 @@ object StreamAutoPlaySelector {
                     true
                 }
 
-                if (matchingStreams.isEmpty()) return null
-                AutoPlayPreferences.withoutLowQuality(matchingStreams).firstOrNull()
+                AutoPlayPreferences.withoutLowQuality(matchingStreams)
             }
 
         }
+    }
+
+    /**
+     * The streams auto-play would accept for this title, best first, for racing (see AutoPlayRace): the same scope,
+     * mode and rule as [selectAutoPlayStream], every match rather than the first.
+     */
+    fun raceCandidates(
+        streams: List<Stream>,
+        mode: StreamAutoPlayMode,
+        regexPattern: String,
+        source: StreamAutoPlaySource,
+        installedAddonNames: Set<String>,
+        selectedAddons: Set<String>,
+        selectedPlugins: Set<String>,
+        preferences: Set<String> = emptySet()
+    ): List<Stream> {
+        if (streams.isEmpty() || mode == StreamAutoPlayMode.MANUAL) return emptyList()
+        val scoped = scopedCandidates(streams, source, installedAddonNames, selectedAddons, selectedPlugins)
+        return modeMatches(scoped, mode, regexPattern, preferences)
     }
 }

@@ -23,7 +23,6 @@ import com.nuvio.tv.domain.model.ContinueWatchingSortMode
 import com.nuvio.tv.domain.model.DEFAULT_CARD_DEPTH_EDGE_COVERAGE
 import com.nuvio.tv.domain.model.DEFAULT_CARD_DEPTH_EDGE_STRENGTH
 import com.nuvio.tv.domain.model.DEFAULT_CARD_DEPTH_SHEEN_STRENGTH
-import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.domain.model.EpisodeOptionsOverlayStyle
 import com.nuvio.tv.domain.model.DetailImdbRatingsVisibility
 import com.nuvio.tv.domain.model.HomeImdbRatingsVisibility
@@ -195,22 +194,6 @@ class LayoutPreferenceDataStore @Inject constructor(
 
     val heroSectionEnabled: Flow<Boolean> = profileFlow { prefs ->
         prefs[heroSectionEnabledKey] ?: true
-    }
-
-    val discoverLocation: Flow<DiscoverLocation> = profileFlow { prefs ->
-        val stored = prefs[discoverLocationKey] ?: DiscoverLocation.IN_SEARCH.name
-        runCatching { DiscoverLocation.valueOf(stored) }
-            .getOrDefault(DiscoverLocation.IN_SEARCH)
-    }
-
-    val lastNonOffDiscoverLocation: Flow<DiscoverLocation> = profileFlow { prefs ->
-        val stored = prefs[lastNonOffDiscoverLocationKey]
-            ?.takeIf { it != DiscoverLocation.OFF.name }
-        val fallback = prefs[discoverLocationKey]
-            ?.takeIf { it != DiscoverLocation.OFF.name }
-        val source = stored ?: fallback ?: DiscoverLocation.IN_SEARCH.name
-        runCatching { DiscoverLocation.valueOf(source) }
-            .getOrDefault(DiscoverLocation.IN_SEARCH)
     }
 
     val posterLabelsEnabled: Flow<Boolean> = profileFlow { prefs ->
@@ -478,15 +461,6 @@ class LayoutPreferenceDataStore @Inject constructor(
         }
     }
 
-    suspend fun setDiscoverLocation(location: DiscoverLocation) {
-        store().edit { prefs ->
-            prefs[discoverLocationKey] = location.name
-            if (location != DiscoverLocation.OFF) {
-                prefs[lastNonOffDiscoverLocationKey] = location.name
-            }
-            prefs.remove(legacySearchDiscoverEnabledKey)
-        }
-    }
 
     suspend fun setPosterLabelsEnabled(enabled: Boolean) {
         store().edit { prefs ->
@@ -756,6 +730,7 @@ class LayoutPreferenceDataStore @Inject constructor(
     }
 }
 
+/** The removed Discover screen's settings, cleared from saved layout settings (see retiredDiscoverSettingsCleanup). */
 internal val legacySearchDiscoverEnabledKey = booleanPreferencesKey("search_discover_enabled")
 internal val discoverLocationKey = stringPreferencesKey("discover_location")
 internal val lastNonOffDiscoverLocationKey = stringPreferencesKey("last_non_off_discover_location")

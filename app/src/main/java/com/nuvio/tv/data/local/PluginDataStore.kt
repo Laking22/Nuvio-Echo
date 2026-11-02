@@ -2,6 +2,7 @@ package com.nuvio.tv.data.local
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nuvio.tv.core.profile.ProfileManager
@@ -55,6 +56,7 @@ class PluginDataStore @Inject constructor(
     private val pluginsEnabledKey = booleanPreferencesKey("plugins_enabled")
     private val groupStreamsByRepositoryKey = booleanPreferencesKey(GROUP_STREAMS_BY_REPOSITORY)
     private val scraperSettingsKey = stringPreferencesKey("scraper_settings")
+    private val sourceLanguagesKey = stringSetPreferencesKey("source_languages")
 
     private val repoListType = Types.newParameterizedType(List::class.java, PluginRepository::class.java)
     private val scraperListType = Types.newParameterizedType(List::class.java, ScraperInfo::class.java)
@@ -188,6 +190,17 @@ class PluginDataStore @Inject constructor(
         store().edit { prefs ->
             prefs[groupStreamsByRepositoryKey] = enabled
         }
+    }
+
+    /** The source languages chosen on the Plugins page; null until they're first chosen. */
+    val sourceLanguages: Flow<Set<String>?> = effectiveProfileIdFlow.flatMapLatest { pid ->
+        factory.get(pid, FEATURE).data.map { prefs -> prefs[sourceLanguagesKey] }
+    }
+
+    suspend fun setSourceLanguages(languages: Set<String>) {
+        val active = profileManager.activeProfile
+        if (active != null && !active.isPrimary && active.usesPrimaryPlugins) return
+        store().edit { prefs -> prefs[sourceLanguagesKey] = languages }
     }
 
     // Scraper code storage

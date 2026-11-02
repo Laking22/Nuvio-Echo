@@ -220,6 +220,14 @@ class SeekThumbnailEngine(
 
     /** The player's length when a source was kept across a stream change; -1 when none is waiting to be checked. */
     private var lengthAtKeep = -1L
+    /** How long the source in use took over its last thumbnails (download and decode), to notice a slow one. */
+    private val sourceTimesMs = ArrayDeque<Long>()
+    /** Slow sources handed over for the current list (see [noteSourceSpeed]). */
+    private var slowHandOvers = 0
+    /** The list position a slow source hands over to at the next step; -1 for none. */
+    private var handOverTo = -1
+    /** The slow source's position while the one it handed over to hasn't given a thumbnail yet; -1 for none. */
+    private var slowFallback = -1
     private val fillQueue = ArrayDeque<Int>()
     private val fillStep = Runnable { fillOnce() }
 
@@ -809,7 +817,20 @@ class SeekThumbnailEngine(
     private fun syncSource(): SeekThumbnailSource? {
         ensureTitle()
         val next = wanted
-        if (next?.key == chain?.key) return source?.takeIf { http != null }
+        if (next?.key == chain?.key) {
+            val to = handOverTo
+            handOverTo = -1
+            if (next != null && to in next.sources.indices && to > chainPosition) {
+                slowFallback = chainPosition
+                chainPosition = to
+                if (fillPrepared) fillWanted = true
+                open(next.sources[to])
+            }
+            return source?.takeIf { http != null }
+        }
+        handOverTo = -1
+        slowHandOvers = 0
+        slowFallback = -1
         // The stream changed (a quality switch), but the source in use (another one, or the one that was playing) is
         // on the new list as another source: it carries on, with what it has made, rather than starting again.
         val keep = source?.takeIf { index != null && !unsupported && http != null }
@@ -867,6 +888,7 @@ class SeekThumbnailEngine(
         fillMade = 0
         decoder.releaseCodec()
         previousTarget = -1L
+        sourceTimesMs.clear()
         source = next
         activeKey = next?.linkKey
         fillDone = false
@@ -1111,6 +1133,7 @@ class SeekThumbnailEngine(
             producedCount++
             producedBytes += stored.size
             noteLatency(SystemClock.elapsedRealtime() - started)
+            noteSourceSpeed(src, SystemClock.elapsedRealtime() - started)
             if (!quiet) Log.i(
                 TAG,
                 "frame at ${idx.keyframes.timeUs[k] / 1_000_000}s bytes=${stored.size} fetchMs=${fetched - started} " +
@@ -1134,6 +1157,32 @@ class SeekThumbnailEngine(
     private fun noteLatency(ms: Long) {
         averageLatencyMs = if (averageLatencyMs == 0.0) ms.toDouble() else averageLatencyMs * 0.7 + ms * 0.3
         _commitWaitMs.value = (averageLatencyMs.toLong() + 700L).coerceIn(MIN_COMMIT_WAIT_MS, MAX_COMMIT_WAIT_MS)
+    }
+
+    /**
+     * A source that gives thumbnails, but slowly (a distant server, or keyframes the software decoder takes long
+     * over, like a small file that's 10-bit HEVC), hands over to the next other source on the list at the next step:
+     * scrubbing a lighter source runs smoothly where this one trailed. What it made stays (it belongs to the title).
+     * Judged on the middle of its last few thumbnails, never handed to the playing file (the heaviest of all), and at
+     * most [MAX_SLOW_HAND_OVERS] times a list.
+     */
+    private fun noteSourceSpeed(src: SeekThumbnailSource, ms: Long) {
+        if (!isWanted(src)) return
+        // It gives thumbnails: no going back to the slow one it took over from.
+        slowFallback = -1
+        sourceTimesMs.addLast(ms)
+        while (sourceTimesMs.size > SLOW_SAMPLE) sourceTimesMs.removeFirst()
+        if (sourceTimesMs.size < SLOW_SAMPLE || slowHandOvers >= MAX_SLOW_HAND_OVERS || handOverTo >= 0) return
+        val typicalMs = sourceTimesMs.sorted()[SLOW_SAMPLE / 2]
+        if (typicalMs < SLOW_SOURCE_MS) return
+        val current = chain ?: return
+        val to = (chainPosition + 1 until current.sources.size).firstOrNull { i ->
+            current.sources[i].alternate != null && current.sources[i].linkKey !in deadLinks &&
+                !SeekPreviewHosts.rejected(current.sources[i].url)
+        } ?: return
+        slowHandOvers++
+        handOverTo = to
+        Log.i(TAG, "${src.alternate ?: "playing"} source is slow (${typicalMs}ms a thumbnail), trying ${current.sources[to].alternate}")
     }
 
     /** The TV had no video memory for a decoder: wait it out, but not for more than [BUSY_GIVE_UP_MS]. */
@@ -1186,6 +1235,18 @@ class SeekThumbnailEngine(
         if (unsupported) return
         if (!lastResort && src.alternate != null && isWanted(src)) SeekPreviewHosts.noteRejected(src.url)
         val current = chain
+        // A source taken over from a slow one that gave nothing: back to the slow one, which did work (further down
+        // the list is only heavier).
+        val back = slowFallback
+        slowFallback = -1
+        if (!lastResort && current != null && isWanted(src) && back in current.sources.indices && producedCount == 0) {
+            slowHandOvers = MAX_SLOW_HAND_OVERS
+            chainPosition = back
+            Log.i(TAG, "no thumbnails from ${src.alternate} source ($reason), back to ${current.sources[back].alternate}")
+            if (fillPrepared) fillWanted = true
+            open(current.sources[back])
+            return
+        }
         if (!lastResort && current != null && isWanted(src) && hasNextSource()) {
             chainPosition++
             // Past those already found not to answer (the playing file is never one of them).
@@ -1215,6 +1276,10 @@ class SeekThumbnailEngine(
         const val MAX_KEYFRAME_BYTES = 12 * 1024 * 1024
         const val DEFAULT_BUDGET_BYTES = 800L * 1024 * 1024
         const val MAX_FAILURES = 3
+        /** Thumbnails a source is judged on for speed, and the typical time (download and decode) that's too slow. */
+        const val SLOW_SAMPLE = 5
+        const val SLOW_SOURCE_MS = 900L
+        const val MAX_SLOW_HAND_OVERS = 2
         const val BUSY_GIVE_UP_MS = 10_000L
         const val BUFFERING_WAIT_MS = 4_000L
         const val MIN_COMMIT_WAIT_MS = 900L

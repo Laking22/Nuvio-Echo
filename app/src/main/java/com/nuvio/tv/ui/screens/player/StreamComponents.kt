@@ -84,7 +84,9 @@ internal fun StreamItem(
     badgePlacement: StreamBadgePlacement = StreamBadgePlacement.BOTTOM,
     onClick: () -> Unit,
     onFocusChanged: ((Boolean) -> Unit)? = null,
-    onUpKey: (() -> Unit)? = null
+    onUpKey: (() -> Unit)? = null,
+    /** The episode panel's look: a faint fill that stays put, outlined in white when focused. */
+    outlineFocus: Boolean = false
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -123,8 +125,8 @@ internal fun StreamItem(
                 } else false
             } else Modifier),
         colors = CardDefaults.colors(
-            containerColor = NuvioTheme.colors.BackgroundElevated,
-            focusedContainerColor = NuvioTheme.colors.BackgroundElevated
+            containerColor = if (outlineFocus) Color.White.copy(alpha = 0.05f) else NuvioTheme.colors.BackgroundElevated,
+            focusedContainerColor = if (outlineFocus) Color.White.copy(alpha = 0.05f) else NuvioTheme.colors.BackgroundElevated
         ),
         shape = CardDefaults.shape(shape = RoundedCornerShape(NuvioTheme.radii.md)),
         border = CardDefaults.border(
@@ -136,11 +138,15 @@ internal fun StreamItem(
                 shape = RoundedCornerShape(NuvioTheme.radii.md)
             ),
             focusedBorder = Border(
-                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
+                border = if (outlineFocus) {
+                    BorderStroke(NuvioTheme.spacing.xxs, Color.White)
+                } else {
+                    NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs)
+                },
                 shape = RoundedCornerShape(NuvioTheme.radii.md)
             )
         ),
-        scale = CardDefaults.scale(focusedScale = 1.04f)
+        scale = CardDefaults.scale(focusedScale = if (outlineFocus) 1.01f else 1.04f)
     ) {
         Row(
             modifier = Modifier

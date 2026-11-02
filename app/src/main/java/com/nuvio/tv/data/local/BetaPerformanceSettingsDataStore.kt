@@ -33,6 +33,8 @@ data class BetaPerformanceSettings(
     val warmUpAddonConnections: Boolean = true,
     /** Pre-connect to the stream's server and start playback with a smaller initial buffer. */
     val fastPlaybackStart: Boolean = true,
+    /** Auto-play tries its top few matching links at once and plays the first to deliver video. */
+    val raceAutoPlaySources: Boolean = true,
     /** When a source fails to play, switch to the next addon's source instead of showing an error. */
     val sourceFallback: Boolean = true,
     /**
@@ -67,6 +69,8 @@ data class BetaPerformanceSettings(
     val heroEdgeToEdge: Boolean = true,
     /** New look: focus is a white edge with a slight lift and soft shadow, instead of a ring in the theme's colour. */
     val quietFocus: Boolean = true,
+    /** New look: a focused media card only grows and rises a little, with no outline. */
+    val quietSelection: Boolean = false,
     /**
      * Trailer quality: [TRAILER_QUALITY_AUTO] fetches each trailer to match what it plays on (a card, a highlight, the
      * hero, full screen); otherwise the tallest picture to fetch, one of [TRAILER_QUALITIES].
@@ -106,11 +110,21 @@ data class BetaPerformanceSettings(
     val trailerVideoLayer: Boolean = false,
     /** New look: how long a focused poster waits before it opens out, in ms (one of [POSTER_OPEN_DELAYS]). */
     val posterOpenDelayMs: Int = 750,
+    /**
+     * New look: highlighted cards take a size of their own ([highlightSizePercent]) instead of following Layout's
+     * poster width (Dynamic).
+     */
+    val highlightSizeCustom: Boolean = false,
+    /**
+     * Custom highlighted cards' size, in percent of the standard one (one of [HIGHLIGHT_SIZE_PERCENTS]). Unset, Custom
+     * starts from the size Dynamic gives.
+     */
+    val highlightSizePercent: Int? = null,
     /** New look: the menu stays out of sight until it's selected (Left from a row, or Up for the top bar). */
     val hideMenuUntilSelected: Boolean = false,
     /** New look: the menu is a glass tab bar at the top instead of the sidebar. */
     val menuOnTop: Boolean = false,
-    /** New look: how opaque the menu's glass is, 0 (clear, as it was) to 2 (frosted): one of [MENU_GLASS_LEVELS]. */
+    /** New look: how opaque the menu's glass is, 0 (clear, as it was) to 2 (frosted), or 3 (blurred live): one of [MENU_GLASS_LEVELS]. */
     val menuGlass: Int = 0,
     /** New look: how notifications come in. */
     val notificationStyle: NotificationStyle = NotificationStyle.ISLAND,
@@ -157,7 +171,17 @@ data class BetaPerformanceSettings(
     /** Smart Highlights hidden for a while: "themeId@epochDay", hidden until that day. */
     val snoozedHighlights: Set<String> = emptySet(),
     /** Titles taken out of one Smart Highlight: "themeId|itemId". */
-    val highlightExclusions: Set<String> = emptySet()
+    val highlightExclusions: Set<String> = emptySet(),
+    /**
+     * Custom enrichment: the day's Smart Highlights go only in numbered spots the user places among Home's rows (see
+     * [com.nuvio.tv.core.home.EnrichmentSlots]), not spread through the page.
+     */
+    val customEnrichment: Boolean = false,
+    /**
+     * Kinds of title kept out of the Smart Highlights: [com.nuvio.tv.core.home.EnrichmentExclusion] keys ("type:anime",
+     * "genre:horror").
+     */
+    val enrichmentExclusions: Set<String> = emptySet()
 ) {
     /** Any Smart Highlights at all (Enrichment above Off). */
     val smartHighlights: Boolean get() = enrichment > ENRICHMENT_OFF
@@ -180,10 +204,13 @@ data class BetaPerformanceSettings(
         const val SMART_NAME_PREFIX = "name:"
 
         /** Poster expand delays offered, in ms. */
-        val MENU_GLASS_LEVELS = listOf(0, 1, 2)
+        val MENU_GLASS_LEVELS = listOf(0, 1, 2, 3)
         const val TRAILER_QUALITY_AUTO = com.nuvio.tv.core.player.TrailerVideoPolicy.AUTO
         val TRAILER_QUALITIES = com.nuvio.tv.core.player.TrailerVideoPolicy.QUALITIES
         val POSTER_OPEN_DELAYS = listOf(-1, 0, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)
+
+        /** Custom highlight sizes offered, in percent of the standard highlighted card. */
+        val HIGHLIGHT_SIZE_PERCENTS = (60..150 step 5).toList()
 
         /** Seek preview data limits offered, in MB; 0 is no limit. */
         val SEEK_PREVIEW_BUDGETS = listOf(200, 400, 800, 1600, 3200, 0)
@@ -208,6 +235,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     private val fetchOnExpansionKey = booleanPreferencesKey("fetch_on_expansion")
     private val warmUpAddonConnectionsKey = booleanPreferencesKey("warm_up_addon_connections")
     private val fastPlaybackStartKey = booleanPreferencesKey("fast_playback_start")
+    private val raceAutoPlaySourcesKey = booleanPreferencesKey("race_auto_play_sources")
     private val sourceFallbackKey = booleanPreferencesKey("source_fallback")
     private val sourceSwitchTimeoutKey = intPreferencesKey("source_switch_timeout_seconds")
     private val autoQualityKey = booleanPreferencesKey("auto_quality")
@@ -219,6 +247,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     private val detailsAmbientBackgroundKey = booleanPreferencesKey("details_ambient_background")
     private val heroEdgeToEdgeKey = booleanPreferencesKey("hero_edge_to_edge")
     private val quietFocusKey = booleanPreferencesKey("quiet_focus")
+    private val quietSelectionKey = booleanPreferencesKey("quiet_selection")
     private val trailerQualityKey = intPreferencesKey("trailer_quality")
     private val minimalPlayerKey = booleanPreferencesKey("minimal_player")
     private val playbackIntroKey = booleanPreferencesKey("playback_intro")
@@ -233,6 +262,8 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     private val omdbApiKeyKey = stringPreferencesKey("omdb_api_key")
     private val trailerVideoLayerKey = booleanPreferencesKey("new_look_trailer_video_layer_v2") // v2: everyone back on the default (off)
     private val posterOpenDelayKey = intPreferencesKey("new_look_poster_open_delay_ms")
+    private val highlightSizeCustomKey = booleanPreferencesKey("new_look_highlight_size_custom")
+    private val highlightSizePercentKey = intPreferencesKey("new_look_highlight_size_percent")
     private val hideMenuKey = booleanPreferencesKey("new_look_hide_menu")
     private val menuOnTopKey = booleanPreferencesKey("new_look_menu_on_top")
     private val menuGlassKey = intPreferencesKey("new_look_menu_glass")
@@ -254,6 +285,8 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     private val blockedHighlightsKey = stringSetPreferencesKey("smart_highlights_blocked")
     private val snoozedHighlightsKey = stringSetPreferencesKey("smart_highlights_snoozed")
     private val highlightExclusionsKey = stringSetPreferencesKey("smart_highlights_excluded")
+    private val customEnrichmentKey = booleanPreferencesKey("custom_enrichment")
+    private val enrichmentExclusionsKey = stringSetPreferencesKey("enrichment_exclusions")
 
     val settings: Flow<BetaPerformanceSettings> = profileManager.activeProfileId.flatMapLatest { profileId ->
         store(profileId).data.map { prefs ->
@@ -264,6 +297,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
             fetchOnExpansion = prefs[fetchOnExpansionKey] ?: defaults.fetchOnExpansion,
             warmUpAddonConnections = prefs[warmUpAddonConnectionsKey] ?: defaults.warmUpAddonConnections,
             fastPlaybackStart = prefs[fastPlaybackStartKey] ?: defaults.fastPlaybackStart,
+            raceAutoPlaySources = prefs[raceAutoPlaySourcesKey] ?: defaults.raceAutoPlaySources,
             sourceFallback = prefs[sourceFallbackKey] ?: defaults.sourceFallback,
             sourceSwitchTimeoutSeconds = prefs[sourceSwitchTimeoutKey]?.coerceIn(
                 BetaPerformanceSettings.SOURCE_SWITCH_TIMEOUT_MIN,
@@ -279,6 +313,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
             detailsAmbientBackground = prefs[detailsAmbientBackgroundKey] ?: defaults.detailsAmbientBackground,
             heroEdgeToEdge = prefs[heroEdgeToEdgeKey] ?: defaults.heroEdgeToEdge,
             quietFocus = prefs[quietFocusKey] ?: defaults.quietFocus,
+            quietSelection = prefs[quietSelectionKey] ?: defaults.quietSelection,
             trailerQuality = prefs[trailerQualityKey]?.takeIf { it in BetaPerformanceSettings.TRAILER_QUALITIES }
                 ?: defaults.trailerQuality,
             minimalPlayer = prefs[minimalPlayerKey] ?: defaults.minimalPlayer,
@@ -298,6 +333,9 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
             trailerVideoLayer = prefs[trailerVideoLayerKey] ?: defaults.trailerVideoLayer,
             posterOpenDelayMs = prefs[posterOpenDelayKey]?.takeIf { it in BetaPerformanceSettings.POSTER_OPEN_DELAYS }
                 ?: defaults.posterOpenDelayMs,
+            highlightSizeCustom = prefs[highlightSizeCustomKey] ?: defaults.highlightSizeCustom,
+            highlightSizePercent = prefs[highlightSizePercentKey]
+                ?.takeIf { it in BetaPerformanceSettings.HIGHLIGHT_SIZE_PERCENTS },
             hideMenuUntilSelected = prefs[hideMenuKey] ?: defaults.hideMenuUntilSelected,
             menuOnTop = prefs[menuOnTopKey] ?: defaults.menuOnTop,
             menuGlass = prefs[menuGlassKey]?.takeIf { it in BetaPerformanceSettings.MENU_GLASS_LEVELS } ?: defaults.menuGlass,
@@ -317,7 +355,9 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
             smartHighlightMdbList = prefs[smartHighlightMdbListKey] ?: defaults.smartHighlightMdbList,
             blockedHighlights = prefs[blockedHighlightsKey] ?: defaults.blockedHighlights,
             snoozedHighlights = prefs[snoozedHighlightsKey] ?: defaults.snoozedHighlights,
-            highlightExclusions = prefs[highlightExclusionsKey] ?: defaults.highlightExclusions
+            highlightExclusions = prefs[highlightExclusionsKey] ?: defaults.highlightExclusions,
+            customEnrichment = prefs[customEnrichmentKey] ?: defaults.customEnrichment,
+            enrichmentExclusions = prefs[enrichmentExclusionsKey] ?: defaults.enrichmentExclusions
             )
         }
     }
@@ -340,6 +380,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     suspend fun setFetchOnExpansion(enabled: Boolean) = set(fetchOnExpansionKey, enabled)
     suspend fun setWarmUpAddonConnections(enabled: Boolean) = set(warmUpAddonConnectionsKey, enabled)
     suspend fun setFastPlaybackStart(enabled: Boolean) = set(fastPlaybackStartKey, enabled)
+    suspend fun setRaceAutoPlaySources(enabled: Boolean) = set(raceAutoPlaySourcesKey, enabled)
     suspend fun setSourceFallback(enabled: Boolean) = set(sourceFallbackKey, enabled)
 
     suspend fun setAutoQuality(enabled: Boolean) = set(autoQualityKey, enabled)
@@ -367,6 +408,7 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     suspend fun setDetailsAmbientBackground(enabled: Boolean) = set(detailsAmbientBackgroundKey, enabled)
     suspend fun setHeroEdgeToEdge(enabled: Boolean) = set(heroEdgeToEdgeKey, enabled)
     suspend fun setQuietFocus(enabled: Boolean) = set(quietFocusKey, enabled)
+    suspend fun setQuietSelection(enabled: Boolean) = set(quietSelectionKey, enabled)
     suspend fun setTrailerQuality(height: Int) {
         if (height !in BetaPerformanceSettings.TRAILER_QUALITIES) return
         store().edit { prefs -> prefs[trailerQualityKey] = height }
@@ -403,6 +445,18 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
     suspend fun setPosterOpenDelay(ms: Int) {
         if (ms !in BetaPerformanceSettings.POSTER_OPEN_DELAYS) return
         store().edit { prefs -> prefs[posterOpenDelayKey] = ms }
+    }
+    suspend fun setHighlightSizeCustom(custom: Boolean) = set(highlightSizeCustomKey, custom)
+    suspend fun setHighlightSizePercent(percent: Int) {
+        if (percent !in BetaPerformanceSettings.HIGHLIGHT_SIZE_PERCENTS) return
+        store().edit { prefs -> prefs[highlightSizePercentKey] = percent }
+    }
+    /** Back to Dynamic, forgetting the custom size. */
+    suspend fun resetHighlightSize() {
+        store().edit { prefs ->
+            prefs.remove(highlightSizeCustomKey)
+            prefs.remove(highlightSizePercentKey)
+        }
     }
     suspend fun setHideMenuUntilSelected(enabled: Boolean) = set(hideMenuKey, enabled)
     suspend fun setMenuOnTop(enabled: Boolean) = set(menuOnTopKey, enabled)
@@ -458,6 +512,14 @@ class BetaPerformanceSettingsDataStore @Inject constructor(
         }
     }
     suspend fun setSmartHighlightAiNames(enabled: Boolean) = set(smartHighlightAiNamesKey, enabled)
+    suspend fun setCustomEnrichment(enabled: Boolean) = set(customEnrichmentKey, enabled)
+
+    suspend fun toggleEnrichmentExclusion(key: String) {
+        store().edit { prefs ->
+            val current = prefs[enrichmentExclusionsKey] ?: emptySet()
+            prefs[enrichmentExclusionsKey] = if (key in current) current - key else current + key
+        }
+    }
     suspend fun setSmartHighlightTrakt(enabled: Boolean) = set(smartHighlightTraktKey, enabled)
     suspend fun setSmartHighlightMdbList(enabled: Boolean) = set(smartHighlightMdbListKey, enabled)
 

@@ -143,9 +143,28 @@
 -keep class com.fasterxml.jackson.** { *; }
 -keepclassmembers class com.fasterxml.jackson.** { *; }
 
-# AndroidX components referenced by extensions
+# Everything else extensions are compiled against: CloudStream's library dependencies and the AndroidX and
+# Material views their settings screens use. R8 can't see these uses, so without the rules it strips or
+# renames them and the extension fails with NoClassDefFoundError / NoSuchMethodError.
 -keep class androidx.fragment.app.** { *; }
 -keep interface androidx.fragment.app.** { *; }
+-keep class androidx.appcompat.** { *; }
+-keep class androidx.recyclerview.** { *; }
+-keep class androidx.lifecycle.** { *; }
+-keep class androidx.core.** { *; }
+-keep class com.google.android.material.** { *; }
+-keep class com.google.gson.** { *; }
+-keep class kotlinx.serialization.** { *; }
+-keep class kotlinx.datetime.** { *; }
+-keep class com.fleeksoft.ksoup.** { *; }
+-keep class org.schabi.newpipe.** { *; }
+-keep class org.mozilla.javascript.** { *; }
+-keep class org.mozilla.classfile.** { *; }
+-keep class me.xdrop.fuzzywuzzy.** { *; }
+-keep class dev.whyoleg.cryptography.** { *; }
+-keep class com.uwetrottmann.tmdb2.** { *; }
+-dontwarn org.schabi.newpipe.**
+-dontwarn com.fleeksoft.ksoup.**
 
 -dontwarn java.beans.ConstructorProperties
 -dontwarn java.beans.Transient

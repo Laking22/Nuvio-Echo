@@ -125,9 +125,7 @@ private sealed interface AddonExperienceModeState {
 fun AddonManagerScreen(
     viewModel: AddonManagerViewModel = hiltViewModel(),
     showBuiltInHeader: Boolean = true,
-    onBackPress: () -> Unit = {},
-    onNavigateToCatalogOrder: () -> Unit = {},
-    onNavigateToCollections: () -> Unit = {}
+    onBackPress: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val firstAddonToggleFocusRequester = remember { FocusRequester() }
@@ -160,11 +158,6 @@ fun AddonManagerScreen(
     val deleteDialogFocusRequester = remember { FocusRequester() }
     var isEditing by remember { mutableStateOf(false) }
     var addonUrlPendingDeletion by remember { mutableStateOf<String?>(null) }
-    val hasHomeVisibleCatalogs = remember(uiState.installedAddons) {
-        uiState.installedAddons.any { addon ->
-            addon.enabled && addon.catalogs.any { catalog -> !catalog.isSearchOnlyCatalog() }
-        }
-    }
     val manageFromPhoneSubtitle = if (webConfigMode == com.nuvio.tv.core.server.AddonWebConfigMode.COLLECTIONS_ONLY) {
         stringResource(R.string.addon_manage_collections_from_phone_subtitle)
     } else {
@@ -416,18 +409,6 @@ fun AddonManagerScreen(
                 )
             }
 
-            if (!viewModel.isReadOnly && !isEssential && hasHomeVisibleCatalogs) {
-                item {
-                    CatalogOrderEntryCard(onClick = onNavigateToCatalogOrder)
-                }
-            }
-
-            if (!isEssential) {
-                item {
-                    CollectionsEntryCard(onClick = onNavigateToCollections)
-                }
-            }
-
             item {
                 RefreshAddonsEntryCard(
                     subtitle = refreshAddonsSubtitle,
@@ -669,128 +650,6 @@ private fun ManageFromPhoneCard(
             }
             Icon(
                 imageVector = Icons.Default.PhoneAndroid,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = NuvioTheme.colors.TextSecondary
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalTvMaterial3Api::class)
-@Composable
-private fun CatalogOrderEntryCard(onClick: () -> Unit) {
-    var isFocused by remember { mutableStateOf(false) }
-
-    Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .onFocusChanged { isFocused = it.isFocused },
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = NuvioTheme.colors.BackgroundCard,
-            focusedContainerColor = NuvioTheme.colors.FocusBackground
-        ),
-        border = ClickableSurfaceDefaults.border(
-            focusedBorder = Border(
-                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                shape = RoundedCornerShape(18.dp)
-            )
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(18.dp)),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.01f)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Reorder,
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp),
-                    tint = if (isFocused) NuvioTheme.colors.Secondary else NuvioTheme.colors.TextSecondary
-                )
-                Spacer(modifier = Modifier.width(NuvioTheme.spacing.lg))
-                Column {
-                    Text(
-                        text = stringResource(R.string.addon_reorder_title),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, textDirection = TextDirection.Content),
-                        color = NuvioTheme.colors.TextPrimary,
-                    )
-                    Text(
-                        text = stringResource(R.string.addon_reorder_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = NuvioTheme.colors.TextSecondary
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = NuvioTheme.colors.TextSecondary
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalTvMaterial3Api::class)
-@Composable
-private fun CollectionsEntryCard(onClick: () -> Unit) {
-    var isFocused by remember { mutableStateOf(false) }
-
-    Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .onFocusChanged { isFocused = it.isFocused },
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = NuvioTheme.colors.BackgroundCard,
-            focusedContainerColor = NuvioTheme.colors.FocusBackground
-        ),
-        border = ClickableSurfaceDefaults.border(
-            focusedBorder = Border(
-                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                shape = RoundedCornerShape(18.dp)
-            )
-        ),
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(18.dp)),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.01f)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.FolderOpen,
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp),
-                    tint = if (isFocused) NuvioTheme.colors.Secondary else NuvioTheme.colors.TextSecondary
-                )
-                Spacer(modifier = Modifier.width(NuvioTheme.spacing.lg))
-                Column {
-                    Text(
-                        text = stringResource(R.string.collections_card_title),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, textDirection = TextDirection.Content),
-                        color = NuvioTheme.colors.TextPrimary,
-                    )
-                    Text(
-                        text = stringResource(R.string.collections_card_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = NuvioTheme.colors.TextSecondary
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = NuvioTheme.colors.TextSecondary
@@ -1468,8 +1327,4 @@ private fun AddonCardContent(
             color = NuvioTheme.colors.TextTertiary
         )
     }
-}
-
-private fun CatalogDescriptor.isSearchOnlyCatalog(): Boolean {
-    return extra.any { extra -> extra.name.equals("search", ignoreCase = true) && extra.isRequired }
 }

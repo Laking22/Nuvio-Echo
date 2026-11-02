@@ -376,6 +376,11 @@ androidComponents {
 }
 
 afterEvaluate {
+    // CloudStream's library asks to be compiled against API 37, which this Gradle plugin doesn't support yet.
+    // Nothing in Echo calls its API 37 parts, and extensions run on the device's own API level either way.
+    tasks.matching { it.name.startsWith("check") && it.name.endsWith("AarMetadata") }.configureEach {
+        enabled = false
+    }
     tasks.withType<L8DexDesugarLibTask>().configureEach {
         if (name.endsWith("AndroidTest")) {
             keepRulesConfigurations.add("-keep class j\$.** { *; }")
@@ -463,6 +468,8 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    // CloudStream's library is built with Kotlin 2.4: Hilt needs a metadata reader that understands it.
+    ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.0")
     implementation(libs.hilt.navigation.compose)
 
     // Networking
@@ -552,13 +559,13 @@ dependencies {
     add("fullImplementation", "com.fasterxml.jackson.module:jackson-module-kotlin:2.17.0")
     add("fullImplementation", libs.nicehttp)
     add("fullImplementation", libs.conscrypt.android)
-    add("fullImplementation", "com.github.recloudstream.cloudstream:library:${libs.versions.cloudstream.get()}") {
-        exclude(group = "org.mozilla", module = "rhino")
-        exclude(group = "com.github.AmarullisVFX", module = "newpipeextractor")
-        exclude(group = "com.github.AmaryllisVFX", module = "newpipeextractor")
-        exclude(group = "com.github.AmaryllisVFX.newpipeextractor")
-        exclude(group = "info.debatty", module = "java-string-similarity")
-    }
+    // The whole library, as CloudStream ships it: extensions call into its dependencies too (Rhino, NewPipe,
+    // fuzzywuzzy, kotlinx serialization).
+    add("fullImplementation", "com.github.recloudstream.cloudstream:library:${libs.versions.cloudstream.get()}")
+    // Extensions' settings screens are AppCompat and Material views.
+    add("fullImplementation", libs.google.material)
+    // DNS over HTTPS for extensions, as CloudStream offers, for sites an ISP's DNS blocks.
+    add("fullImplementation", libs.okhttp.dnsoverhttps)
 
     // Markdown rendering
     implementation(libs.markdown.renderer.m3)

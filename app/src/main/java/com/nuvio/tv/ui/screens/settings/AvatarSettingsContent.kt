@@ -61,12 +61,14 @@ import coil3.compose.AsyncImage
 import com.nuvio.tv.data.remote.supabase.AvatarCatalogItem
 import kotlinx.coroutines.launch
 import com.nuvio.tv.R
-import com.nuvio.tv.data.local.AddCustomAvatarResult
+import com.nuvio.tv.data.local.AddAvatarsReport
 import com.nuvio.tv.ui.components.AvatarPickerGrid
 import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.theme.NuvioTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Upload
 
 @Composable
 internal fun AvatarSettingsContent(
@@ -75,6 +77,26 @@ internal fun AvatarSettingsContent(
 ) {
     val state by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
+    var exported by remember { mutableStateOf<Pair<String?, List<String>>?>(null) }
+    // What the last add or import did, shown under the tiles for a few seconds.
+    var status by remember { mutableStateOf<String?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    fun report(result: AddAvatarsReport?): String = if (result == null) {
+        context.getString(R.string.profile_avatars_import_failed)
+    } else {
+        buildList {
+            add(context.resources.getQuantityString(R.plurals.profile_avatars_added, result.added, result.added))
+            if (result.duplicate > 0) add(context.getString(R.string.profile_avatars_report_duplicate, result.duplicate))
+            if (result.invalid > 0) add(context.getString(R.string.profile_avatars_report_invalid, result.invalid))
+        }.joinToString(" · ")
+    }
+    LaunchedEffect(status) {
+        if (status != null) {
+            kotlinx.coroutines.delay(6_000)
+            status = null
+        }
+    }
     var pendingRemoval by remember { mutableStateOf<AvatarCatalogItem?>(null) }
     val addFocus = remember { FocusRequester() }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -118,6 +140,24 @@ internal fun AvatarSettingsContent(
                         modifier = Modifier.focusRequester(addFocus)
                     )
                 }
+                item(key = "import") {
+                    AvatarTile(
+                        label = stringResource(R.string.profile_avatars_import),
+                        imageUrl = null,
+                        icon = Icons.Filled.Download,
+                        onClick = { showImportDialog = true }
+                    )
+                }
+                if (state.custom.isNotEmpty()) {
+                    item(key = "export") {
+                        AvatarTile(
+                            label = stringResource(R.string.profile_avatars_export),
+                            imageUrl = null,
+                            icon = Icons.Filled.Upload,
+                            onClick = { viewModel.exportPack { location, links -> exported = location to links } }
+                        )
+                    }
+                }
                 items(state.custom, key = AvatarCatalogItem::id) { avatar ->
                     AvatarTile(
                         label = avatar.displayName,
@@ -125,6 +165,13 @@ internal fun AvatarSettingsContent(
                         onClick = { pendingRemoval = avatar }
                     )
                 }
+            }
+            status?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = NuvioTheme.colors.TextSecondary
+                )
             }
         }
         SettingsGroupCard(
@@ -154,11 +201,88 @@ internal fun AvatarSettingsContent(
     }
 
     if (showAddDialog) {
-        AddAvatarUrlDialog(
+        AvatarLinkDialog(
+            title = stringResource(R.string.profile_avatars_url_title),
+            subtitle = stringResource(R.string.profile_avatars_url_subtitle),
+            placeholder = stringResource(R.string.profile_avatars_url_placeholder),
+            confirmLabel = stringResource(R.string.action_save),
             onDismiss = { showAddDialog = false },
-            onSave = { url, onResult -> viewModel.addAvatar(url, onResult) },
-            onAdded = { showAddDialog = false }
+            onConfirm = { text, fail ->
+                viewModel.addAvatars(text) { result ->
+                    if (result.added > 0) {
+                        showAddDialog = false
+                        status = report(result)
+                    } else {
+                        fail(report(result))
+                    }
+                }
+            }
         )
+    }
+
+    if (showImportDialog) {
+        AvatarLinkDialog(
+            title = stringResource(R.string.profile_avatars_import_title),
+            subtitle = stringResource(R.string.profile_avatars_import_subtitle),
+            placeholder = stringResource(R.string.profile_avatars_import_placeholder),
+            confirmLabel = stringResource(R.string.profile_avatars_import),
+            extraLabel = stringResource(R.string.profile_avatars_import_downloads),
+            onExtra = { fail ->
+                viewModel.importFromDownloads { result ->
+                    if (result == null) {
+                        fail(context.getString(R.string.profile_avatars_import_none))
+                    } else {
+                        showImportDialog = false
+                        status = report(result)
+                    }
+                }
+            },
+            onDismiss = { showImportDialog = false },
+            onConfirm = { text, fail ->
+                viewModel.importPack(text) { result ->
+                    if (result != null && result.added > 0) {
+                        showImportDialog = false
+                        status = report(result)
+                    } else {
+                        fail(report(result))
+                    }
+                }
+            }
+        )
+    }
+
+    exported?.let { (location, links) ->
+        NuvioDialog(
+            onDismiss = { exported = null },
+            title = stringResource(R.string.profile_avatars_export_title),
+            subtitle = if (location != null) {
+                stringResource(R.string.profile_avatars_export_saved, location)
+            } else {
+                stringResource(R.string.profile_avatars_export_failed)
+            },
+            width = 680.dp
+        ) {
+            // The links too, so the pack can be typed into another device or shared as text.
+            Text(
+                text = links.joinToString(", "),
+                style = MaterialTheme.typography.bodySmall,
+                color = NuvioTheme.colors.TextSecondary,
+                maxLines = 8,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(SettingsGlassFill)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+            SettingsDialogActionRow {
+                SettingsDialogActionButton(
+                    text = stringResource(R.string.action_done),
+                    primary = true,
+                    onClick = { exported = null }
+                )
+            }
+        }
     }
 
     pendingRemoval?.let { avatar ->
@@ -193,7 +317,8 @@ private fun AvatarTile(
     label: String,
     imageUrl: String?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Filled.Add
 ) {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(20.dp)
@@ -231,7 +356,7 @@ private fun AvatarTile(
             ) {
                 if (imageUrl == null) {
                     Icon(
-                        imageVector = Icons.Filled.Add,
+                        imageVector = icon,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(30.dp)
@@ -256,14 +381,23 @@ private fun AvatarTile(
     }
 }
 
+/**
+ * A dialog with one text field for avatar links: adding them (several separated by commas) or importing a pack.
+ * [onConfirm] and [onExtra] get a callback to show why nothing was added, leaving the dialog open.
+ */
 @Composable
-private fun AddAvatarUrlDialog(
+private fun AvatarLinkDialog(
+    title: String,
+    subtitle: String,
+    placeholder: String,
+    confirmLabel: String,
     onDismiss: () -> Unit,
-    onSave: (String, (AddCustomAvatarResult) -> Unit) -> Unit,
-    onAdded: () -> Unit
+    onConfirm: (String, (String) -> Unit) -> Unit,
+    extraLabel: String? = null,
+    onExtra: (((String) -> Unit) -> Unit)? = null
 ) {
     var value by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<AddCustomAvatarResult?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
     var inputFocused by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -275,8 +409,8 @@ private fun AddAvatarUrlDialog(
 
     NuvioDialog(
         onDismiss = onDismiss,
-        title = stringResource(R.string.profile_avatars_url_title),
-        subtitle = stringResource(R.string.profile_avatars_url_subtitle),
+        title = title,
+        subtitle = subtitle,
         width = 680.dp,
         suppressFirstKeyUp = false
     ) {
@@ -307,7 +441,7 @@ private fun AddAvatarUrlDialog(
                             event.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER &&
                                 event.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN
                         },
-                    singleLine = true,
+                    maxLines = 4,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { keyboardController?.hide() }),
                     textStyle = MaterialTheme.typography.bodyMedium.copy(color = NuvioTheme.colors.TextPrimary),
@@ -315,7 +449,7 @@ private fun AddAvatarUrlDialog(
                     decorationBox = { innerTextField ->
                         if (value.isBlank()) {
                             Text(
-                                text = stringResource(R.string.profile_avatars_url_placeholder),
+                                text = placeholder,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = NuvioTheme.colors.TextTertiary
                             )
@@ -325,32 +459,31 @@ private fun AddAvatarUrlDialog(
                 )
             }
         }
-        if (error != null) {
+        error?.let { message ->
             Text(
-                text = stringResource(
-                    when (error) {
-                        AddCustomAvatarResult.INVALID -> R.string.profile_avatars_invalid_url
-                        AddCustomAvatarResult.DUPLICATE -> R.string.profile_avatars_duplicate_url
-                        else -> R.string.profile_avatars_invalid_url
-                    }
-                ),
+                text = message,
                 color = Color(0xFFFF9898),
                 style = MaterialTheme.typography.bodySmall
             )
         }
         SettingsDialogActionRow {
+            if (extraLabel != null && onExtra != null) {
+                SettingsDialogActionButton(
+                    text = extraLabel,
+                    onClick = { onExtra { error = it } }
+                )
+            }
             SettingsDialogActionButton(
                 text = stringResource(R.string.action_cancel),
                 onClick = onDismiss
             )
             SettingsDialogActionButton(
-                text = stringResource(R.string.action_save),
+                text = confirmLabel,
                 primary = true,
+                enabled = value.isNotBlank(),
                 onClick = {
                     keyboardController?.hide()
-                    onSave(value) { result ->
-                        if (result == AddCustomAvatarResult.ADDED) onAdded() else error = result
-                    }
+                    onConfirm(value) { error = it }
                 }
             )
         }

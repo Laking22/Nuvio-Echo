@@ -236,13 +236,19 @@ class UpdateViewModel @Inject constructor(
             val safeName = update.assetName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
             val destination = File(File(context.cacheDir, "updates"), safeName)
             val result = withContext(Dispatchers.IO) {
+                // Progress is reported every few KB: pass it on only when the whole percent changes.
+                var shownPercent = Int.MIN_VALUE
                 apkDownloader.download(update.assetUrl, destination) { downloaded, total ->
                     val progress = if (total != null && total > 0) {
                         (downloaded.toFloat() / total.toFloat()).coerceIn(0f, 1f)
                     } else {
                         null
                     }
-                    _uiState.update { it.copy(downloadProgress = progress) }
+                    val percent = progress?.let { (it * 100).toInt() } ?: -1
+                    if (percent != shownPercent) {
+                        shownPercent = percent
+                        _uiState.update { it.copy(downloadProgress = progress) }
+                    }
                 }
             }
 
@@ -291,10 +297,18 @@ class UpdateViewModel @Inject constructor(
         }
 
         _uiState.update { it.copy(showUnknownSourcesDialog = false) }
-        ApkInstaller.launchInstall(context, apkFile)
+        if (!ApkInstaller.launchInstall(context, apkFile)) {
+            _uiState.update {
+                it.copy(errorMessage = context.getString(R.string.update_error_no_installer), showBanner = true)
+            }
+        }
     }
 
     fun openUnknownSourcesSettings() {
-        ApkInstaller.buildUnknownSourcesSettingsIntent(context)?.let(context::startActivity)
+        if (!ApkInstaller.openUnknownSourcesSettings(context)) {
+            _uiState.update {
+                it.copy(errorMessage = context.getString(R.string.update_error_no_settings), showBanner = true)
+            }
+        }
     }
 }

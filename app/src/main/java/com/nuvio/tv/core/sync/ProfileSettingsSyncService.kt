@@ -22,7 +22,6 @@ import com.nuvio.tv.data.local.StreamBadgeSettingsDataStore
 import com.nuvio.tv.data.local.TmdbSettingsDataStore
 import com.nuvio.tv.data.remote.supabase.SupabaseProfileSetupCopyResult
 import com.nuvio.tv.data.remote.supabase.SupabaseProfileSettingsBlob
-import com.nuvio.tv.domain.model.DiscoverLocation
 import com.nuvio.tv.domain.repository.MetaRepository
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.CancellationException
@@ -73,7 +72,10 @@ private val catalogKeysExcludedFromProfileSettingsBlob = setOf(
     "custom_catalog_titles"
 )
 
-private val localOnlyLayoutProfileSettingsKeys = setOf(
+/** The removed Discover screen's settings: neither sent nor taken, so another device's copy can't bring them back. */
+private val retiredLayoutProfileSettingsKeys = setOf(
+    "search_discover_enabled",
+    "discover_location",
     "last_non_off_discover_location"
 )
 
@@ -158,8 +160,7 @@ private val credentialProfileSettingsKeys = mapOf(
 internal fun shouldExcludePreferenceFromProfileSettingsSync(feature: String, keyName: String): Boolean {
     return when {
         feature == "layout_settings" && keyName in catalogKeysExcludedFromProfileSettingsBlob -> true
-        feature == "layout_settings" && keyName in localOnlyLayoutProfileSettingsKeys -> true
-        feature == "layout_settings" && keyName == "search_discover_enabled" -> true
+        feature == "layout_settings" && keyName in retiredLayoutProfileSettingsKeys -> true
         feature == PLAYER_SETTINGS_FEATURE && keyName in localOnlyPlayerProfileSettingsKeys -> true
         feature == PluginDataStore.FEATURE && keyName != PluginDataStore.GROUP_STREAMS_BY_REPOSITORY -> true
         keyName in credentialProfileSettingsKeys[feature].orEmpty() -> true
@@ -490,64 +491,13 @@ class ProfileSettingsSyncService @Inject constructor(
                 }
                 profileDataStoreFactory.get(profileId, feature).edit { mutablePrefs ->
                     val preservedEntries = captureLocalOnlyPreferenceEntries(feature, mutablePrefs)
-                    val priorDiscoverLocation = if (feature == "layout_settings") {
-                        mutablePrefs[stringPreferencesKey("discover_location")]
-                    } else null
-                    val priorLastNonOff = if (feature == "layout_settings") {
-                        mutablePrefs[stringPreferencesKey("last_non_off_discover_location")]?.let {
-                            runCatching { DiscoverLocation.valueOf(it) }.getOrNull()
-                        }?.takeIf { it != DiscoverLocation.OFF }
-                    } else null
-
                     mutablePrefs.clear()
-                    val hasWellFormedNewDiscoverKey = feature == "layout_settings" &&
-                        extractDiscoverLocationString(featureJson) != null
                     featureJson.forEach { (keyName, encodedValue) ->
-                        if (shouldExcludePreferenceFromProfileSettingsSync(feature, keyName)) {
-                            if (feature != "layout_settings" || keyName != "search_discover_enabled") return@forEach
-                            if (!hasWellFormedNewDiscoverKey) {
-                                val legacy = (encodedValue as? JsonObject)
-                                    ?.get("value")?.jsonPrimitive?.contentOrNull
-                                    ?.toBooleanStrictOrNull()
-                                if (legacy != null) {
-                                    val translated = DiscoverLocation.fromLegacySearchDiscoverEnabled(legacy)
-                                    val priorLocation = priorDiscoverLocation?.let {
-                                        runCatching { DiscoverLocation.valueOf(it) }.getOrNull()
-                                    }
-                                    val priorIsValidNonOff = priorLocation != null && priorLocation != DiscoverLocation.OFF
-                                    when {
-                                        translated == DiscoverLocation.OFF ->
-                                            mutablePrefs[stringPreferencesKey("discover_location")] = translated.name
-                                        priorIsValidNonOff -> {}
-                                        priorLastNonOff != null ->
-                                            mutablePrefs[stringPreferencesKey("discover_location")] = priorLastNonOff.name
-                                        else ->
-                                            mutablePrefs[stringPreferencesKey("discover_location")] = translated.name
-                                    }
-                                }
-                            }
-                            return@forEach
-                        }
-                        if (feature == "layout_settings" && keyName == "discover_location" && !hasWellFormedNewDiscoverKey) return@forEach
+                        if (shouldExcludePreferenceFromProfileSettingsSync(feature, keyName)) return@forEach
                         applyEncodedPreference(mutablePrefs, keyName, encodedValue)
                     }
 
                     restorePreferenceEntries(mutablePrefs, preservedEntries)
-                    if (feature == "layout_settings" && priorDiscoverLocation != null) {
-                        val discoverKey = stringPreferencesKey("discover_location")
-                        if (mutablePrefs[discoverKey] == null) {
-                            mutablePrefs[discoverKey] = priorDiscoverLocation
-                        }
-                    }
-                    if (feature == "layout_settings") {
-                        val finalDiscover = mutablePrefs[stringPreferencesKey("discover_location")]?.let {
-                            runCatching { DiscoverLocation.valueOf(it) }.getOrNull()
-                        }
-                        if (finalDiscover != null && finalDiscover != DiscoverLocation.OFF) {
-                            mutablePrefs[stringPreferencesKey("last_non_off_discover_location")] =
-                                finalDiscover.name
-                        }
-                    }
                 }
             }
         } finally {
@@ -599,47 +549,10 @@ class ProfileSettingsSyncService @Inject constructor(
         return signatures.joinToString(separator = "||")
     }
 
-    private fun extractDiscoverLocationString(featureJson: JsonObject): String? {
-        val encoded = featureJson["discover_location"] as? JsonObject ?: return null
-        val type = encoded["type"]?.jsonPrimitive?.contentOrNull
-        if (type != "string") return null
-        return encoded["value"]?.jsonPrimitive?.contentOrNull
-    }
-
+    /** Layout settings as compared, without the removed Discover screen's settings (never sent or taken). */
     private fun normalizeLayoutSettingsForSignature(featureJson: JsonObject): JsonObject {
-        val hasLegacy = "search_discover_enabled" in featureJson
-        val hasNewKey = "discover_location" in featureJson
-        val hasLocalOnly = featureJson.keys.any { it in localOnlyLayoutProfileSettingsKeys }
-        if (!hasLegacy && !hasNewKey && !hasLocalOnly) return featureJson
-        val newDiscoverString = extractDiscoverLocationString(featureJson)
-        if (!hasLegacy && newDiscoverString != null && !hasLocalOnly) return featureJson
-        return buildJsonObject {
-            featureJson.forEach { (keyName, encodedValue) ->
-                when {
-                    keyName == "search_discover_enabled" -> return@forEach
-                    keyName == "discover_location" && newDiscoverString == null -> return@forEach
-                    keyName in localOnlyLayoutProfileSettingsKeys -> return@forEach
-                    else -> put(keyName, encodedValue)
-                }
-            }
-            if (newDiscoverString == null && hasLegacy) {
-                val legacy = (featureJson["search_discover_enabled"] as? JsonObject)
-                    ?.get("value")?.jsonPrimitive?.contentOrNull
-                    ?.toBooleanStrictOrNull()
-                if (legacy != null) {
-                    put(
-                        "discover_location",
-                        buildJsonObject {
-                            put("type", "string")
-                            put(
-                                "value",
-                                DiscoverLocation.fromLegacySearchDiscoverEnabled(legacy).name
-                            )
-                        }
-                    )
-                }
-            }
-        }
+        if (featureJson.keys.none { it in retiredLayoutProfileSettingsKeys }) return featureJson
+        return JsonObject(featureJson.filterKeys { it !in retiredLayoutProfileSettingsKeys })
     }
 
     private fun buildSettingsSignature(featuresJson: JsonObject): String {
@@ -679,7 +592,7 @@ class ProfileSettingsSyncService @Inject constructor(
         mutablePrefs: MutablePreferences
     ): Map<Preferences.Key<*>, Any> {
         val keyNames = when (feature) {
-            "layout_settings" -> catalogKeysExcludedFromProfileSettingsBlob + localOnlyLayoutProfileSettingsKeys
+            "layout_settings" -> catalogKeysExcludedFromProfileSettingsBlob
             PLAYER_SETTINGS_FEATURE -> localOnlyPlayerProfileSettingsKeys
             else -> credentialProfileSettingsKeys[feature].orEmpty()
         }

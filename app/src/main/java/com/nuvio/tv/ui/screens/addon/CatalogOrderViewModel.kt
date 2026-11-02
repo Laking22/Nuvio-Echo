@@ -389,7 +389,8 @@ class CatalogOrderViewModel @Inject constructor(
     ): List<CatalogOrderItem> {
         val byKey = catalogItems.associateBy { it.key }
         val merged = HomeRowOrder.merge(
-            catalogItems.map { it.key }, BuiltInRow.entries, beta.homeRowOrder, continueWatching = true
+            catalogItems.map { it.key }, BuiltInRow.entries, beta.homeRowOrder, continueWatching = true,
+            slots = com.nuvio.tv.core.home.EnrichmentSlots.active(beta)
         ) { key ->
             byKey[key]?.typeLabel
         }
@@ -397,7 +398,22 @@ class CatalogOrderViewModel @Inject constructor(
             val canMoveUp = index > 0
             val canMoveDown = index < merged.lastIndex
             val builtIn = BuiltInRow.fromRowKey(key)
-            if (key == HomeRowOrder.CONTINUE_WATCHING_KEY) {
+            if (com.nuvio.tv.core.home.EnrichmentSlots.isSlot(key)) {
+                // A custom enrichment spot: only moves; the Enrichment level decides how many there are.
+                CatalogOrderItem(
+                    key = key,
+                    disableKey = "",
+                    catalogName = "",
+                    addonName = "",
+                    typeLabel = "",
+                    isDisabled = false,
+                    canMoveUp = canMoveUp,
+                    canMoveDown = canMoveDown,
+                    canDisable = false,
+                    slotNumber = com.nuvio.tv.core.home.EnrichmentSlots.number(key),
+                    slotGrand = com.nuvio.tv.core.home.EnrichmentSlots.isGrand(key)
+                )
+            } else if (key == HomeRowOrder.CONTINUE_WATCHING_KEY) {
                 // Only moves: it's shown or hidden in its own settings, and has no highlighted or grand look.
                 CatalogOrderItem(
                     key = key,
@@ -577,7 +593,11 @@ data class CatalogOrderItem(
     /** New look: whether Home shows the row as a grand row; null where it can't be one (classic look, collections). */
     val grand: Boolean? = null,
     /** False for Continue Watching, which this screen only moves. */
-    val canDisable: Boolean = true
+    val canDisable: Boolean = true,
+    /** A custom enrichment spot's number ("Highlight #2"); null for every other row. */
+    val slotNumber: Int? = null,
+    /** With [slotNumber]: a grand spot rather than a highlight one. */
+    val slotGrand: Boolean = false
 ) {
     val isBuiltIn: Boolean get() = builtInLabelRes != null
 }

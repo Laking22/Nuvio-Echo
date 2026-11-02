@@ -102,7 +102,9 @@ data class NuvioContrastPair(
 class NuvioColorScheme(
     palette: ThemeColorPalette,
     amoledMode: Boolean = false,
-    amoledSurfacesMode: Boolean = false
+    amoledSurfacesMode: Boolean = false,
+    /** The neutral accent of buttons and switches; pages on Settings' glass use white so focused labels stay bright. */
+    primary: Color = NuvioPrimitives.neutral500
 ) {
     private val pureBlack = NuvioPrimitives.black
     private val pureBlackSurfaces = amoledMode && amoledSurfacesMode
@@ -120,7 +122,7 @@ class NuvioColorScheme(
     val PlayerOverlay = palette.playerOverlay
     val Divider = NuvioPrimitives.neutral750
 
-    val Primary = NuvioPrimitives.neutral500
+    val Primary = primary
     val PrimaryVariant = NuvioPrimitives.neutral650
     val OnPrimary = NuvioPrimitives.white
     val Secondary = palette.secondary

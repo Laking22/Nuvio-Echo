@@ -115,9 +115,24 @@ class TitleReviewsRepository @Inject constructor(
         private val EMPHASIS by lazy { Regex("\\*\\*|__|\\*") }
         private val LINK by lazy { Regex("\\[([^\\]]*)\\]\\([^)]*\\)") }
         private val BLANK_LINES by lazy { Regex("\n{3,}") }
+        /** The end of a block in HTML (a paragraph, heading, list item, line break): a line break in plain text. */
+        private val HTML_BREAK by lazy { Regex("<\\s*(br\\s*/?|/\\s*(p|div|h[1-6]|li|article|section|blockquote))\\s*>", RegexOption.IGNORE_CASE) }
+        private val HTML_TAG by lazy { Regex("</?[a-zA-Z][^>]*>") }
+        private val LINE_INDENT by lazy { Regex("(?m)^[ \\t]+") }
 
-        /** TMDB reviews are Markdown-ish; the reader shows plain text. */
-        fun plainText(content: String): String = content
+        /** Some TMDB reviews are pasted in as HTML: its tags go, block ends become line breaks, entities are decoded. */
+        private fun withoutHtml(content: String): String {
+            if (!HTML_TAG.containsMatchIn(content)) return content
+            return content
+                .replace(HTML_BREAK, "\n")
+                .replace(HTML_TAG, "")
+                .replace("&nbsp;", " ").replace("&quot;", "\"").replace("&#39;", "'").replace("&apos;", "'")
+                .replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+                .replace(LINE_INDENT, "")
+        }
+
+        /** TMDB reviews are Markdown-ish (now and then HTML); the reader shows plain text. */
+        fun plainText(content: String): String = withoutHtml(content)
             .replace(EMPHASIS, "")
             .replace(LINK, "$1")
             .replace("\r\n", "\n")

@@ -79,6 +79,8 @@ import com.nuvio.tv.ui.navigation.NuvioNavHost
 import com.nuvio.tv.ui.navigation.Screen
 import com.nuvio.tv.ui.theme.NuvioLayout
 import com.nuvio.tv.ui.util.rememberDrawerItemFocusRequesters
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 
 /**
@@ -89,8 +91,10 @@ import kotlinx.coroutines.launch
 class NewLookChrome internal constructor(
     val menuOnTop: Boolean,
     val hideMenu: Boolean,
-    /** Start padding the scaffold gives root screens; Home draws across it. */
+    /** Start padding root screens get (see [RootScreenInset]); Home draws across it. */
     val contentInset: Dp,
+    /** The screens the menu shows on, which get [contentInset]. */
+    val rootRoutes: Set<String>,
     private val menuFocusedState: State,
     private val focusTopBarAction: () -> Unit,
     private val topBarContent: @Composable (onDown: () -> Unit, modifier: Modifier) -> Unit,
@@ -122,6 +126,18 @@ class NewLookChrome internal constructor(
 }
 
 val LocalNewLookChrome = staticCompositionLocalOf<NewLookChrome?> { null }
+
+/**
+ * A menu screen's room for the sidebar, inside the screen rather than around the navigation area: around it, the
+ * screens that draw under the sidebar (Home, Settings, Calendar...) were cut off at its edge while they faded in, so
+ * the strip left of the sidebar showed black until the fade ended.
+ */
+@Composable
+internal fun RootScreenInset(route: String, content: @Composable () -> Unit) {
+    val chrome = LocalNewLookChrome.current
+    val inset = if (chrome != null && route in chrome.rootRoutes) chrome.contentInset else 0.dp
+    Box(modifier = Modifier.fillMaxSize().padding(start = inset)) { content() }
+}
 
 /**
  * Stretches a root screen's background left across the column the scaffold leaves for the sidebar, as Home does, so
@@ -262,17 +278,26 @@ internal fun NewLookScaffold(
     // Root screens make room for the sidebar only while it stays on screen; hidden or on top, they use the full
     // width (Genres and Search had a wasted column on the left).
     val sidebarInset = if (!menuOnTop && !hideMenu) NuvioLayout.tokens.sidebarContentOffset else 0.dp
-    val chrome = remember(menuOnTop, hideMenu, barItems, selectedDrawerRoute, onHome) {
+    val chrome = remember(menuOnTop, hideMenu, barItems, selectedDrawerRoute, onHome, rootRoutes) {
         NewLookChrome(
             menuOnTop = menuOnTop,
             hideMenu = hideMenu,
             contentInset = sidebarInset,
+            rootRoutes = rootRoutes,
             menuFocusedState = focusState,
             focusTopBarAction = { latestOpenMenu() },
             topBarContent = { onDown, modifier -> latestTopBar(onDown, modifier) },
             pageScroll = pageScroll
         )
     }
+
+    // Menu glass at Blur: the screens are recorded for the sidebar to blur, only while it can show (never over the
+    // player, whose video isn't the app's to read) and on Android 12 and up, where the blur is drawn live.
+    val menuHaze = remember {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) HazeState() else null
+    }
+    val blursMenu = menuHaze != null && LocalMenuGlass.current == MENU_GLASS_BLUR && showMenu && !menuOnTop &&
+        currentRoute?.startsWith("player") != true
 
     Box(
         modifier = Modifier
@@ -285,10 +310,21 @@ internal fun NewLookScaffold(
                 false
             }
     ) {
+        // The sidebar's column, in the page colour, for screens that don't draw under the sidebar: the app's background
+        // is see-through while Home is up (Home paints the whole screen itself). Home draws over this.
+        if (showMenu && sidebarInset > 0.dp) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(sidebarInset)
+                    .background(com.nuvio.tv.ui.theme.NuvioTheme.colors.Background)
+            )
+        }
+        // The screens take the whole width; menu screens leave the sidebar's room themselves (RootScreenInset).
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = if (showMenu) sidebarInset else 0.dp)
+                .then(if (blursMenu && menuHaze != null) Modifier.hazeSource(state = menuHaze) else Modifier)
                 .onPreviewKeyEvent { event ->
                     if (event.key == Key.DirectionLeft && event.type == KeyEventType.KeyDown) {
                         leftGate.onLeftDown(event.nativeKeyEvent.eventTime, event.nativeKeyEvent.repeatCount)
@@ -375,6 +411,7 @@ internal fun NewLookScaffold(
                     },
                 contentAlignment = Alignment.Center
             ) {
+                CompositionLocalProvider(LocalMenuHaze provides menuHaze.takeIf { blursMenu }) {
                 GlassPill(
                     items = drawerItems,
                     selectedRoute = selectedDrawerRoute,
@@ -389,6 +426,7 @@ internal fun NewLookScaffold(
                     mayEnterWithLeft = leftGate::mayOpen,
                     drawerIcon = drawerIcon
                 )
+                }
             }
         }
 
@@ -406,9 +444,16 @@ internal fun NewLookScaffold(
             LaunchedEffect(Unit) { openMenu() }
         }
 
+        // Voice search's light, across the whole screen and over the sidebar, as the launcher's is: inside the screens'
+        // area it stopped at the sidebar's column.
+        com.nuvio.tv.ui.screens.search.VoiceListeningGlowHost()
+
         // Notifications: drawn under the avatar so style 2 grows out from behind it. Over the player only the
         // player's own ones show, always as the island (the avatar isn't drawn there); the rest wait for it to close.
-        if (currentRoute?.startsWith("player") != true) {
+        val onPlayer = currentRoute?.startsWith("player") == true
+        // The player's own notices go with it, so none replays over the page it returns to.
+        LaunchedEffect(onPlayer) { if (!onPlayer) NewLookNotifications.dropPlayerNotices() }
+        if (!onPlayer) {
             // Auto quality's notices belong to the player alone.
             NotificationHost(
                 style = notificationStyle,
@@ -537,6 +582,19 @@ internal fun GlassPill(
             }
             .padding(PillPadding)
     ) {
+        // Blur's glass, the whole pill (past the padding the contents sit in).
+        MenuBlur(
+            shape = shape,
+            modifier = Modifier
+                .matchParentSize()
+                .layout { measurable, constraints ->
+                    val pad = PillPadding.roundToPx()
+                    val placeable = measurable.measure(
+                        androidx.compose.ui.unit.Constraints.fixed(constraints.maxWidth + pad * 2, constraints.maxHeight + pad * 2)
+                    )
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(-pad, -pad) }
+                }
+        )
         PillLens(at = at, focused = focused)
         Column(verticalArrangement = Arrangement.spacedBy(IconGap)) {
             items.forEachIndexed { index, item ->
@@ -649,7 +707,7 @@ internal fun GlassTabBar(
     Box(
         modifier = modifier
             .height(BarHeight)
-            .menuFrost(shape)
+            // Clear glass, as the sidebar's: a frosted fill stood out gray against the page.
             .glassSurface(shape)
             .onFocusChanged {
                 hasFocus = it.hasFocus

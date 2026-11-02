@@ -81,12 +81,16 @@ class BetaPerformanceSettingsViewModel @Inject constructor(
     fun setFetchOnExpansion(enabled: Boolean) = viewModelScope.launch { dataStore.setFetchOnExpansion(enabled) }
     fun setWarmUpAddonConnections(enabled: Boolean) = viewModelScope.launch { dataStore.setWarmUpAddonConnections(enabled) }
     fun setFastPlaybackStart(enabled: Boolean) = viewModelScope.launch { dataStore.setFastPlaybackStart(enabled) }
+    fun setRaceAutoPlaySources(enabled: Boolean) = viewModelScope.launch { dataStore.setRaceAutoPlaySources(enabled) }
     fun setSourceFallback(enabled: Boolean) = viewModelScope.launch { dataStore.setSourceFallback(enabled) }
     fun setPosterColourMesh(enabled: Boolean) = viewModelScope.launch { dataStore.setPosterColourMesh(enabled) }
     fun setHomeAmbientBackground(enabled: Boolean) = viewModelScope.launch { dataStore.setHomeAmbientBackground(enabled) }
     fun setDetailsAmbientBackground(enabled: Boolean) = viewModelScope.launch { dataStore.setDetailsAmbientBackground(enabled) }
     fun setHeroEdgeToEdge(enabled: Boolean) = viewModelScope.launch { dataStore.setHeroEdgeToEdge(enabled) }
     fun setQuietFocus(enabled: Boolean) = viewModelScope.launch { dataStore.setQuietFocus(enabled) }
+    fun setQuietSelection(enabled: Boolean) = viewModelScope.launch { dataStore.setQuietSelection(enabled) }
+    fun setCustomEnrichment(enabled: Boolean) = viewModelScope.launch { dataStore.setCustomEnrichment(enabled) }
+    fun toggleEnrichmentExclusion(key: String) { viewModelScope.launch { dataStore.toggleEnrichmentExclusion(key) } }
     fun setTrailerQuality(height: Int) = viewModelScope.launch { dataStore.setTrailerQuality(height) }
     fun setTrailerVideoLayer(enabled: Boolean) = viewModelScope.launch { dataStore.setTrailerVideoLayer(enabled) }
     fun setEnrichment(level: Int) = viewModelScope.launch { dataStore.setEnrichment(level) }
@@ -106,6 +110,9 @@ class BetaPerformanceSettingsViewModel @Inject constructor(
     fun setAudioMenuLanguage(key: String, shown: Boolean) = viewModelScope.launch { dataStore.setAudioMenuLanguage(key, shown) }
     fun setHideMenu(enabled: Boolean) = viewModelScope.launch { dataStore.setHideMenuUntilSelected(enabled) }
     fun setPosterOpenDelay(ms: Int) = viewModelScope.launch { dataStore.setPosterOpenDelay(ms) }
+    fun setHighlightSizeCustom(custom: Boolean) = viewModelScope.launch { dataStore.setHighlightSizeCustom(custom) }
+    fun setHighlightSizePercent(percent: Int) = viewModelScope.launch { dataStore.setHighlightSizePercent(percent) }
+    fun resetHighlightSize() = viewModelScope.launch { dataStore.resetHighlightSize() }
     fun setSourceSwitchTimeout(seconds: Int) = viewModelScope.launch { dataStore.setSourceSwitchTimeout(seconds) }
     fun setAutoQuality(enabled: Boolean) = viewModelScope.launch { dataStore.setAutoQuality(enabled) }
     fun setAutoQualityConfirm(seconds: Int) = viewModelScope.launch { dataStore.setAutoQualityConfirm(seconds) }
@@ -211,6 +218,12 @@ internal fun LookAndFeelSettingsGroup(viewModel: BetaPerformanceSettingsViewMode
             onToggle = { viewModel.setQuietFocus(!settings.quietFocus) }
         )
         SettingsToggleRow(
+            title = stringResource(R.string.quiet_selection_title),
+            subtitle = stringResource(R.string.quiet_selection_subtitle),
+            checked = settings.quietSelection,
+            onToggle = { viewModel.setQuietSelection(!settings.quietSelection) }
+        )
+        SettingsToggleRow(
             title = stringResource(R.string.beta_poster_colour_mesh_title),
             subtitle = stringResource(R.string.beta_poster_colour_mesh_subtitle),
             checked = settings.posterColourMesh,
@@ -263,7 +276,8 @@ internal fun MenuPlacementRows(viewModel: BetaPerformanceSettingsViewModel = hil
             when (settings.menuGlass) {
                 0 -> R.string.menu_glass_low
                 1 -> R.string.menu_glass_mid
-                else -> R.string.menu_glass_high
+                2 -> R.string.menu_glass_high
+                else -> R.string.menu_glass_blur
             }
         ),
         onValueChange = viewModel::setMenuGlass
@@ -364,6 +378,23 @@ internal fun HighlightSettingsGroup(viewModel: BetaPerformanceSettingsViewModel 
             onValueChange = viewModel::setEnrichment
         )
         if (settings.smartHighlights) {
+            SettingsToggleRow(
+                title = stringResource(R.string.custom_enrichment_title),
+                subtitle = stringResource(R.string.custom_enrichment_subtitle),
+                explainer = stringResource(R.string.custom_enrichment_explainer),
+                checked = settings.customEnrichment,
+                onToggle = { viewModel.setCustomEnrichment(!settings.customEnrichment) }
+            )
+            SettingsSectionLabel(text = stringResource(R.string.enrichment_exclusions_title))
+            val exclusionOptions = (com.nuvio.tv.core.home.EnrichmentExclusion.types +
+                com.nuvio.tv.core.home.EnrichmentExclusion.genres).map { it.key to stringResource(it.labelRes) }
+            SettingsChipRow(
+                items = exclusionOptions,
+                selected = settings.enrichmentExclusions,
+                onToggle = viewModel::toggleEnrichmentExclusion,
+                explainerTitle = stringResource(R.string.enrichment_exclusions_title),
+                explainer = stringResource(R.string.enrichment_exclusions_explainer)
+            )
             SettingsToggleRow(
                 title = stringResource(R.string.beta_smart_highlight_ai_names_title),
                 subtitle = stringResource(R.string.beta_smart_highlight_ai_names_subtitle),
@@ -480,6 +511,19 @@ internal fun SourceFetchRows(viewModel: BetaPerformanceSettingsViewModel = hiltV
         explainer = stringResource(R.string.beta_warm_up_explainer),
         checked = settings.warmUpAddonConnections,
         onToggle = { viewModel.setWarmUpAddonConnections(!settings.warmUpAddonConnections) }
+    )
+}
+
+/** Playback → Stream Selection, with auto-play on: Race matching sources. */
+@Composable
+internal fun RaceSourcesRow(viewModel: BetaPerformanceSettingsViewModel = hiltViewModel()) {
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    SettingsToggleRow(
+        title = stringResource(R.string.beta_race_sources_title),
+        subtitle = stringResource(R.string.beta_race_sources_subtitle),
+        explainer = stringResource(R.string.beta_race_sources_explainer),
+        checked = settings.raceAutoPlaySources,
+        onToggle = { viewModel.setRaceAutoPlaySources(!settings.raceAutoPlaySources) }
     )
 }
 

@@ -45,6 +45,14 @@
 
     <string name="nd_row_similar">Similar titles</string>
     <string name="nd_row_reviews">Reviews</string>
+    <string name="nd_menu_similar">Similar titles</string>
+    <string name="nd_menu_reviews">Reviews</string>
+    <string name="nd_panel_similar_like">Like %1$s</string>
+    <plurals name="nd_panel_reviews_count">
+        <item quantity="one">%d review</item>
+        <item quantity="other">%d reviews</item>
+    </plurals>
+    <string name="nd_panel_reviews_hint">OK opens the full review</string>
     <string name="nd_reviews_loading">Loading reviews…</string>
     <string name="nd_reviews_empty">No reviews yet.</string>
     <string name="nd_review_score">%1$d/10</string>

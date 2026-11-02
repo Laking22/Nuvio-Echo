@@ -48,6 +48,22 @@ class PluginManager {
 
     suspend fun setGroupStreamsByRepository(enabled: Boolean) = Unit
 
+    val sourceLanguages: Flow<Set<String>> = flowOf(emptySet())
+
+    suspend fun setSourceLanguages(languages: Set<String>) = Unit
+
+    suspend fun installedSourceLanguages(): Map<String, Int> = emptyMap()
+
+    val extensionDnsOptions: List<Pair<Int, Int>> = emptyList()
+
+    fun extensionDns(context: android.content.Context): Int = 0
+
+    fun setExtensionDns(context: android.content.Context, key: Int) = Unit
+
+    suspend fun hasExtensionSettings(scraperId: String): Boolean = false
+
+    fun openExtensionSettings(context: android.content.Context, scraperId: String) = Unit
+
     suspend fun executeScrapers(
         tmdbId: String,
         mediaType: String,
